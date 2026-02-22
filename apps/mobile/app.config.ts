@@ -30,7 +30,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundler: "metro",
   },
   plugins: [
-    "expo-router",
+    ["expo-router", { devtools: { enabled: false } }],
     "expo-secure-store",
     [
       "expo-build-properties",

@@ -1,20 +1,36 @@
 import { Tabs, Redirect } from "expo-router";
-import { Text, useColorScheme } from "react-native";
+import { useColorScheme, View, Text, ActivityIndicator } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/auth.store";
-import { ActivityIndicator, View } from "react-native";
 
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+function TabIcon({
+  icon,
+  iconFocused,
+  label,
+  focused,
+}: {
+  icon: IoniconName;
+  iconFocused: IoniconName;
+  label: string;
+  focused: boolean;
+}) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const activeColor = "#16a34a";
+  const inactiveColor = isDark ? "#64748b" : "#9ca3af";
+  const color = focused ? activeColor : inactiveColor;
+
   return (
-    <View style={{ alignItems: "center" }}>
-      <Text style={{ fontSize: 18 }}>{emoji}</Text>
+    <View style={{ alignItems: "center", justifyContent: "center", gap: 2 }}>
+      <Ionicons name={focused ? iconFocused : icon} size={22} color={color} />
       <Text
         style={{
-          fontSize: 9,
+          fontSize: 10,
           fontWeight: focused ? "600" : "400",
-          color: focused ? "#16a34a" : isDark ? "#94a3b8" : "#6b7280",
-          marginTop: 1,
+          color,
+          letterSpacing: 0.1,
         }}
       >
         {label}
@@ -30,7 +46,14 @@ export default function TabsLayout() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: isDark ? "#0f172a" : "#ffffff" }}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: isDark ? "#0f172a" : "#ffffff",
+        }}
+      >
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
@@ -44,18 +67,31 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: isDark ? "#0f172a" : "#ffffff" },
+        headerStyle: {
+          backgroundColor: isDark ? "#0f172a" : "#ffffff",
+        },
+        headerShadowVisible: false,
+        headerTitleStyle: {
+          fontWeight: "700",
+          fontSize: 17,
+          color: isDark ? "#f1f5f9" : "#111827",
+        },
         headerTintColor: isDark ? "#f1f5f9" : "#111827",
         tabBarShowLabel: false,
         tabBarStyle: {
-          height: 64,
-          paddingBottom: 12,
-          paddingTop: 6,
-          borderTopColor: isDark ? "#334155" : "#e5e7eb",
+          height: 68,
+          paddingBottom: 10,
+          paddingTop: 8,
+          borderTopWidth: 0,
           backgroundColor: isDark ? "#0f172a" : "#ffffff",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: isDark ? 0.25 : 0.06,
+          shadowRadius: 10,
+          elevation: 12,
         },
         tabBarActiveTintColor: "#16a34a",
-        tabBarInactiveTintColor: isDark ? "#94a3b8" : "#6b7280",
+        tabBarInactiveTintColor: isDark ? "#64748b" : "#9ca3af",
       }}
     >
       <Tabs.Screen
@@ -63,7 +99,7 @@ export default function TabsLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🏠" label="Home" focused={focused} />
+            <TabIcon icon="home-outline" iconFocused="home" label="Home" focused={focused} />
           ),
         }}
       />
@@ -72,7 +108,7 @@ export default function TabsLayout() {
         options={{
           title: "Find Players",
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🔍" label="Find" focused={focused} />
+            <TabIcon icon="search-outline" iconFocused="search" label="Find" focused={focused} />
           ),
         }}
       />
@@ -81,7 +117,12 @@ export default function TabsLayout() {
         options={{
           title: "Messages",
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="💬" label="Messages" focused={focused} />
+            <TabIcon
+              icon="chatbubble-ellipses-outline"
+              iconFocused="chatbubble-ellipses"
+              label="Messages"
+              focused={focused}
+            />
           ),
         }}
       />
@@ -90,7 +131,7 @@ export default function TabsLayout() {
         options={{
           title: "Matches",
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🎾" label="Matches" focused={focused} />
+            <TabIcon icon="trophy-outline" iconFocused="trophy" label="Matches" focused={focused} />
           ),
         }}
       />
@@ -99,7 +140,12 @@ export default function TabsLayout() {
         options={{
           title: "Courts",
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🏟️" label="Courts" focused={focused} />
+            <TabIcon
+              icon="location-outline"
+              iconFocused="location"
+              label="Courts"
+              focused={focused}
+            />
           ),
         }}
       />
@@ -108,7 +154,12 @@ export default function TabsLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="👤" label="Profile" focused={focused} />
+            <TabIcon
+              icon="person-circle-outline"
+              iconFocused="person-circle"
+              label="Profile"
+              focused={focused}
+            />
           ),
         }}
       />
