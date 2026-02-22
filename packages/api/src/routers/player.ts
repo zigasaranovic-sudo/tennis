@@ -155,18 +155,22 @@ export const playerRouter = router({
   getFilterOptions: protectedProcedure
     .input(z.object({ city: z.string().optional() }))
     .query(async ({ ctx, input }) => {
-      const base = ctx.supabase
+      const { data: cityData } = await ctx.supabase
         .from("profiles")
+        .select("city")
         .eq("is_public", true)
         .eq("is_active", true)
-        .neq("id", ctx.user.id);
-
-      const { data: cityData } = await (base as typeof base)
-        .select("city")
+        .neq("id", ctx.user.id)
         .not("city", "is", null);
       const cities = [...new Set((cityData ?? []).map((p) => p.city).filter(Boolean))].sort() as string[];
 
-      let clubQuery = (base as typeof base).select("home_club, city").not("home_club", "is", null);
+      let clubQuery = ctx.supabase
+        .from("profiles")
+        .select("home_club")
+        .eq("is_public", true)
+        .eq("is_active", true)
+        .neq("id", ctx.user.id)
+        .not("home_club", "is", null);
       if (input.city) clubQuery = clubQuery.eq("city", input.city);
       const { data: clubData } = await clubQuery;
       const clubs = [...new Set((clubData ?? []).map((p) => p.home_club).filter(Boolean))].sort() as string[];
