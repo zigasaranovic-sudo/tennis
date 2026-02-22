@@ -1,0 +1,26 @@
+{
+  "name": "@tenis/api",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./context": "./src/context.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@trpc/server": "^11.0.0",
+    "zod": "^3.24.0",
+    "@tenis/db": "workspace:*",
+    "@tenis/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@tenis/config": "workspace:*",
+    "typescript": "^5.8.0",
+    "vitest": "^2.0.0"
+  }
+}
