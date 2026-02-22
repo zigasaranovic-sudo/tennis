@@ -14,10 +14,75 @@ const SKILL_LEVELS: { value: SkillLevel; label: string; desc: string }[] = [
   { value: "professional", label: "Professional", desc: "Tournament level (NTRP 5.0+)" },
 ];
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const COUNTRIES: { code: string; name: string }[] = [
+  { code: "SI", name: "Slovenia" },
+  { code: "HR", name: "Croatia" },
+  { code: "AT", name: "Austria" },
+  { code: "DE", name: "Germany" },
+  { code: "IT", name: "Italy" },
+  { code: "FR", name: "France" },
+  { code: "ES", name: "Spain" },
+  { code: "PT", name: "Portugal" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "CH", name: "Switzerland" },
+  { code: "NL", name: "Netherlands" },
+  { code: "BE", name: "Belgium" },
+  { code: "PL", name: "Poland" },
+  { code: "CZ", name: "Czech Republic" },
+  { code: "SK", name: "Slovakia" },
+  { code: "HU", name: "Hungary" },
+  { code: "RS", name: "Serbia" },
+  { code: "BA", name: "Bosnia and Herzegovina" },
+  { code: "ME", name: "Montenegro" },
+  { code: "MK", name: "North Macedonia" },
+  { code: "AL", name: "Albania" },
+  { code: "BG", name: "Bulgaria" },
+  { code: "RO", name: "Romania" },
+  { code: "GR", name: "Greece" },
+  { code: "SE", name: "Sweden" },
+  { code: "NO", name: "Norway" },
+  { code: "DK", name: "Denmark" },
+  { code: "FI", name: "Finland" },
+  { code: "US", name: "United States" },
+  { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" },
+  { code: "BR", name: "Brazil" },
+  { code: "AR", name: "Argentina" },
+  { code: "JP", name: "Japan" },
+  { code: "CN", name: "China" },
+  { code: "IN", name: "India" },
+  { code: "ZA", name: "South Africa" },
+];
+
+const CITIES_BY_COUNTRY: Record<string, string[]> = {
+  SI: ["Ljubljana", "Maribor", "Celje", "Kranj", "Koper", "Velenje", "Novo Mesto", "Ptuj", "Nova Gorica", "Murska Sobota", "Bled", "Portorož"],
+  HR: ["Zagreb", "Split", "Rijeka", "Osijek", "Zadar", "Pula", "Dubrovnik", "Varaždin"],
+  AT: ["Vienna", "Graz", "Linz", "Salzburg", "Innsbruck", "Klagenfurt"],
+  DE: ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne", "Stuttgart", "Düsseldorf", "Leipzig"],
+  IT: ["Rome", "Milan", "Naples", "Turin", "Florence", "Bologna", "Venice", "Trieste"],
+  FR: ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Bordeaux", "Strasbourg"],
+  ES: ["Madrid", "Barcelona", "Valencia", "Seville", "Bilbao", "Málaga"],
+  GB: ["London", "Manchester", "Birmingham", "Glasgow", "Edinburgh", "Liverpool"],
+  CH: ["Zurich", "Geneva", "Basel", "Bern", "Lausanne"],
+  NL: ["Amsterdam", "Rotterdam", "The Hague", "Utrecht"],
+  BE: ["Brussels", "Antwerp", "Ghent", "Bruges"],
+  PL: ["Warsaw", "Krakow", "Gdansk", "Wroclaw", "Poznan"],
+  CZ: ["Prague", "Brno", "Ostrava", "Plzen"],
+  SK: ["Bratislava", "Košice", "Prešov", "Žilina"],
+  HU: ["Budapest", "Debrecen", "Miskolc", "Pécs"],
+  RS: ["Belgrade", "Novi Sad", "Niš", "Kragujevac"],
+  SE: ["Stockholm", "Gothenburg", "Malmö", "Uppsala"],
+  NO: ["Oslo", "Bergen", "Trondheim"],
+  DK: ["Copenhagen", "Aarhus", "Odense"],
+  US: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"],
+  AU: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide"],
+};
 
 const INPUT_CLASS =
   "w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500";
+
+const SELECT_CLASS =
+  "w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -33,30 +98,14 @@ export default function RegisterPage() {
 
   // Step 2: Profile
   const [skillLevel, setSkillLevel] = useState<SkillLevel>("intermediate");
+  const [country, setCountry] = useState("SI");
   const [city, setCity] = useState("");
-  const [country, setCountry] = useState("US");
-
-  // Step 3: Availability
-  const [availability, setAvailability] = useState<
-    { day: number; start: string; end: string }[]
-  >([]);
+  const [customCity, setCustomCity] = useState("");
 
   const updateProfile = trpc.player.updateProfile.useMutation();
-  const setAvailabilityMutation = trpc.player.setAvailability.useMutation();
 
-  const toggleDay = (day: number) => {
-    setAvailability((prev) => {
-      const exists = prev.find((a) => a.day === day);
-      if (exists) return prev.filter((a) => a.day !== day);
-      return [...prev, { day, start: "09:00", end: "12:00" }];
-    });
-  };
-
-  const updateSlot = (day: number, field: "start" | "end", value: string) => {
-    setAvailability((prev) =>
-      prev.map((a) => (a.day === day ? { ...a, [field]: value } : a))
-    );
-  };
+  const citiesForCountry = CITIES_BY_COUNTRY[country] ?? [];
+  const selectedCity = city === "__custom__" ? customCity : city;
 
   const handleFinalSubmit = async () => {
     setError(null);
@@ -64,7 +113,6 @@ export default function RegisterPage() {
     try {
       const supabase = createClient();
 
-      // 1. Sign up via browser client — sets session cookie automatically
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -85,23 +133,11 @@ export default function RegisterPage() {
         return;
       }
 
-      // 2. Update profile fields via tRPC (runs with the new session)
       await updateProfile.mutateAsync({
         skill_level: skillLevel,
-        city: city || undefined,
+        city: selectedCity || undefined,
         country,
       });
-
-      // 3. Save availability if any slots selected
-      if (availability.length > 0) {
-        await setAvailabilityMutation.mutateAsync({
-          slots: availability.map((a) => ({
-            day_of_week: a.day,
-            start_time: a.start,
-            end_time: a.end,
-          })),
-        });
-      }
 
       router.push("/profile?welcome=true");
       router.refresh();
@@ -120,29 +156,24 @@ export default function RegisterPage() {
 
           {/* Step indicator */}
           <div className="flex items-center justify-center gap-2 mt-6">
-            {[1, 2, 3].map((s) => (
+            {[1, 2].map((s) => (
               <div key={s} className="flex items-center gap-2">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                    step >= s
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-200 text-gray-500"
+                    step >= s ? "bg-green-600 text-white" : "bg-gray-200 text-gray-500"
                   }`}
                 >
                   {s}
                 </div>
-                {s < 3 && (
-                  <div
-                    className={`w-12 h-0.5 ${step > s ? "bg-green-600" : "bg-gray-200"}`}
-                  />
+                {s < 2 && (
+                  <div className={`w-16 h-0.5 ${step > s ? "bg-green-600" : "bg-gray-200"}`} />
                 )}
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-500 mt-2 px-8">
+          <div className="flex justify-between text-xs text-gray-500 mt-2 px-12">
             <span>Account</span>
             <span>Profile</span>
-            <span>Availability</span>
           </div>
         </div>
 
@@ -210,6 +241,12 @@ export default function RegisterPage() {
               >
                 Continue
               </button>
+              <p className="text-center text-sm text-gray-600">
+                Already have an account?{" "}
+                <Link href="/login" className="text-green-600 font-medium hover:underline">
+                  Sign in
+                </Link>
+              </p>
             </div>
           )}
 
@@ -217,6 +254,7 @@ export default function RegisterPage() {
           {step === 2 && (
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-900">Your tennis profile</h2>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">Skill level</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -236,88 +274,63 @@ export default function RegisterPage() {
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className={INPUT_CLASS}
-                    placeholder="New York"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                  <input
-                    type="text"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 2))}
-                    className={INPUT_CLASS}
-                    placeholder="US"
-                    maxLength={2}
-                  />
-                </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <select
+                  value={country}
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    setCity("");
+                    setCustomCity("");
+                  }}
+                  className={SELECT_CLASS}
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
+                </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                {citiesForCountry.length > 0 ? (
+                  <>
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className={SELECT_CLASS}
+                    >
+                      <option value="">Select a city</option>
+                      {citiesForCountry.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                      <option value="__custom__">Other (type manually)</option>
+                    </select>
+                    {city === "__custom__" && (
+                      <input
+                        type="text"
+                        value={customCity}
+                        onChange={(e) => setCustomCity(e.target.value)}
+                        className={`${INPUT_CLASS} mt-2`}
+                        placeholder="Enter your city"
+                      />
+                    )}
+                  </>
+                ) : (
+                  <input
+                    type="text"
+                    value={customCity}
+                    onChange={(e) => setCustomCity(e.target.value)}
+                    className={INPUT_CLASS}
+                    placeholder="Enter your city"
+                  />
+                )}
+              </div>
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(1)}
-                  className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setStep(3)}
-                  className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Availability */}
-          {step === 3 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">When can you play?</h2>
-              <p className="text-sm text-gray-500">Select your typical weekly availability so other players can find you.</p>
-              <div className="space-y-3">
-                {DAYS.map((day, index) => {
-                  const slot = availability.find((a) => a.day === index);
-                  return (
-                    <div key={day} className="flex items-center gap-3">
-                      <button
-                        onClick={() => toggleDay(index)}
-                        className={`w-12 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                          slot ? "bg-green-600 text-white" : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {day}
-                      </button>
-                      {slot && (
-                        <div className="flex items-center gap-2 flex-1">
-                          <input
-                            type="time"
-                            value={slot.start}
-                            onChange={(e) => updateSlot(index, "start", e.target.value)}
-                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                          />
-                          <span className="text-gray-400 text-sm">to</span>
-                          <input
-                            type="time"
-                            value={slot.end}
-                            onChange={(e) => updateSlot(index, "end", e.target.value)}
-                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setStep(2)}
                   className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Back
@@ -331,15 +344,6 @@ export default function RegisterPage() {
                 </button>
               </div>
             </div>
-          )}
-
-          {step === 1 && (
-            <p className="mt-4 text-center text-sm text-gray-600">
-              Already have an account?{" "}
-              <Link href="/login" className="text-green-600 font-medium hover:underline">
-                Sign in
-              </Link>
-            </p>
           )}
         </div>
       </div>
