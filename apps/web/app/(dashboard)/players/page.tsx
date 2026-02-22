@@ -37,19 +37,19 @@ export default function PlayersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Find Players</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Find Players</h1>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Skill Level</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Skill Level</label>
             <select
               value={skillLevel ?? ""}
               onChange={(e) =>
                 setSkillLevel((e.target.value as SkillLevel) || undefined)
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="">All levels</option>
               {Object.entries(SKILL_LABELS).map(([val, label]) => (
@@ -60,33 +60,33 @@ export default function PlayersPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">City</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">City</label>
             <input
               type="text"
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="Any city"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Min ELO</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Min ELO</label>
             <input
               type="number"
               value={minElo}
               onChange={(e) => setMinElo(e.target.value)}
               placeholder="800"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Max ELO</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Max ELO</label>
             <input
               type="number"
               value={maxElo}
               onChange={(e) => setMaxElo(e.target.value)}
               placeholder="3000"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function PlayersPage() {
               <Link
                 key={player.id}
                 href={`/players/${player.id}`}
-                className="bg-white rounded-xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all"
+                className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5 hover:border-green-300 hover:shadow-sm transition-all"
               >
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold text-lg overflow-hidden">
@@ -115,32 +115,32 @@ export default function PlayersPage() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-gray-900 truncate">{player.full_name}</p>
-                    <p className="text-sm text-gray-500">@{player.username}</p>
+                    <p className="font-semibold text-gray-900 dark:text-slate-100 truncate">{player.full_name}</p>
+                    <p className="text-sm text-gray-500 dark:text-slate-400">@{player.username}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full capitalize">
+                  <span className="text-xs text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded-full capitalize">
                     {SKILL_LABELS[player.skill_level as SkillLevel]}
                   </span>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900">
+                    <p className="font-bold text-gray-900 dark:text-slate-100">
                       {player.elo_rating}
                       {player.elo_provisional && (
-                        <span className="text-xs text-gray-400 font-normal ml-1">*</span>
+                        <span className="text-xs text-gray-400 dark:text-slate-600 font-normal ml-1">*</span>
                       )}
                     </p>
-                    <p className="text-xs text-gray-400">ELO</p>
+                    <p className="text-xs text-gray-400 dark:text-slate-600">ELO</p>
                   </div>
                 </div>
 
                 {(player as { home_club?: string | null }).home_club ? (
-                  <p className="mt-2 text-xs text-gray-400">
+                  <p className="mt-2 text-xs text-gray-400 dark:text-slate-600">
                     🎾 {(player as { home_club?: string | null }).home_club}
                   </p>
                 ) : player.city ? (
-                  <p className="mt-2 text-xs text-gray-400">
+                  <p className="mt-2 text-xs text-gray-400 dark:text-slate-600">
                     📍 {player.city}
                   </p>
                 ) : null}
@@ -153,7 +153,7 @@ export default function PlayersPage() {
               <button
                 onClick={() => fetchNextPage()}
                 disabled={isFetching}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50"
+                className="px-6 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium disabled:opacity-50"
               >
                 {isFetching ? "Loading..." : "Load more"}
               </button>
@@ -161,14 +161,14 @@ export default function PlayersPage() {
           )}
         </>
       ) : (
-        <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
           {isFetching ? (
-            <p className="text-gray-500">Searching for players...</p>
+            <p className="text-gray-500 dark:text-slate-400">Searching for players...</p>
           ) : (
             <>
               <p className="text-4xl mb-4">🔍</p>
-              <p className="font-medium text-gray-900">No players found</p>
-              <p className="text-sm text-gray-500 mt-1">Try adjusting your filters</p>
+              <p className="font-medium text-gray-900 dark:text-slate-100">No players found</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Try adjusting your filters</p>
             </>
           )}
         </div>

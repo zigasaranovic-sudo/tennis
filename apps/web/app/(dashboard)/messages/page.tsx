@@ -9,14 +9,14 @@ export default function MessagesPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Messages</h1>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-center gap-4 p-4 animate-pulse">
-              <div className="w-12 h-12 rounded-full bg-gray-200" />
+              <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-slate-700" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-32" />
-                <div className="h-3 bg-gray-100 rounded w-48" />
+                <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-32" />
+                <div className="h-3 bg-gray-100 dark:bg-slate-700 rounded w-48" />
               </div>
             </div>
           ))}
@@ -27,15 +27,15 @@ export default function MessagesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Messages</h1>
 
       {conversations && conversations.length > 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
           {conversations.map((conv) => (
             <Link
               key={conv.id}
               href={`/messages/${conv.id}`}
-              className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
             >
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold text-lg flex-shrink-0 overflow-hidden">
                 {conv.other_player?.avatar_url ? (
@@ -49,13 +49,13 @@ export default function MessagesPage() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 truncate">
+                <p className="font-semibold text-gray-900 dark:text-slate-100 truncate">
                   {conv.other_player?.full_name ?? "Unknown Player"}
                 </p>
-                <p className="text-sm text-gray-400">@{conv.other_player?.username}</p>
+                <p className="text-sm text-gray-400 dark:text-slate-600">@{conv.other_player?.username}</p>
               </div>
               {conv.last_message_at && (
-                <p className="text-xs text-gray-400 flex-shrink-0">
+                <p className="text-xs text-gray-400 dark:text-slate-600 flex-shrink-0">
                   {new Date(conv.last_message_at).toLocaleDateString()}
                 </p>
               )}
@@ -63,10 +63,10 @@ export default function MessagesPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
           <p className="text-4xl mb-4">💬</p>
-          <p className="font-medium text-gray-900">No conversations yet</p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="font-medium text-gray-900 dark:text-slate-100">No conversations yet</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             Find a player and start a conversation
           </p>
           <Link

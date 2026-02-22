@@ -41,7 +41,7 @@ export default function MyBookingsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">My Bookings</h1>
         <Link
           href="/courts"
           className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors"
@@ -59,7 +59,7 @@ export default function MyBookingsPage() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
               tab === t
                 ? "bg-green-600 text-white"
-                : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
+                : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600"
             }`}
           >
             {t}
@@ -71,7 +71,7 @@ export default function MyBookingsPage() {
       {isLoading ? (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse h-24" />
+            <div key={i} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5 animate-pulse h-24" />
           ))}
         </div>
       ) : bookings && bookings.length > 0 ? (
@@ -86,10 +86,10 @@ export default function MyBookingsPage() {
             return (
               <div
                 key={booking.id}
-                className={`bg-white rounded-xl border p-5 flex items-start justify-between gap-4 ${
+                className={`bg-white dark:bg-slate-800 rounded-xl border p-5 flex items-start justify-between gap-4 ${
                   booking.status === "cancelled"
-                    ? "border-gray-200 opacity-60"
-                    : "border-gray-200"
+                    ? "border-gray-200 dark:border-slate-700 opacity-60"
+                    : "border-gray-200 dark:border-slate-700"
                 }`}
               >
                 <div className="flex items-start gap-4">
@@ -97,19 +97,19 @@ export default function MyBookingsPage() {
                     🎾
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-gray-900 dark:text-slate-100">
                       {court?.name ?? "Court"} · {venue?.name}
                     </p>
-                    <p className="text-sm text-gray-500 mt-0.5">📍 {venue?.city}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">📍 {venue?.city}</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
                       {start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}{" "}
                       {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       {" – "}
                       {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      <span className="text-gray-400 ml-2">({hours}h)</span>
+                      <span className="text-gray-400 dark:text-slate-600 ml-2">({hours}h)</span>
                     </p>
                     {booking.notes && (
-                      <p className="text-xs text-gray-400 mt-0.5">{booking.notes}</p>
+                      <p className="text-xs text-gray-400 dark:text-slate-600 mt-0.5">{booking.notes}</p>
                     )}
                   </div>
                 </div>
@@ -133,9 +133,9 @@ export default function MyBookingsPage() {
           })}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
           <p className="text-4xl mb-4">📅</p>
-          <p className="font-medium text-gray-900">
+          <p className="font-medium text-gray-900 dark:text-slate-100">
             {tab === "upcoming" ? "No upcoming bookings" : "No past bookings"}
           </p>
           {tab === "upcoming" && (

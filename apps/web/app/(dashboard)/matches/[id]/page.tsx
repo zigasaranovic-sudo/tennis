@@ -57,7 +57,7 @@ export default function MatchDetailPage({
     accepted: "bg-blue-100 text-blue-700",
     pending_confirmation: "bg-orange-100 text-orange-700",
     completed: "bg-green-100 text-green-700",
-    cancelled: "bg-gray-100 text-gray-600",
+    cancelled: "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400",
     disputed: "bg-red-100 text-red-700",
   };
 
@@ -86,12 +86,12 @@ export default function MatchDetailPage({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/matches" className="text-gray-500 hover:text-gray-700 text-sm">
+        <Link href="/matches" className="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 text-sm">
           ← Matches
         </Link>
         <span
           className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${
-            statusColors[match.status] ?? "bg-gray-100 text-gray-600"
+            statusColors[match.status] ?? "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400"
           }`}
         >
           {match.status.replace(/_/g, " ")}
@@ -99,7 +99,7 @@ export default function MatchDetailPage({
       </div>
 
       {/* Match header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
         <div className="flex items-center justify-between">
           <div className="text-center flex-1">
             <div className="w-16 h-16 bg-green-100 rounded-full mx-auto flex items-center justify-center text-green-700 font-bold text-2xl overflow-hidden">
@@ -109,16 +109,16 @@ export default function MatchDetailPage({
                 (myPlayer as { full_name?: string })?.full_name?.[0]
               )}
             </div>
-            <p className="font-semibold text-gray-900 mt-2">
+            <p className="font-semibold text-gray-900 dark:text-slate-100 mt-2">
               {(myPlayer as { full_name?: string })?.full_name}
             </p>
-            <p className="text-sm text-gray-400">You</p>
+            <p className="text-sm text-gray-400 dark:text-slate-600">You</p>
           </div>
 
           <div className="text-center px-6">
             {match.status === "completed" && scoreDetail ? (
               <div>
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                   {Array.isArray(scoreDetail)
                     ? scoreDetail
                         .map((s) =>
@@ -139,15 +139,15 @@ export default function MatchDetailPage({
                 )}
               </div>
             ) : (
-              <p className="text-gray-400 text-xl">vs</p>
+              <p className="text-gray-400 dark:text-slate-600 text-xl">vs</p>
             )}
-            <p className="text-xs text-gray-400 mt-1 capitalize">
+            <p className="text-xs text-gray-400 dark:text-slate-600 mt-1 capitalize">
               {match.format?.replace(/_/g, " ")}
             </p>
           </div>
 
           <div className="text-center flex-1">
-            <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto flex items-center justify-center text-gray-600 font-bold text-2xl overflow-hidden">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full mx-auto flex items-center justify-center text-gray-600 dark:text-slate-400 font-bold text-2xl overflow-hidden">
               {(opponent as { avatar_url?: string })?.avatar_url ? (
                 <img src={(opponent as { avatar_url?: string }).avatar_url!} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -155,20 +155,20 @@ export default function MatchDetailPage({
               )}
             </div>
             <Link href={`/players/${(opponent as { id?: string })?.id}`}>
-              <p className="font-semibold text-gray-900 mt-2 hover:text-green-600 transition-colors">
+              <p className="font-semibold text-gray-900 dark:text-slate-100 mt-2 hover:text-green-600 transition-colors">
                 {(opponent as { full_name?: string })?.full_name}
               </p>
             </Link>
-            <p className="text-sm text-gray-400">Opponent</p>
+            <p className="text-sm text-gray-400 dark:text-slate-600">Opponent</p>
           </div>
         </div>
 
         {/* Match details */}
-        <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-2 gap-3 text-sm">
+        <div className="mt-5 pt-5 border-t border-gray-100 dark:border-slate-700 grid grid-cols-2 gap-3 text-sm">
           {match.scheduled_at && (
             <div>
-              <p className="text-gray-400 text-xs">Date & Time</p>
-              <p className="text-gray-700 font-medium">
+              <p className="text-gray-400 dark:text-slate-600 text-xs">Date & Time</p>
+              <p className="text-gray-700 dark:text-slate-300 font-medium">
                 {new Date(match.scheduled_at).toLocaleDateString("en-US", {
                   weekday: "long",
                   month: "long",
@@ -181,8 +181,8 @@ export default function MatchDetailPage({
           )}
           {match.location_city && (
             <div>
-              <p className="text-gray-400 text-xs">Location</p>
-              <p className="text-gray-700 font-medium">
+              <p className="text-gray-400 dark:text-slate-600 text-xs">Location</p>
+              <p className="text-gray-700 dark:text-slate-300 font-medium">
                 {match.location_name ?? match.location_city}
               </p>
             </div>
@@ -192,10 +192,10 @@ export default function MatchDetailPage({
 
       {/* Result submission — shown for accepted matches */}
       {match.status === "accepted" && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Submit Result</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Submit Result</h2>
           <div className="space-y-3 mb-4">
-            <div className="grid grid-cols-5 gap-2 text-xs text-gray-500 font-medium px-1">
+            <div className="grid grid-cols-5 gap-2 text-xs text-gray-500 dark:text-slate-400 font-medium px-1">
               <span className="col-span-2 text-center">
                 {(myPlayer as { full_name?: string })?.full_name?.split(" ")[0]}
               </span>
@@ -206,7 +206,7 @@ export default function MatchDetailPage({
             </div>
             {scoreInputs.map((set, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 w-8">Set {i + 1}</span>
+                <span className="text-xs text-gray-400 dark:text-slate-600 w-8">Set {i + 1}</span>
                 <input
                   type="number"
                   min={0}
@@ -219,10 +219,10 @@ export default function MatchDetailPage({
                       )
                     )
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-slate-700 dark:text-slate-100"
                   placeholder="0"
                 />
-                <span className="text-gray-400">–</span>
+                <span className="text-gray-400 dark:text-slate-600">–</span>
                 <input
                   type="number"
                   min={0}
@@ -235,13 +235,13 @@ export default function MatchDetailPage({
                       )
                     )
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-slate-700 dark:text-slate-100"
                   placeholder="0"
                 />
                 {i > 0 && (
                   <button
                     onClick={() => removeSet(i)}
-                    className="text-gray-400 hover:text-red-500 transition-colors text-lg"
+                    className="text-gray-400 dark:text-slate-600 hover:text-red-500 transition-colors text-lg"
                   >
                     ×
                   </button>
@@ -253,7 +253,7 @@ export default function MatchDetailPage({
             {scoreInputs.length < 5 && (
               <button
                 onClick={addSet}
-                className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
               >
                 + Add set
               </button>
@@ -275,13 +275,13 @@ export default function MatchDetailPage({
       {/* Result confirmation */}
       {match.status === "pending_confirmation" && !iSubmittedResult && (
         <div className="bg-orange-50 rounded-xl border border-orange-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Confirm Result</h2>
-          <p className="text-sm text-gray-600 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-2">Confirm Result</h2>
+          <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">
             Your opponent submitted a result. Please confirm or dispute.
           </p>
-          <div className="bg-white rounded-lg p-4 mb-4 text-center">
-            <p className="text-sm text-gray-500 mb-1">Score submitted:</p>
-            <p className="text-xl font-bold text-gray-900">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-4 mb-4 text-center">
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-1">Score submitted:</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-slate-100">
               {Array.isArray(scoreDetail)
                 ? scoreDetail
                     .map((s) =>
@@ -314,7 +314,7 @@ export default function MatchDetailPage({
                 onChange={(e) => setDisputeReason(e.target.value)}
                 placeholder="Explain why you are disputing this result..."
                 rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-red-500 text-sm dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500"
               />
               <button
                 onClick={() =>
@@ -332,9 +332,9 @@ export default function MatchDetailPage({
 
       {/* Completed match result */}
       {match.status === "completed" && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 text-center">
           <p className="text-4xl mb-3">{iWon ? "🏆" : "🎾"}</p>
-          <p className="text-xl font-bold text-gray-900 mb-1">
+          <p className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-1">
             {iWon ? "You won!" : "Match completed"}
           </p>
           {myDelta !== null && myDelta !== undefined && (

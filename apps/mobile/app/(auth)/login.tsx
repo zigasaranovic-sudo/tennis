@@ -8,11 +8,25 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  useColorScheme,
 } from "react-native";
 import { Link } from "expo-router";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const bg = isDark ? "#0f172a" : "#f9fafb";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const border = isDark ? "#334155" : "#e5e7eb";
+  const textPrimary = isDark ? "#f1f5f9" : "#111827";
+  const textSecondary = isDark ? "#94a3b8" : "#6b7280";
+  const inputBg = isDark ? "#1e293b" : "#ffffff";
+  const inputText = isDark ? "#f1f5f9" : "#111827";
+  const placeholder = isDark ? "#64748b" : "#9ca3af";
+  const labelText = isDark ? "#94a3b8" : "#374151";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,7 +45,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-white"
+      style={{ flex: 1, backgroundColor: bg }}
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
@@ -43,15 +57,15 @@ export default function LoginScreen() {
             <View className="w-20 h-20 bg-green-600 rounded-full items-center justify-center mb-4">
               <Text className="text-white text-3xl font-bold">🎾</Text>
             </View>
-            <Text className="text-3xl font-bold text-gray-900">Tenis</Text>
-            <Text className="text-gray-500 mt-1">Find your match</Text>
+            <Text style={{ color: textPrimary }} className="text-3xl font-bold">Tenis</Text>
+            <Text style={{ color: textSecondary }} className="mt-1">Find your match</Text>
           </View>
 
-          <Text className="text-2xl font-bold text-gray-900 mb-6">Sign in</Text>
+          <Text style={{ color: textPrimary }} className="text-2xl font-bold mb-6">Sign in</Text>
 
           <View className="space-y-4">
             <View>
-              <Text className="text-sm font-medium text-gray-700 mb-1">Email</Text>
+              <Text style={{ color: labelText }} className="text-sm font-medium mb-1">Email</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -59,20 +73,40 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="w-full px-4 py-3.5 border border-gray-300 rounded-xl text-base text-gray-900"
-                placeholderTextColor="#9ca3af"
+                style={{
+                  width: "100%",
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  borderWidth: 1,
+                  borderColor: border,
+                  borderRadius: 12,
+                  fontSize: 16,
+                  color: inputText,
+                  backgroundColor: inputBg,
+                }}
+                placeholderTextColor={placeholder}
               />
             </View>
 
             <View>
-              <Text className="text-sm font-medium text-gray-700 mb-1">Password</Text>
+              <Text style={{ color: labelText }} className="text-sm font-medium mb-1">Password</Text>
               <TextInput
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 placeholder="••••••••"
-                className="w-full px-4 py-3.5 border border-gray-300 rounded-xl text-base text-gray-900"
-                placeholderTextColor="#9ca3af"
+                style={{
+                  width: "100%",
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  borderWidth: 1,
+                  borderColor: border,
+                  borderRadius: 12,
+                  fontSize: 16,
+                  color: inputText,
+                  backgroundColor: inputBg,
+                }}
+                placeholderTextColor={placeholder}
               />
             </View>
           </View>
@@ -90,7 +124,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <View className="flex-row justify-center mt-6 gap-1">
-            <Text className="text-gray-500">Don&apos;t have an account?</Text>
+            <Text style={{ color: textSecondary }}>Don&apos;t have an account?</Text>
             <Link href="/(auth)/register">
               <Text className="text-green-600 font-medium">Create one</Text>
             </Link>

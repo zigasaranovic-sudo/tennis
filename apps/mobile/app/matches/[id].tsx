@@ -6,6 +6,7 @@ import {
   Alert,
   TextInput,
   ActivityIndicator,
+  useColorScheme,
 } from "react-native";
 import { useLocalSearchParams, router, useNavigation } from "expo-router";
 import { useLayoutEffect, useState } from "react";
@@ -43,6 +44,17 @@ type MatchData = {
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
+
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const bg = isDark ? "#0f172a" : "#f9fafb";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const border = isDark ? "#334155" : "#e5e7eb";
+  const textPrimary = isDark ? "#f1f5f9" : "#111827";
+  const textSecondary = isDark ? "#94a3b8" : "#6b7280";
+  const inputBg = isDark ? "#1e293b" : "#ffffff";
+  const inputText = isDark ? "#f1f5f9" : "#111827";
 
   const { data: profile } = trpc.player.getProfile.useQuery();
   const { data: matchRaw, refetch } = trpc.match.getMatch.useQuery(
@@ -108,7 +120,7 @@ export default function MatchDetailScreen() {
 
   if (!match) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: bg }}>
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
@@ -162,23 +174,29 @@ export default function MatchDetailScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" contentContainerStyle={{ padding: 16 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ padding: 16 }}>
       {/* Match header */}
-      <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
+      <View
+        style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+        className="rounded-2xl p-5 mb-4"
+      >
         <View className="items-center mb-4">
-          <View className={`px-3 py-1 rounded-full bg-gray-100 mb-3`}>
+          <View
+            style={{ backgroundColor: isDark ? "#334155" : "#f3f4f6" }}
+            className="px-3 py-1 rounded-full mb-3"
+          >
             <Text className={`text-sm font-semibold ${statusInfo.color}`}>
               {statusInfo.label}
             </Text>
           </View>
-          <Text className="text-lg font-bold text-gray-900">
+          <Text style={{ color: textPrimary }} className="text-lg font-bold">
             {profile?.full_name ?? "You"} vs {opponent?.full_name ?? "Opponent"}
           </Text>
-          <Text className="text-sm text-gray-500 mt-1">
+          <Text style={{ color: textSecondary }} className="text-sm mt-1">
             {match.format?.replace(/_/g, " ").replace("best of", "Best of")}
           </Text>
           {match.scheduled_at && (
-            <Text className="text-sm text-gray-400 mt-1">
+            <Text style={{ color: textSecondary }} className="text-sm mt-1">
               {new Date(match.scheduled_at).toLocaleDateString("en-US", {
                 weekday: "short",
                 month: "short",
@@ -189,19 +207,23 @@ export default function MatchDetailScreen() {
             </Text>
           )}
           {match.location_name && (
-            <Text className="text-sm text-gray-400 mt-0.5">📍 {match.location_name}</Text>
+            <Text style={{ color: textSecondary }} className="text-sm mt-0.5">
+              📍 {match.location_name}
+            </Text>
           )}
         </View>
 
         {/* Completed score display */}
         {match.status === "completed" && match.score_detail && (
-          <View className="border-t border-gray-100 pt-4">
-            <Text className="text-center text-sm font-medium text-gray-500 mb-3">Final Score</Text>
+          <View style={{ borderTopColor: border, borderTopWidth: 1 }} className="pt-4">
+            <Text style={{ color: textSecondary }} className="text-center text-sm font-medium mb-3">
+              Final Score
+            </Text>
             <View className="flex-row justify-center gap-4">
               {match.score_detail.map((set, i) => (
                 <View key={i} className="items-center">
-                  <Text className="text-xs text-gray-400 mb-1">Set {i + 1}</Text>
-                  <Text className="text-xl font-bold text-gray-900">
+                  <Text style={{ color: textSecondary }} className="text-xs mb-1">Set {i + 1}</Text>
+                  <Text style={{ color: textPrimary }} className="text-xl font-bold">
                     {set.p1}–{set.p2}
                   </Text>
                 </View>
@@ -217,12 +239,12 @@ export default function MatchDetailScreen() {
 
         {/* ELO changes */}
         {match.status === "completed" && (
-          <View className="flex-row border-t border-gray-100 pt-4 mt-4">
+          <View style={{ borderTopColor: border, borderTopWidth: 1 }} className="flex-row pt-4 mt-4">
             {isPlayer1 ? (
               <>
                 <View className="flex-1 items-center">
-                  <Text className="text-xs text-gray-500">Your ELO</Text>
-                  <Text className="text-base font-bold text-gray-900 mt-0.5">
+                  <Text style={{ color: textSecondary }} className="text-xs">Your ELO</Text>
+                  <Text style={{ color: textPrimary }} className="text-base font-bold mt-0.5">
                     {match.player1_elo_after ?? "—"}
                   </Text>
                   {match.player1_elo_delta != null && (
@@ -235,8 +257,8 @@ export default function MatchDetailScreen() {
                   )}
                 </View>
                 <View className="flex-1 items-center">
-                  <Text className="text-xs text-gray-500">Opponent ELO</Text>
-                  <Text className="text-base font-bold text-gray-900 mt-0.5">
+                  <Text style={{ color: textSecondary }} className="text-xs">Opponent ELO</Text>
+                  <Text style={{ color: textPrimary }} className="text-base font-bold mt-0.5">
                     {match.player2_elo_after ?? "—"}
                   </Text>
                   {match.player2_elo_delta != null && (
@@ -252,8 +274,8 @@ export default function MatchDetailScreen() {
             ) : (
               <>
                 <View className="flex-1 items-center">
-                  <Text className="text-xs text-gray-500">Your ELO</Text>
-                  <Text className="text-base font-bold text-gray-900 mt-0.5">
+                  <Text style={{ color: textSecondary }} className="text-xs">Your ELO</Text>
+                  <Text style={{ color: textPrimary }} className="text-base font-bold mt-0.5">
                     {match.player2_elo_after ?? "—"}
                   </Text>
                   {match.player2_elo_delta != null && (
@@ -266,8 +288,8 @@ export default function MatchDetailScreen() {
                   )}
                 </View>
                 <View className="flex-1 items-center">
-                  <Text className="text-xs text-gray-500">Opponent ELO</Text>
-                  <Text className="text-base font-bold text-gray-900 mt-0.5">
+                  <Text style={{ color: textSecondary }} className="text-xs">Opponent ELO</Text>
+                  <Text style={{ color: textPrimary }} className="text-base font-bold mt-0.5">
                     {match.player1_elo_after ?? "—"}
                   </Text>
                   {match.player1_elo_delta != null && (
@@ -287,19 +309,26 @@ export default function MatchDetailScreen() {
 
       {/* Score entry */}
       {canSubmit && (
-        <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-          <Text className="text-base font-semibold text-gray-900 mb-4">Submit Result</Text>
+        <View
+          style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+          className="rounded-2xl p-5 mb-4"
+        >
+          <Text style={{ color: textPrimary }} className="text-base font-semibold mb-4">
+            Submit Result
+          </Text>
           <View className="flex-row items-center mb-3">
-            <Text className="text-sm text-gray-500 w-12">Set</Text>
-            <Text className="flex-1 text-center text-sm font-medium text-gray-700">You</Text>
-            <Text className="mx-3 text-gray-300">–</Text>
-            <Text className="flex-1 text-center text-sm font-medium text-gray-700">
+            <Text style={{ color: textSecondary }} className="text-sm w-12">Set</Text>
+            <Text style={{ color: textPrimary }} className="flex-1 text-center text-sm font-medium">
+              You
+            </Text>
+            <Text style={{ color: isDark ? "#475569" : "#d1d5db" }} className="mx-3">–</Text>
+            <Text style={{ color: textPrimary }} className="flex-1 text-center text-sm font-medium">
               {opponent?.full_name?.split(" ")[0] ?? "Opp"}
             </Text>
           </View>
           {sets.map((set, i) => (
             <View key={i} className="flex-row items-center mb-3">
-              <Text className="text-sm text-gray-400 w-12">Set {i + 1}</Text>
+              <Text style={{ color: textSecondary }} className="text-sm w-12">Set {i + 1}</Text>
               <TextInput
                 value={set.p1}
                 onChangeText={(v) =>
@@ -309,10 +338,21 @@ export default function MatchDetailScreen() {
                 }
                 keyboardType="numeric"
                 maxLength={2}
-                className="flex-1 border border-gray-300 rounded-lg py-2 text-center text-base"
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: border,
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  textAlign: "center",
+                  fontSize: 16,
+                  backgroundColor: inputBg,
+                  color: inputText,
+                }}
                 placeholder="0"
+                placeholderTextColor={textSecondary}
               />
-              <Text className="mx-3 text-gray-300">–</Text>
+              <Text style={{ color: isDark ? "#475569" : "#d1d5db" }} className="mx-3">–</Text>
               <TextInput
                 value={set.p2}
                 onChangeText={(v) =>
@@ -322,8 +362,19 @@ export default function MatchDetailScreen() {
                 }
                 keyboardType="numeric"
                 maxLength={2}
-                className="flex-1 border border-gray-300 rounded-lg py-2 text-center text-base"
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: border,
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  textAlign: "center",
+                  fontSize: 16,
+                  backgroundColor: inputBg,
+                  color: inputText,
+                }}
                 placeholder="0"
+                placeholderTextColor={textSecondary}
               />
             </View>
           ))}
@@ -350,9 +401,14 @@ export default function MatchDetailScreen() {
 
       {/* Confirm / Dispute actions */}
       {(canConfirm || canDispute) && (
-        <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-          <Text className="text-base font-semibold text-gray-900 mb-1">Confirm Result?</Text>
-          <Text className="text-sm text-gray-500 mb-4">
+        <View
+          style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+          className="rounded-2xl p-5 mb-4"
+        >
+          <Text style={{ color: textPrimary }} className="text-base font-semibold mb-1">
+            Confirm Result?
+          </Text>
+          <Text style={{ color: textSecondary }} className="text-sm mb-4">
             {match.result_submitted_by === match.player1_id
               ? match.player1?.full_name
               : match.player2?.full_name}{" "}
@@ -362,8 +418,8 @@ export default function MatchDetailScreen() {
             <View className="flex-row gap-3 mb-4">
               {match.score_detail.map((set, i) => (
                 <View key={i} className="items-center">
-                  <Text className="text-xs text-gray-400">Set {i + 1}</Text>
-                  <Text className="text-lg font-bold text-gray-900">
+                  <Text style={{ color: textSecondary }} className="text-xs">Set {i + 1}</Text>
+                  <Text style={{ color: textPrimary }} className="text-lg font-bold">
                     {set.p1}–{set.p2}
                   </Text>
                 </View>

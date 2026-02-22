@@ -79,10 +79,10 @@ const CITIES_BY_COUNTRY: Record<string, string[]> = {
 };
 
 const INPUT_CLASS =
-  "w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500";
+  "w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-700 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500";
 
 const SELECT_CLASS =
-  "w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500";
+  "w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -148,11 +148,11 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 py-12 px-4">
       <div className="max-w-lg w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Tenis</h1>
-          <p className="mt-2 text-gray-600">Create your player account</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">Tenis</h1>
+          <p className="mt-2 text-gray-600 dark:text-slate-400">Create your player account</p>
 
           {/* Step indicator */}
           <div className="flex items-center justify-center gap-2 mt-6">
@@ -160,26 +160,26 @@ export default function RegisterPage() {
               <div key={s} className="flex items-center gap-2">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                    step >= s ? "bg-green-600 text-white" : "bg-gray-200 text-gray-500"
+                    step >= s ? "bg-green-600 text-white" : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
                   }`}
                 >
                   {s}
                 </div>
                 {s < 2 && (
-                  <div className={`w-16 h-0.5 ${step > s ? "bg-green-600" : "bg-gray-200"}`} />
+                  <div className={`w-16 h-0.5 ${step > s ? "bg-green-600" : "bg-gray-200 dark:bg-slate-700"}`} />
                 )}
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-500 mt-2 px-12">
+          <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400 mt-2 px-12">
             <span>Account</span>
             <span>Profile</span>
           </div>
         </div>
 
-        <div className="bg-white py-8 px-6 shadow rounded-xl">
+        <div className="bg-white dark:bg-slate-800 py-8 px-6 shadow rounded-xl">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
               {error}
             </div>
           )}
@@ -187,9 +187,9 @@ export default function RegisterPage() {
           {/* Step 1: Account */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-900">Create your account</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">Create your account</h2>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Full name</label>
                 <input
                   type="text"
                   value={fullName}
@@ -199,7 +199,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Username</label>
                 <input
                   type="text"
                   value={username}
@@ -209,7 +209,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email</label>
                 <input
                   type="email"
                   value={email}
@@ -219,7 +219,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Password</label>
                 <input
                   type="password"
                   value={password}
@@ -241,7 +241,7 @@ export default function RegisterPage() {
               >
                 Continue
               </button>
-              <p className="text-center text-sm text-gray-600">
+              <p className="text-center text-sm text-gray-600 dark:text-slate-400">
                 Already have an account?{" "}
                 <Link href="/login" className="text-green-600 font-medium hover:underline">
                   Sign in
@@ -253,10 +253,10 @@ export default function RegisterPage() {
           {/* Step 2: Profile */}
           {step === 2 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">Your tennis profile</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">Your tennis profile</h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Skill level</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-3">Skill level</label>
                 <div className="grid grid-cols-2 gap-3">
                   {SKILL_LEVELS.map((level) => (
                     <button
@@ -264,19 +264,19 @@ export default function RegisterPage() {
                       onClick={() => setSkillLevel(level.value)}
                       className={`p-3 border-2 rounded-lg text-left transition-colors ${
                         skillLevel === level.value
-                          ? "border-green-600 bg-green-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? "border-green-600 bg-green-50 dark:bg-green-900/20"
+                          : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                       }`}
                     >
-                      <div className="font-medium text-sm text-gray-900">{level.label}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{level.desc}</div>
+                      <div className="font-medium text-sm text-gray-900 dark:text-slate-100">{level.label}</div>
+                      <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{level.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Country</label>
                 <select
                   value={country}
                   onChange={(e) => {
@@ -293,7 +293,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">City</label>
                 {citiesForCountry.length > 0 ? (
                   <>
                     <select
@@ -331,7 +331,7 @@ export default function RegisterPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(1)}
-                  className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   Back
                 </button>

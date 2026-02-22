@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  useColorScheme,
 } from "react-native";
 import { Link } from "expo-router";
 import { supabase } from "@/lib/supabase";
@@ -21,6 +22,26 @@ const SKILL_LEVELS: { value: SkillLevel; label: string; desc: string }[] = [
 ];
 
 export default function RegisterScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const bg = isDark ? "#0f172a" : "#f9fafb";
+  const textPrimary = isDark ? "#f1f5f9" : "#111827";
+  const textSecondary = isDark ? "#94a3b8" : "#6b7280";
+  const inputBg = isDark ? "#1e293b" : "#ffffff";
+  const inputText = isDark ? "#f1f5f9" : "#111827";
+  const placeholder = isDark ? "#64748b" : "#9ca3af";
+  const border = isDark ? "#334155" : "#e5e7eb";
+  const labelText = isDark ? "#94a3b8" : "#374151";
+  const stepInactiveBg = isDark ? "#334155" : "#e5e7eb";
+  const stepInactiveText = isDark ? "#94a3b8" : "#6b7280";
+  const skillCardBorder = isDark ? "#334155" : "#e5e7eb";
+  const skillCardSelectedBorder = "#16a34a";
+  const skillCardSelectedBg = isDark ? "#14532d" : "#f0fdf4";
+  const skillCardBg = isDark ? "#1e293b" : "#ffffff";
+  const backBtnBorder = isDark ? "#334155" : "#d1d5db";
+  const backBtnText = isDark ? "#94a3b8" : "#374151";
+
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,10 +79,22 @@ export default function RegisterScreen() {
     setLoading(false);
   };
 
+  const inputStyle = {
+    width: "100%" as const,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: border,
+    borderRadius: 12,
+    fontSize: 16,
+    color: inputText,
+    backgroundColor: inputBg,
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-white"
+      style={{ flex: 1, backgroundColor: bg }}
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
@@ -69,8 +102,8 @@ export default function RegisterScreen() {
       >
         <View className="flex-1 px-6 py-12">
           <View className="items-center mb-8">
-            <Text className="text-3xl font-bold text-gray-900">Tenis</Text>
-            <Text className="text-gray-500 mt-1">Create your account</Text>
+            <Text style={{ color: textPrimary }} className="text-3xl font-bold">Tenis</Text>
+            <Text style={{ color: textSecondary }} className="mt-1">Create your account</Text>
           </View>
 
           {/* Step indicators */}
@@ -78,16 +111,18 @@ export default function RegisterScreen() {
             {[1, 2].map((s) => (
               <View key={s} className="flex-row items-center gap-2">
                 <View
-                  className={`w-8 h-8 rounded-full items-center justify-center ${
-                    step >= s ? "bg-green-600" : "bg-gray-200"
-                  }`}
+                  style={
+                    step >= s
+                      ? { width: 32, height: 32, borderRadius: 16, backgroundColor: "#16a34a", alignItems: "center", justifyContent: "center" }
+                      : { width: 32, height: 32, borderRadius: 16, backgroundColor: stepInactiveBg, alignItems: "center", justifyContent: "center" }
+                  }
                 >
-                  <Text className={`text-sm font-bold ${step >= s ? "text-white" : "text-gray-500"}`}>
+                  <Text style={step >= s ? { color: "#ffffff", fontSize: 14, fontWeight: "700" } : { color: stepInactiveText, fontSize: 14, fontWeight: "700" }}>
                     {s}
                   </Text>
                 </View>
                 {s < 2 && (
-                  <View className={`w-12 h-0.5 ${step > s ? "bg-green-600" : "bg-gray-200"}`} />
+                  <View style={{ width: 48, height: 2, backgroundColor: step > s ? "#16a34a" : stepInactiveBg }} />
                 )}
               </View>
             ))}
@@ -95,53 +130,53 @@ export default function RegisterScreen() {
 
           {step === 1 && (
             <View className="space-y-4">
-              <Text className="text-xl font-bold text-gray-900 mb-2">Account details</Text>
+              <Text style={{ color: textPrimary }} className="text-xl font-bold mb-2">Account details</Text>
 
               <View>
-                <Text className="text-sm font-medium text-gray-700 mb-1">Full Name</Text>
+                <Text style={{ color: labelText }} className="text-sm font-medium mb-1">Full Name</Text>
                 <TextInput
                   value={fullName}
                   onChangeText={setFullName}
                   placeholder="Roger Federer"
-                  className="w-full px-4 py-3.5 border border-gray-300 rounded-xl text-base text-gray-900"
-                  placeholderTextColor="#9ca3af"
+                  style={inputStyle}
+                  placeholderTextColor={placeholder}
                 />
               </View>
 
               <View>
-                <Text className="text-sm font-medium text-gray-700 mb-1">Username</Text>
+                <Text style={{ color: labelText }} className="text-sm font-medium mb-1">Username</Text>
                 <TextInput
                   value={username}
                   onChangeText={(t) => setUsername(t.toLowerCase())}
                   autoCapitalize="none"
                   placeholder="roger_federer"
-                  className="w-full px-4 py-3.5 border border-gray-300 rounded-xl text-base text-gray-900"
-                  placeholderTextColor="#9ca3af"
+                  style={inputStyle}
+                  placeholderTextColor={placeholder}
                 />
               </View>
 
               <View>
-                <Text className="text-sm font-medium text-gray-700 mb-1">Email</Text>
+                <Text style={{ color: labelText }} className="text-sm font-medium mb-1">Email</Text>
                 <TextInput
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   placeholder="you@example.com"
-                  className="w-full px-4 py-3.5 border border-gray-300 rounded-xl text-base text-gray-900"
-                  placeholderTextColor="#9ca3af"
+                  style={inputStyle}
+                  placeholderTextColor={placeholder}
                 />
               </View>
 
               <View>
-                <Text className="text-sm font-medium text-gray-700 mb-1">Password</Text>
+                <Text style={{ color: labelText }} className="text-sm font-medium mb-1">Password</Text>
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
                   placeholder="At least 8 characters"
-                  className="w-full px-4 py-3.5 border border-gray-300 rounded-xl text-base text-gray-900"
-                  placeholderTextColor="#9ca3af"
+                  style={inputStyle}
+                  placeholderTextColor={placeholder}
                 />
               </View>
 
@@ -162,43 +197,47 @@ export default function RegisterScreen() {
 
           {step === 2 && (
             <View className="space-y-4">
-              <Text className="text-xl font-bold text-gray-900 mb-2">Your tennis profile</Text>
+              <Text style={{ color: textPrimary }} className="text-xl font-bold mb-2">Your tennis profile</Text>
 
-              <Text className="text-sm font-medium text-gray-700">Skill level</Text>
+              <Text style={{ color: labelText }} className="text-sm font-medium">Skill level</Text>
               <View className="grid grid-cols-2 gap-2">
                 {SKILL_LEVELS.map((level) => (
                   <TouchableOpacity
                     key={level.value}
                     onPress={() => setSkillLevel(level.value)}
-                    className={`p-4 border-2 rounded-xl mb-2 ${
-                      skillLevel === level.value
-                        ? "border-green-600 bg-green-50"
-                        : "border-gray-200"
-                    }`}
+                    style={{
+                      padding: 16,
+                      borderWidth: 2,
+                      borderRadius: 12,
+                      marginBottom: 8,
+                      borderColor: skillLevel === level.value ? skillCardSelectedBorder : skillCardBorder,
+                      backgroundColor: skillLevel === level.value ? skillCardSelectedBg : skillCardBg,
+                    }}
                   >
-                    <Text className="font-semibold text-sm text-gray-900">{level.label}</Text>
-                    <Text className="text-xs text-gray-500 mt-0.5">{level.desc}</Text>
+                    <Text style={{ color: textPrimary }} className="font-semibold text-sm">{level.label}</Text>
+                    <Text style={{ color: textSecondary }} className="text-xs mt-0.5">{level.desc}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
               <View>
-                <Text className="text-sm font-medium text-gray-700 mb-1">City (optional)</Text>
+                <Text style={{ color: labelText }} className="text-sm font-medium mb-1">City (optional)</Text>
                 <TextInput
                   value={city}
                   onChangeText={setCity}
                   placeholder="New York"
-                  className="w-full px-4 py-3.5 border border-gray-300 rounded-xl text-base text-gray-900"
-                  placeholderTextColor="#9ca3af"
+                  style={inputStyle}
+                  placeholderTextColor={placeholder}
                 />
               </View>
 
               <View className="flex-row gap-3 mt-4">
                 <TouchableOpacity
                   onPress={() => setStep(1)}
-                  className="flex-1 py-4 border border-gray-300 rounded-xl items-center"
+                  style={{ borderColor: backBtnBorder, borderWidth: 1 }}
+                  className="flex-1 py-4 rounded-xl items-center"
                 >
-                  <Text className="text-gray-700 font-semibold">Back</Text>
+                  <Text style={{ color: backBtnText }} className="font-semibold">Back</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleRegister}
@@ -217,7 +256,7 @@ export default function RegisterScreen() {
 
           {step === 1 && (
             <View className="flex-row justify-center mt-6 gap-1">
-              <Text className="text-gray-500">Already have an account?</Text>
+              <Text style={{ color: textSecondary }}>Already have an account?</Text>
               <Link href="/(auth)/login">
                 <Text className="text-green-600 font-medium">Sign in</Text>
               </Link>

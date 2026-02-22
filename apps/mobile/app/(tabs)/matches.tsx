@@ -4,6 +4,7 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
+  useColorScheme,
 } from "react-native";
 import { router } from "expo-router";
 import { trpc } from "@/lib/trpc";
@@ -11,6 +12,16 @@ import { trpc } from "@/lib/trpc";
 type Tab = "upcoming" | "requests" | "history";
 
 export default function MatchesScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const bg = isDark ? "#0f172a" : "#f9fafb";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const border = isDark ? "#334155" : "#e5e7eb";
+  const textPrimary = isDark ? "#f1f5f9" : "#111827";
+  const textSecondary = isDark ? "#94a3b8" : "#6b7280";
+  const divider = isDark ? "#334155" : "#e5e7eb";
+
   const [tab, setTab] = useState<Tab>("upcoming");
 
   const { data: profile } = trpc.player.getProfile.useQuery();
@@ -28,9 +39,9 @@ export default function MatchesScreen() {
   ];
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{ flex: 1, backgroundColor: bg }}>
       {/* Tab bar */}
-      <View className="flex-row bg-white border-b border-gray-200 px-4">
+      <View style={{ backgroundColor: cardBg, borderBottomColor: divider, borderBottomWidth: 1 }} className="flex-row px-4">
         {tabs.map((t) => (
           <TouchableOpacity
             key={t.key}
@@ -41,9 +52,8 @@ export default function MatchesScreen() {
           >
             <View className="flex-row items-center gap-1">
               <Text
-                className={`text-sm font-medium ${
-                  tab === t.key ? "text-green-600" : "text-gray-500"
-                }`}
+                style={{ color: tab === t.key ? "#16a34a" : textSecondary }}
+                className="text-sm font-medium"
               >
                 {t.label}
               </Text>
@@ -72,20 +82,21 @@ export default function MatchesScreen() {
             return (
               <TouchableOpacity
                 onPress={() => router.push(`/matches/${match.id}`)}
-                className={`rounded-2xl border p-4 mb-3 ${
+                style={
                   isPendingConf
-                    ? "bg-orange-50 border-orange-200"
-                    : "bg-white border-gray-200"
-                }`}
+                    ? { backgroundColor: "#fff7ed", borderColor: "#fed7aa", borderWidth: 1 }
+                    : { backgroundColor: cardBg, borderColor: border, borderWidth: 1 }
+                }
+                className="rounded-2xl p-4 mb-3"
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3 flex-1">
                     <Text className="text-3xl">🎾</Text>
                     <View className="flex-1 min-w-0">
-                      <Text className="font-semibold text-gray-900" numberOfLines={1}>
+                      <Text style={{ color: textPrimary }} className="font-semibold" numberOfLines={1}>
                         vs {(opponent as { full_name?: string })?.full_name}
                       </Text>
-                      <Text className="text-sm text-gray-500">
+                      <Text style={{ color: textSecondary }} className="text-sm">
                         {match.scheduled_at
                           ? new Date(match.scheduled_at).toLocaleDateString("en-US", {
                               weekday: "short",
@@ -102,7 +113,7 @@ export default function MatchesScreen() {
                       )}
                     </View>
                   </View>
-                  <Text className="text-gray-400">›</Text>
+                  <Text style={{ color: textSecondary }}>›</Text>
                 </View>
               </TouchableOpacity>
             );
@@ -110,7 +121,7 @@ export default function MatchesScreen() {
           ListEmptyComponent={
             <View className="items-center py-16">
               <Text className="text-5xl mb-4">🎾</Text>
-              <Text className="font-semibold text-gray-900">No upcoming matches</Text>
+              <Text style={{ color: textPrimary }} className="font-semibold">No upcoming matches</Text>
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/search")}
                 className="mt-4 px-5 py-2.5 bg-green-600 rounded-xl"
@@ -132,26 +143,26 @@ export default function MatchesScreen() {
             const isIncoming = req.recipient_id === profile?.id;
             const other = isIncoming ? req.requester : req.recipient;
             return (
-              <View className="bg-white rounded-2xl border border-gray-200 p-4 mb-3">
+              <View style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }} className="rounded-2xl p-4 mb-3">
                 <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-row items-center gap-3 flex-1">
-                    <View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center">
-                      <Text className="font-bold text-gray-600 text-xl">
+                    <View style={{ backgroundColor: isDark ? "#334155" : "#f3f4f6" }} className="w-12 h-12 rounded-full items-center justify-center">
+                      <Text style={{ color: textSecondary }} className="font-bold text-xl">
                         {(other as { full_name?: string })?.full_name?.[0] ?? "?"}
                       </Text>
                     </View>
                     <View className="flex-1 min-w-0">
                       <View className="flex-row items-center gap-2 mb-0.5">
-                        <View className={`px-2 py-0.5 rounded-full ${isIncoming ? "bg-blue-100" : "bg-gray-100"}`}>
-                          <Text className={`text-xs font-medium ${isIncoming ? "text-blue-700" : "text-gray-600"}`}>
+                        <View className={`px-2 py-0.5 rounded-full ${isIncoming ? "bg-blue-100" : (isDark ? "bg-slate-700" : "bg-gray-100")}`}>
+                          <Text className={`text-xs font-medium ${isIncoming ? "text-blue-700" : ""}`} style={!isIncoming ? { color: textSecondary } : undefined}>
                             {isIncoming ? "Incoming" : "Sent"}
                           </Text>
                         </View>
                       </View>
-                      <Text className="font-semibold text-gray-900" numberOfLines={1}>
+                      <Text style={{ color: textPrimary }} className="font-semibold" numberOfLines={1}>
                         {(other as { full_name?: string })?.full_name}
                       </Text>
-                      <Text className="text-sm text-gray-500">
+                      <Text style={{ color: textSecondary }} className="text-sm">
                         {new Date(req.proposed_at).toLocaleDateString("en-US", {
                           weekday: "short",
                           month: "short",
@@ -166,9 +177,10 @@ export default function MatchesScreen() {
                   <View className="flex-row gap-2">
                     <TouchableOpacity
                       onPress={() => respondToRequest.mutate({ request_id: req.id, response: "declined" })}
-                      className="flex-1 py-2.5 border border-gray-300 rounded-xl items-center"
+                      style={{ borderColor: border }}
+                      className="flex-1 py-2.5 border rounded-xl items-center"
                     >
-                      <Text className="text-gray-600 font-medium text-sm">Decline</Text>
+                      <Text style={{ color: textSecondary }} className="font-medium text-sm">Decline</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => respondToRequest.mutate({ request_id: req.id, response: "accepted" })}
@@ -184,7 +196,7 @@ export default function MatchesScreen() {
           ListEmptyComponent={
             <View className="items-center py-16">
               <Text className="text-5xl mb-4">📬</Text>
-              <Text className="font-semibold text-gray-900">No pending requests</Text>
+              <Text style={{ color: textPrimary }} className="font-semibold">No pending requests</Text>
             </View>
           }
         />
@@ -204,7 +216,8 @@ export default function MatchesScreen() {
             return (
               <TouchableOpacity
                 onPress={() => router.push(`/matches/${match.id}`)}
-                className="bg-white border border-gray-200 rounded-2xl p-4 mb-2 flex-row items-center justify-between"
+                style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+                className="rounded-2xl p-4 mb-2 flex-row items-center justify-between"
               >
                 <View className="flex-row items-center gap-3 flex-1">
                   <View className={`px-3 py-1.5 rounded-lg ${won ? "bg-green-100" : "bg-red-100"}`}>
@@ -213,10 +226,10 @@ export default function MatchesScreen() {
                     </Text>
                   </View>
                   <View className="flex-1 min-w-0">
-                    <Text className="font-semibold text-gray-900" numberOfLines={1}>
+                    <Text style={{ color: textPrimary }} className="font-semibold" numberOfLines={1}>
                       vs {(opponent as { full_name?: string })?.full_name}
                     </Text>
-                    <Text className="text-xs text-gray-400">
+                    <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs">
                       {match.played_at ? new Date(match.played_at).toLocaleDateString() : ""}
                     </Text>
                   </View>
@@ -232,7 +245,7 @@ export default function MatchesScreen() {
           ListEmptyComponent={
             <View className="items-center py-16">
               <Text className="text-5xl mb-4">📊</Text>
-              <Text className="font-semibold text-gray-900">No match history yet</Text>
+              <Text style={{ color: textPrimary }} className="font-semibold">No match history yet</Text>
             </View>
           }
         />

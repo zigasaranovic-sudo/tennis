@@ -10,30 +10,31 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "@supabase/ssr": "^0.6.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "@tanstack/react-query": "^5.80.0",
+    "@tenis/api": "workspace:*",
+    "@tenis/db": "workspace:*",
+    "@tenis/types": "workspace:*",
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
-    "@tanstack/react-query": "^5.80.0",
-    "@supabase/supabase-js": "^2.49.0",
-    "@supabase/ssr": "^0.6.0",
+    "next": "16.1.6",
+    "next-themes": "^0.4.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "zod": "^3.24.0",
-    "zustand": "^5.0.0",
-    "@tenis/api": "workspace:*",
-    "@tenis/db": "workspace:*",
-    "@tenis/types": "workspace:*"
+    "zustand": "^5.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tenis/config": "workspace:*",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "@tenis/config": "workspace:*"
+    "typescript": "^5"
   }
 }

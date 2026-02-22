@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  useColorScheme,
 } from "react-native";
 import { router } from "expo-router";
 import { trpc } from "@/lib/trpc";
@@ -20,6 +21,21 @@ const SKILL_OPTIONS: { value: SkillLevel | ""; label: string }[] = [
 ];
 
 export default function SearchScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const bg = isDark ? "#0f172a" : "#f9fafb";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const border = isDark ? "#334155" : "#e5e7eb";
+  const textPrimary = isDark ? "#f1f5f9" : "#111827";
+  const textSecondary = isDark ? "#94a3b8" : "#6b7280";
+  const inputBg = isDark ? "#1e293b" : "#ffffff";
+  const inputText = isDark ? "#f1f5f9" : "#111827";
+  const placeholder = isDark ? "#64748b" : "#9ca3af";
+  const chipBg = isDark ? "#334155" : "#f3f4f6";
+  const chipBorder = isDark ? "#475569" : "#e5e7eb";
+  const chipText = isDark ? "#94a3b8" : "#4b5563";
+
   const [skill, setSkill] = useState<SkillLevel | "">("");
   const [city, setCity] = useState("");
 
@@ -39,15 +55,25 @@ export default function SearchScreen() {
   const players = data?.pages.flatMap((p) => p.players) ?? [];
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{ flex: 1, backgroundColor: bg }}>
       {/* Search inputs */}
-      <View className="bg-white px-4 py-3 border-b border-gray-200">
+      <View style={{ backgroundColor: cardBg, borderBottomColor: border, borderBottomWidth: 1, paddingHorizontal: 16, paddingVertical: 12 }}>
         <TextInput
           value={city}
           onChangeText={setCity}
           placeholder="Search by city..."
-          className="w-full px-4 py-3 bg-gray-100 rounded-xl text-base text-gray-900"
-          placeholderTextColor="#9ca3af"
+          style={{
+            width: "100%",
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            backgroundColor: inputBg,
+            borderRadius: 12,
+            fontSize: 16,
+            color: inputText,
+            borderColor: border,
+            borderWidth: 1,
+          }}
+          placeholderTextColor={placeholder}
         />
 
         {/* Skill filter chips */}
@@ -56,16 +82,18 @@ export default function SearchScreen() {
             <TouchableOpacity
               key={opt.value}
               onPress={() => setSkill(opt.value)}
-              className={`px-3 py-1.5 rounded-full ${
+              style={
                 skill === opt.value
-                  ? "bg-green-600"
-                  : "bg-gray-100 border border-gray-200"
-              }`}
+                  ? { backgroundColor: "#16a34a", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }
+                  : { backgroundColor: chipBg, borderColor: chipBorder, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }
+              }
             >
               <Text
-                className={`text-sm font-medium ${
-                  skill === opt.value ? "text-white" : "text-gray-600"
-                }`}
+                style={
+                  skill === opt.value
+                    ? { color: "#ffffff", fontSize: 14, fontWeight: "500" }
+                    : { color: chipText, fontSize: 14, fontWeight: "500" }
+                }
               >
                 {opt.label}
               </Text>
@@ -82,7 +110,8 @@ export default function SearchScreen() {
         renderItem={({ item: player }) => (
           <TouchableOpacity
             onPress={() => router.push(`/players/${player.id}`)}
-            className="bg-white rounded-2xl border border-gray-200 p-4 mb-3 flex-row items-center justify-between"
+            style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+            className="rounded-2xl p-4 mb-3 flex-row items-center justify-between"
           >
             <View className="flex-row items-center gap-3 flex-1">
               <View className="w-14 h-14 bg-green-100 rounded-full items-center justify-center">
@@ -91,25 +120,25 @@ export default function SearchScreen() {
                 </Text>
               </View>
               <View className="flex-1 min-w-0">
-                <Text className="font-semibold text-gray-900" numberOfLines={1}>
+                <Text style={{ color: textPrimary }} className="font-semibold" numberOfLines={1}>
                   {player.full_name}
                 </Text>
-                <Text className="text-sm text-gray-500">@{player.username}</Text>
+                <Text style={{ color: textSecondary }} className="text-sm">@{player.username}</Text>
                 {player.city && (
-                  <Text className="text-xs text-gray-400 mt-0.5">📍 {player.city}</Text>
+                  <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs mt-0.5">📍 {player.city}</Text>
                 )}
               </View>
             </View>
             <View className="items-end ml-2">
-              <Text className="text-xl font-bold text-gray-900">
+              <Text style={{ color: textPrimary }} className="text-xl font-bold">
                 {player.elo_rating}
                 {player.elo_provisional && (
-                  <Text className="text-sm text-gray-400 font-normal">*</Text>
+                  <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-sm font-normal">*</Text>
                 )}
               </Text>
-              <Text className="text-xs text-gray-400">ELO</Text>
-              <View className="bg-gray-100 rounded-lg px-2 py-0.5 mt-1">
-                <Text className="text-xs text-gray-600 capitalize">
+              <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs">ELO</Text>
+              <View style={{ backgroundColor: chipBg }} className="rounded-lg px-2 py-0.5 mt-1">
+                <Text style={{ color: chipText }} className="text-xs capitalize">
                   {player.skill_level}
                 </Text>
               </View>
@@ -124,8 +153,8 @@ export default function SearchScreen() {
           ) : (
             <View className="items-center py-16">
               <Text className="text-5xl mb-4">🔍</Text>
-              <Text className="font-semibold text-gray-900">No players found</Text>
-              <Text className="text-sm text-gray-500 mt-1">Try different filters</Text>
+              <Text style={{ color: textPrimary }} className="font-semibold">No players found</Text>
+              <Text style={{ color: textSecondary }} className="text-sm mt-1">Try different filters</Text>
             </View>
           )
         }

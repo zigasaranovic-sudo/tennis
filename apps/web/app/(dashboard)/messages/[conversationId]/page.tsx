@@ -106,12 +106,12 @@ export default function ConversationPage() {
   const myId = profile?.id;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100dvh-10rem)] md:h-[calc(100dvh-8rem)]">
       {/* Header */}
-      <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
+      <div className="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-slate-700">
         <button
           onClick={() => router.back()}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
+          className="text-gray-400 dark:text-slate-600 hover:text-gray-600 dark:hover:text-slate-400 transition-colors"
         >
           ←
         </button>
@@ -125,8 +125,8 @@ export default function ConversationPage() {
               )}
             </div>
             <div>
-              <p className="font-semibold text-gray-900">{conv.other_player.full_name}</p>
-              <p className="text-xs text-gray-400">@{conv.other_player.username}</p>
+              <p className="font-semibold text-gray-900 dark:text-slate-100">{conv.other_player.full_name}</p>
+              <p className="text-xs text-gray-400 dark:text-slate-600">@{conv.other_player.username}</p>
             </div>
           </Link>
         )}
@@ -135,9 +135,9 @@ export default function ConversationPage() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto py-4 space-y-3">
         {isLoading ? (
-          <div className="text-center text-gray-400 py-8">Loading messages...</div>
+          <div className="text-center text-gray-400 dark:text-slate-600 py-8">Loading messages...</div>
         ) : messages.length === 0 ? (
-          <div className="text-center text-gray-400 py-8">No messages yet. Say hi!</div>
+          <div className="text-center text-gray-400 dark:text-slate-600 py-8">No messages yet. Say hi!</div>
         ) : (
           messages.map((msg) => {
             const isMe = msg.sender_id === myId;
@@ -147,11 +147,11 @@ export default function ConversationPage() {
                   className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm ${
                     isMe
                       ? "bg-green-600 text-white rounded-br-sm"
-                      : "bg-white border border-gray-200 text-gray-900 rounded-bl-sm"
+                      : "bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-slate-100 rounded-bl-sm"
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                  <p className={`text-[10px] mt-1 ${isMe ? "text-green-100" : "text-gray-400"}`}>
+                  <p className={`text-[10px] mt-1 ${isMe ? "text-green-100" : "text-gray-400 dark:text-slate-500"}`}>
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
@@ -163,7 +163,7 @@ export default function ConversationPage() {
       </div>
 
       {/* Input */}
-      <div className="pt-4 border-t border-gray-200">
+      <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
         <div className="flex gap-3 items-end">
           <textarea
             value={text}
@@ -171,7 +171,7 @@ export default function ConversationPage() {
             onKeyDown={handleKeyDown}
             placeholder="Type a message... (Enter to send)"
             rows={1}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-2xl text-sm text-gray-900 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-green-500 max-h-32"
+            className="flex-1 px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-2xl text-sm text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-700 dark:placeholder-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-green-500 max-h-32"
             style={{ fieldSizing: "content" } as React.CSSProperties}
           />
           <button

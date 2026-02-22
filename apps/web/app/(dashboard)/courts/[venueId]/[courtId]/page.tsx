@@ -88,33 +88,33 @@ export default function CourtBookingPage() {
   };
 
   if (!court && venue) {
-    return <div className="text-center py-20 text-gray-500">Court not found</div>;
+    return <div className="text-center py-20 text-gray-500 dark:text-slate-400">Court not found</div>;
   }
 
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/courts" className="hover:text-gray-900">Courts</Link>
+      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
+        <Link href="/courts" className="hover:text-gray-900 dark:hover:text-slate-100">Courts</Link>
         <span>/</span>
-        <Link href={`/courts/${venueId}`} className="hover:text-gray-900">{venue?.name ?? "Venue"}</Link>
+        <Link href={`/courts/${venueId}`} className="hover:text-gray-900 dark:hover:text-slate-100">{venue?.name ?? "Venue"}</Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">{court?.name ?? "Court"}</span>
+        <span className="text-gray-900 dark:text-slate-100 font-medium">{court?.name ?? "Court"}</span>
       </div>
 
       {/* Court info */}
       {court && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{court.name}</h1>
-              <p className="text-gray-500 mt-1 capitalize">{court.surface} · {court.is_indoor ? "Indoor" : "Outdoor"}</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{court.name}</h1>
+              <p className="text-gray-500 dark:text-slate-400 mt-1 capitalize">{court.surface} · {court.is_indoor ? "Indoor" : "Outdoor"}</p>
             </div>
             <div className="text-right">
               {court.price_per_hour != null ? (
-                <p className="text-xl font-bold text-gray-900">€{(court.price_per_hour / 100).toFixed(2)}/hr</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-slate-100">€{(court.price_per_hour / 100).toFixed(2)}/hr</p>
               ) : (
-                <p className="text-sm text-gray-400">Contact for pricing</p>
+                <p className="text-sm text-gray-400 dark:text-slate-600">Contact for pricing</p>
               )}
             </div>
           </div>
@@ -122,8 +122,8 @@ export default function CourtBookingPage() {
       )}
 
       {/* Date picker */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Select date</label>
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
+        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Select date</label>
         <input
           type="date"
           value={date}
@@ -135,16 +135,17 @@ export default function CourtBookingPage() {
             setError(null);
             setSuccess(false);
           }}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-slate-700 dark:text-slate-100"
         />
       </div>
 
       {/* Time slot grid */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="text-sm font-medium text-gray-700 mb-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
+        <h2 className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-4">
           Select time — click start, then click end
         </h2>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="overflow-x-auto -mx-1 px-1">
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 min-w-[280px]">
           {HOURS.map((h) => {
             const booked = isBooked(h);
             const isStart = startHour === h;
@@ -159,10 +160,10 @@ export default function CourtBookingPage() {
                 disabled={booked}
                 className={`py-2 rounded-lg text-xs font-medium transition-colors ${
                   booked
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    ? "bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 cursor-not-allowed"
                     : isSelected
                     ? "bg-green-600 text-white"
-                    : "bg-white border border-gray-200 text-gray-700 hover:border-green-400 hover:text-green-700"
+                    : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:border-green-400 hover:text-green-700"
                 }`}
               >
                 {formatHour(h)}
@@ -170,9 +171,10 @@ export default function CourtBookingPage() {
             );
           })}
         </div>
+        </div>
 
         {startHour !== null && (
-          <p className="mt-4 text-sm text-gray-600">
+          <p className="mt-4 text-sm text-gray-600 dark:text-slate-400">
             {endHour !== null
               ? `Selected: ${formatHour(startHour)} – ${formatHour(endHour)} (${endHour - startHour}h)`
               : `Start: ${formatHour(startHour)} — now click end time`}
@@ -182,15 +184,15 @@ export default function CourtBookingPage() {
 
       {/* Notes + confirm */}
       {startHour !== null && endHour !== null && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Notes (optional)</label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Practice session"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500"
             />
           </div>
           {error && (
@@ -214,10 +216,10 @@ export default function CourtBookingPage() {
       )}
 
       {/* Legend */}
-      <div className="flex gap-4 text-xs text-gray-500">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block" /> Booked</span>
+      <div className="flex gap-4 text-xs text-gray-500 dark:text-slate-400">
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 dark:bg-slate-700 inline-block" /> Booked</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-600 inline-block" /> Selected</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-gray-200 inline-block" /> Available</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-gray-200 dark:border-slate-700 inline-block" /> Available</span>
       </div>
     </div>
   );

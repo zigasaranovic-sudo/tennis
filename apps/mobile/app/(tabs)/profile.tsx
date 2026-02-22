@@ -4,6 +4,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  useColorScheme,
 } from "react-native";
 import { router } from "expo-router";
 import { trpc } from "@/lib/trpc";
@@ -12,6 +13,16 @@ import { supabase } from "@/lib/supabase";
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function ProfileScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const bg = isDark ? "#0f172a" : "#f9fafb";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const border = isDark ? "#334155" : "#e5e7eb";
+  const textPrimary = isDark ? "#f1f5f9" : "#111827";
+  const textSecondary = isDark ? "#94a3b8" : "#6b7280";
+  const divider = isDark ? "#334155" : "#f3f4f6";
+
   const { data: profile } = trpc.player.getProfile.useQuery();
   const { data: myRank } = trpc.ranking.getPlayerRank.useQuery();
   const { data: eloHistory } = trpc.player.getEloHistory.useQuery(
@@ -44,9 +55,9 @@ export default function ProfileScreen() {
       : 0;
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" contentContainerStyle={{ padding: 16 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ padding: 16 }}>
       {/* Profile header */}
-      <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
+      <View style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }} className="rounded-2xl p-5 mb-4">
         <View className="flex-row items-center gap-4 mb-4">
           <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center">
             <Text className="text-green-700 font-bold text-4xl">
@@ -54,48 +65,48 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <View className="flex-1 min-w-0">
-            <Text className="text-xl font-bold text-gray-900">{profile.full_name}</Text>
-            <Text className="text-gray-500">@{profile.username}</Text>
+            <Text style={{ color: textPrimary }} className="text-xl font-bold">{profile.full_name}</Text>
+            <Text style={{ color: textSecondary }}>@{profile.username}</Text>
             {profile.city && (
-              <Text className="text-sm text-gray-400 mt-0.5">📍 {profile.city}</Text>
+              <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-sm mt-0.5">📍 {profile.city}</Text>
             )}
           </View>
         </View>
 
-        {profile.bio ? <Text className="text-gray-600 text-sm mb-4">{profile.bio}</Text> : null}
+        {profile.bio ? <Text style={{ color: textSecondary }} className="text-sm mb-4">{profile.bio}</Text> : null}
 
         {/* Stats */}
-        <View className="flex-row border-t border-gray-100 pt-4 gap-2">
+        <View style={{ borderTopColor: divider, borderTopWidth: 1 }} className="flex-row pt-4 gap-2">
           <View className="flex-1 items-center">
-            <Text className="text-2xl font-bold text-gray-900">
+            <Text style={{ color: textPrimary }} className="text-2xl font-bold">
               {profile.elo_rating}
               {profile.elo_provisional && (
-                <Text className="text-sm text-gray-400">*</Text>
+                <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-sm">*</Text>
               )}
             </Text>
-            <Text className="text-xs text-gray-500 mt-0.5">ELO</Text>
+            <Text style={{ color: textSecondary }} className="text-xs mt-0.5">ELO</Text>
           </View>
           <View className="flex-1 items-center">
-            <Text className="text-2xl font-bold text-gray-900">
+            <Text style={{ color: textPrimary }} className="text-2xl font-bold">
               {myRank?.rank ? `#${myRank.rank}` : "–"}
             </Text>
-            <Text className="text-xs text-gray-500 mt-0.5">Rank</Text>
+            <Text style={{ color: textSecondary }} className="text-xs mt-0.5">Rank</Text>
           </View>
           <View className="flex-1 items-center">
-            <Text className="text-2xl font-bold text-gray-900">{profile.matches_played}</Text>
-            <Text className="text-xs text-gray-500 mt-0.5">Matches</Text>
+            <Text style={{ color: textPrimary }} className="text-2xl font-bold">{profile.matches_played}</Text>
+            <Text style={{ color: textSecondary }} className="text-xs mt-0.5">Matches</Text>
           </View>
           <View className="flex-1 items-center">
-            <Text className="text-2xl font-bold text-gray-900">{winRate}%</Text>
-            <Text className="text-xs text-gray-500 mt-0.5">Win Rate</Text>
+            <Text style={{ color: textPrimary }} className="text-2xl font-bold">{winRate}%</Text>
+            <Text style={{ color: textSecondary }} className="text-xs mt-0.5">Win Rate</Text>
           </View>
         </View>
       </View>
 
       {/* ELO Progress bar chart */}
       {eloHistory && eloHistory.length > 1 && (
-        <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-          <Text className="text-base font-semibold text-gray-900 mb-3">ELO Progress</Text>
+        <View style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }} className="rounded-2xl p-5 mb-4">
+          <Text style={{ color: textPrimary }} className="text-base font-semibold mb-3">ELO Progress</Text>
           <View className="h-20 flex-row items-end gap-0.5">
             {eloHistory.slice(-20).map((point, i) => {
               const values = eloHistory.slice(-20).map((p) => p.elo_after);
@@ -113,7 +124,7 @@ export default function ProfileScreen() {
             })}
           </View>
           {profile.elo_provisional && (
-            <Text className="text-xs text-gray-400 mt-2">
+            <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs mt-2">
               * Provisional — {Math.max(0, 10 - profile.matches_played)} more matches to establish rating
             </Text>
           )}
@@ -122,8 +133,8 @@ export default function ProfileScreen() {
 
       {/* Availability */}
       {availability && availability.length > 0 && (
-        <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-          <Text className="text-base font-semibold text-gray-900 mb-3">Availability</Text>
+        <View style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }} className="rounded-2xl p-5 mb-4">
+          <Text style={{ color: textPrimary }} className="text-base font-semibold mb-3">Availability</Text>
           {availability.map((slot) => (
             <View key={slot.id} className="flex-row items-center gap-3 mb-2">
               <View className="w-12 bg-green-100 rounded-lg py-1 items-center">
@@ -131,7 +142,7 @@ export default function ProfileScreen() {
                   {DAY_NAMES[slot.day_of_week]}
                 </Text>
               </View>
-              <Text className="text-sm text-gray-600">
+              <Text style={{ color: textSecondary }} className="text-sm">
                 {slot.start_time} – {slot.end_time}
               </Text>
             </View>
@@ -143,15 +154,17 @@ export default function ProfileScreen() {
       <View className="space-y-3">
         <TouchableOpacity
           onPress={() => Alert.alert("Coming soon", "Profile editing will be available shortly")}
-          className="bg-white rounded-2xl border border-gray-200 p-4 flex-row items-center justify-between"
+          style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+          className="rounded-2xl p-4 flex-row items-center justify-between"
         >
-          <Text className="font-medium text-gray-900">Edit Profile</Text>
-          <Text className="text-gray-400">›</Text>
+          <Text style={{ color: textPrimary }} className="font-medium">Edit Profile</Text>
+          <Text style={{ color: textSecondary }}>›</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={handleSignOut}
-          className="bg-white rounded-2xl border border-red-100 p-4 items-center mt-2"
+          style={{ backgroundColor: cardBg, borderColor: isDark ? "#7f1d1d" : "#fee2e2", borderWidth: 1 }}
+          className="rounded-2xl p-4 items-center mt-2"
         >
           <Text className="font-medium text-red-500">Sign Out</Text>
         </TouchableOpacity>

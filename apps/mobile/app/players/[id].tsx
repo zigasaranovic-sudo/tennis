@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  useColorScheme,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { trpc } from "@/lib/trpc";
@@ -19,6 +20,15 @@ const SKILL_LABELS: Record<string, string> = {
 
 export default function PlayerProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const bg = isDark ? "#0f172a" : "#f9fafb";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const border = isDark ? "#334155" : "#e5e7eb";
+  const textPrimary = isDark ? "#f1f5f9" : "#111827";
+  const textSecondary = isDark ? "#94a3b8" : "#6b7280";
 
   const { data: player, isLoading } = trpc.player.getPublicProfile.useQuery(
     { id },
@@ -72,7 +82,7 @@ export default function PlayerProfileScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: bg }}>
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
@@ -80,8 +90,8 @@ export default function PlayerProfileScreen() {
 
   if (!player) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <Text className="text-gray-500">Player not found.</Text>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: bg }}>
+        <Text style={{ color: textSecondary }}>Player not found.</Text>
       </View>
     );
   }
@@ -92,9 +102,12 @@ export default function PlayerProfileScreen() {
       : 0;
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" contentContainerStyle={{ padding: 16 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ padding: 16 }}>
       {/* Header card */}
-      <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
+      <View
+        style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+        className="rounded-2xl p-5 mb-4"
+      >
         <View className="flex-row items-center gap-4 mb-4">
           <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center">
             <Text className="text-green-700 font-bold text-4xl">
@@ -102,10 +115,14 @@ export default function PlayerProfileScreen() {
             </Text>
           </View>
           <View className="flex-1 min-w-0">
-            <Text className="text-xl font-bold text-gray-900">{player.full_name}</Text>
-            <Text className="text-gray-500">@{player.username}</Text>
+            <Text style={{ color: textPrimary }} className="text-xl font-bold">
+              {player.full_name}
+            </Text>
+            <Text style={{ color: textSecondary }}>@{player.username}</Text>
             {player.city && (
-              <Text className="text-sm text-gray-400 mt-0.5">📍 {player.city}</Text>
+              <Text style={{ color: textSecondary }} className="text-sm mt-0.5">
+                📍 {player.city}
+              </Text>
             )}
             {player.skill_level && (
               <View className="mt-1 self-start bg-green-100 rounded-full px-2 py-0.5">
@@ -118,35 +135,47 @@ export default function PlayerProfileScreen() {
         </View>
 
         {player.bio ? (
-          <Text className="text-gray-600 text-sm mb-4">{player.bio}</Text>
+          <Text style={{ color: textSecondary }} className="text-sm mb-4">
+            {player.bio}
+          </Text>
         ) : null}
 
         {/* Stats row */}
-        <View className="flex-row border-t border-gray-100 pt-4 gap-2">
+        <View
+          style={{ borderTopColor: border, borderTopWidth: 1 }}
+          className="flex-row pt-4 gap-2"
+        >
           <View className="flex-1 items-center">
-            <Text className="text-2xl font-bold text-gray-900">
+            <Text style={{ color: textPrimary }} className="text-2xl font-bold">
               {player.elo_rating}
               {player.elo_provisional && (
-                <Text className="text-sm text-gray-400">*</Text>
+                <Text style={{ color: textSecondary }} className="text-sm">*</Text>
               )}
             </Text>
-            <Text className="text-xs text-gray-500 mt-0.5">ELO</Text>
+            <Text style={{ color: textSecondary }} className="text-xs mt-0.5">ELO</Text>
           </View>
           <View className="flex-1 items-center">
-            <Text className="text-2xl font-bold text-gray-900">{player.matches_played}</Text>
-            <Text className="text-xs text-gray-500 mt-0.5">Matches</Text>
+            <Text style={{ color: textPrimary }} className="text-2xl font-bold">
+              {player.matches_played}
+            </Text>
+            <Text style={{ color: textSecondary }} className="text-xs mt-0.5">Matches</Text>
           </View>
           <View className="flex-1 items-center">
-            <Text className="text-2xl font-bold text-gray-900">{winRate}%</Text>
-            <Text className="text-xs text-gray-500 mt-0.5">Win Rate</Text>
+            <Text style={{ color: textPrimary }} className="text-2xl font-bold">{winRate}%</Text>
+            <Text style={{ color: textSecondary }} className="text-xs mt-0.5">Win Rate</Text>
           </View>
         </View>
       </View>
 
       {/* ELO chart */}
       {eloHistory && eloHistory.length > 1 && (
-        <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-          <Text className="text-base font-semibold text-gray-900 mb-3">ELO Progress</Text>
+        <View
+          style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+          className="rounded-2xl p-5 mb-4"
+        >
+          <Text style={{ color: textPrimary }} className="text-base font-semibold mb-3">
+            ELO Progress
+          </Text>
           <View className="h-20 flex-row items-end gap-0.5">
             {eloHistory.slice(-20).map((point, i) => {
               const values = eloHistory.slice(-20).map((p) => p.elo_after);
@@ -168,8 +197,13 @@ export default function PlayerProfileScreen() {
 
       {/* Availability */}
       {availability && availability.length > 0 && (
-        <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-          <Text className="text-base font-semibold text-gray-900 mb-3">Availability</Text>
+        <View
+          style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+          className="rounded-2xl p-5 mb-4"
+        >
+          <Text style={{ color: textPrimary }} className="text-base font-semibold mb-3">
+            Availability
+          </Text>
           {availability.map((slot) => (
             <View key={slot.id} className="flex-row items-center gap-3 mb-2">
               <View className="w-12 bg-green-100 rounded-lg py-1 items-center">
@@ -177,7 +211,7 @@ export default function PlayerProfileScreen() {
                   {DAY_NAMES[slot.day_of_week]}
                 </Text>
               </View>
-              <Text className="text-sm text-gray-600">
+              <Text style={{ color: textSecondary }} className="text-sm">
                 {slot.start_time} – {slot.end_time}
               </Text>
             </View>
@@ -187,8 +221,13 @@ export default function PlayerProfileScreen() {
 
       {/* Recent matches */}
       {matchHistory && matchHistory.length > 0 && (
-        <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-          <Text className="text-base font-semibold text-gray-900 mb-3">Recent Matches</Text>
+        <View
+          style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+          className="rounded-2xl p-5 mb-4"
+        >
+          <Text style={{ color: textPrimary }} className="text-base font-semibold mb-3">
+            Recent Matches
+          </Text>
           {(matchHistory as unknown as Array<{
             id: string;
             winner_id: string | null;
@@ -204,17 +243,18 @@ export default function PlayerProfileScreen() {
               <TouchableOpacity
                 key={match.id}
                 onPress={() => router.push(`/matches/${match.id}`)}
-                className="flex-row items-center justify-between py-2 border-b border-gray-50 last:border-0"
+                style={{ borderBottomColor: border, borderBottomWidth: 1 }}
+                className="flex-row items-center justify-between py-2 last:border-0"
               >
                 <View className="flex-row items-center gap-2">
                   <View
                     className={`w-2 h-2 rounded-full ${isWinner ? "bg-green-500" : "bg-red-400"}`}
                   />
-                  <Text className="text-sm text-gray-700">
+                  <Text style={{ color: textPrimary }} className="text-sm">
                     vs {opponent?.full_name ?? "Unknown"}
                   </Text>
                 </View>
-                <Text className="text-xs text-gray-400">
+                <Text style={{ color: textSecondary }} className="text-xs">
                   {new Date(match.played_at ?? match.scheduled_at ?? "").toLocaleDateString()}
                 </Text>
               </TouchableOpacity>

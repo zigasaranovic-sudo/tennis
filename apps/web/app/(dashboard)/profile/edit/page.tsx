@@ -101,7 +101,7 @@ export default function EditProfilePage() {
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Edit Profile</h1>
 
       {saved && (
         <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
@@ -109,42 +109,42 @@ export default function EditProfilePage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Full Name</label>
           <input
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Username</label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase())}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Bio</label>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={3}
             maxLength={500}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
             placeholder="Tell other players about yourself..."
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Skill Level</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Skill Level</label>
           <select
             value={skillLevel}
             onChange={(e) => setSkillLevel(e.target.value as SkillLevel)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             {SKILL_LEVELS.map((l) => (
               <option key={l.value} value={l.value}>{l.label}</option>
@@ -153,42 +153,42 @@ export default function EditProfilePage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">City</label>
             <input
               type="text"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="New York"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Country</label>
             <input
               type="text"
               value={country}
               onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 2))}
               maxLength={2}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="US"
             />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Home Tennis Club</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Home Tennis Club</label>
           <input
             type="text"
             value={homeClub}
             onChange={(e) => setHomeClub(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             placeholder="e.g. TC Tivoli, Central Park Tennis Club"
           />
         </div>
       </div>
 
       {/* Availability editor */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Weekly Availability</h2>
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Weekly Availability</h2>
         <div className="space-y-3">
           {DAYS.map((day, index) => {
             const slot = availability.find((a) => a.day === index);
@@ -199,7 +199,7 @@ export default function EditProfilePage() {
                   className={`w-24 h-9 rounded-lg flex items-center justify-center text-sm font-medium transition-colors ${
                     slot
                       ? "bg-green-600 text-white"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                      : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700"
                   }`}
                 >
                   {day.slice(0, 3)}
@@ -210,14 +210,14 @@ export default function EditProfilePage() {
                       type="time"
                       value={slot.start}
                       onChange={(e) => updateSlot(index, "start", e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
-                    <span className="text-gray-400 text-sm">to</span>
+                    <span className="text-gray-400 dark:text-slate-600 text-sm">to</span>
                     <input
                       type="time"
                       value={slot.end}
                       onChange={(e) => updateSlot(index, "end", e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
                 )}
@@ -230,7 +230,7 @@ export default function EditProfilePage() {
       <div className="flex gap-3">
         <button
           onClick={() => router.back()}
-          className="flex-1 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex-1 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
         >
           Cancel
         </button>

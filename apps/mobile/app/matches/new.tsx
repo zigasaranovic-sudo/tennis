@@ -7,6 +7,7 @@ import {
   Alert,
   FlatList,
   ActivityIndicator,
+  useColorScheme,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -23,6 +24,18 @@ type Format = (typeof FORMATS)[number]["value"];
 export default function NewMatchScreen() {
   // Pre-fill recipient if navigated from a player profile
   const { recipient_id: prefillId } = useLocalSearchParams<{ recipient_id?: string }>();
+
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const bg = isDark ? "#0f172a" : "#f9fafb";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const border = isDark ? "#334155" : "#e5e7eb";
+  const textPrimary = isDark ? "#f1f5f9" : "#111827";
+  const textSecondary = isDark ? "#94a3b8" : "#6b7280";
+  const inputBg = isDark ? "#1e293b" : "#ffffff";
+  const inputText = isDark ? "#f1f5f9" : "#111827";
+  const placeholder = isDark ? "#64748b" : "#9ca3af";
 
   const [query, setQuery] = useState("");
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(prefillId ?? null);
@@ -68,19 +81,22 @@ export default function NewMatchScreen() {
     });
   };
 
-  const showSearch = !selectedPlayerId && !prefillId;
-
   return (
     <ScrollView
-      className="flex-1 bg-gray-50"
+      style={{ flex: 1, backgroundColor: bg }}
       contentContainerStyle={{ padding: 16 }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text className="text-base font-semibold text-gray-900 mb-4">Request a Match</Text>
+      <Text style={{ color: textPrimary }} className="text-base font-semibold mb-4">
+        Request a Match
+      </Text>
 
       {/* Player picker */}
-      <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-        <Text className="text-sm font-medium text-gray-700 mb-3">Opponent</Text>
+      <View
+        style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+        className="rounded-2xl p-5 mb-4"
+      >
+        <Text style={{ color: textSecondary }} className="text-sm font-medium mb-3">Opponent</Text>
 
         {selectedPlayerId ? (
           <View className="flex-row items-center justify-between">
@@ -90,7 +106,9 @@ export default function NewMatchScreen() {
                   {selectedPlayerName[0] ?? "?"}
                 </Text>
               </View>
-              <Text className="font-medium text-gray-900">{selectedPlayerName}</Text>
+              <Text style={{ color: textPrimary }} className="font-medium">
+                {selectedPlayerName}
+              </Text>
             </View>
             {!prefillId && (
               <TouchableOpacity
@@ -110,7 +128,17 @@ export default function NewMatchScreen() {
               value={query}
               onChangeText={setQuery}
               placeholder="Filter by city…"
-              className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+              style={{
+                borderWidth: 1,
+                borderColor: border,
+                borderRadius: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                fontSize: 16,
+                backgroundColor: inputBg,
+                color: inputText,
+              }}
+              placeholderTextColor={placeholder}
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -129,7 +157,8 @@ export default function NewMatchScreen() {
                       setSelectedPlayerId(item.id);
                       setSelectedPlayerName(item.full_name);
                     }}
-                    className="flex-row items-center gap-3 py-3 border-b border-gray-50"
+                    style={{ borderBottomColor: border, borderBottomWidth: 1 }}
+                    className="flex-row items-center gap-3 py-3"
                   >
                     <View className="w-9 h-9 bg-green-100 rounded-full items-center justify-center">
                       <Text className="text-green-700 font-bold">
@@ -137,10 +166,10 @@ export default function NewMatchScreen() {
                       </Text>
                     </View>
                     <View>
-                      <Text className="text-sm font-medium text-gray-900">
+                      <Text style={{ color: textPrimary }} className="text-sm font-medium">
                         {item.full_name}
                       </Text>
-                      <Text className="text-xs text-gray-400">
+                      <Text style={{ color: textSecondary }} className="text-xs">
                         @{item.username} · ELO {item.elo_rating}
                       </Text>
                     </View>
@@ -149,32 +178,42 @@ export default function NewMatchScreen() {
               />
             )}
             {query.length >= 2 && !searching && searchResults?.players.length === 0 && (
-              <Text className="text-sm text-gray-400 mt-3 text-center">No players found</Text>
+              <Text style={{ color: textSecondary }} className="text-sm mt-3 text-center">
+                No players found
+              </Text>
             )}
           </>
         )}
       </View>
 
       {/* Format picker */}
-      <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-        <Text className="text-sm font-medium text-gray-700 mb-3">Match Format</Text>
+      <View
+        style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+        className="rounded-2xl p-5 mb-4"
+      >
+        <Text style={{ color: textSecondary }} className="text-sm font-medium mb-3">
+          Match Format
+        </Text>
         {FORMATS.map((f) => (
           <TouchableOpacity
             key={f.value}
             onPress={() => setFormat(f.value)}
-            className={`flex-row items-center gap-3 py-3 border-b border-gray-50 last:border-0`}
+            style={{ borderBottomColor: border, borderBottomWidth: 1 }}
+            className="flex-row items-center gap-3 py-3 last:border-0"
           >
             <View
-              className={`w-5 h-5 rounded-full border-2 items-center justify-center ${
-                format === f.value ? "border-green-600" : "border-gray-300"
-              }`}
+              style={{
+                borderColor: format === f.value ? "#16a34a" : border,
+              }}
+              className={`w-5 h-5 rounded-full border-2 items-center justify-center`}
             >
               {format === f.value && (
                 <View className="w-2.5 h-2.5 rounded-full bg-green-600" />
               )}
             </View>
             <Text
-              className={`text-sm ${format === f.value ? "text-gray-900 font-medium" : "text-gray-600"}`}
+              style={{ color: format === f.value ? textPrimary : textSecondary }}
+              className={`text-sm ${format === f.value ? "font-medium" : ""}`}
             >
               {f.label}
             </Text>
@@ -183,19 +222,34 @@ export default function NewMatchScreen() {
       </View>
 
       {/* Optional fields */}
-      <View className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-        <Text className="text-sm font-medium text-gray-700 mb-3">Details (optional)</Text>
+      <View
+        style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
+        className="rounded-2xl p-5 mb-4"
+      >
+        <Text style={{ color: textSecondary }} className="text-sm font-medium mb-3">
+          Details (optional)
+        </Text>
         <View className="mb-4">
-          <Text className="text-xs text-gray-500 mb-1">Location</Text>
+          <Text style={{ color: textSecondary }} className="text-xs mb-1">Location</Text>
           <TextInput
             value={location}
             onChangeText={setLocation}
             placeholder="e.g. Central Park Courts"
-            className="border border-gray-300 rounded-lg px-4 py-3 text-base"
+            style={{
+              borderWidth: 1,
+              borderColor: border,
+              borderRadius: 8,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              fontSize: 16,
+              backgroundColor: inputBg,
+              color: inputText,
+            }}
+            placeholderTextColor={placeholder}
           />
         </View>
         <View>
-          <Text className="text-xs text-gray-500 mb-1">Message</Text>
+          <Text style={{ color: textSecondary }} className="text-xs mb-1">Message</Text>
           <TextInput
             value={message}
             onChangeText={setMessage}
@@ -203,7 +257,18 @@ export default function NewMatchScreen() {
             multiline
             numberOfLines={3}
             textAlignVertical="top"
-            className="border border-gray-300 rounded-lg px-4 py-3 text-base min-h-20"
+            style={{
+              borderWidth: 1,
+              borderColor: border,
+              borderRadius: 8,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              fontSize: 16,
+              minHeight: 80,
+              backgroundColor: inputBg,
+              color: inputText,
+            }}
+            placeholderTextColor={placeholder}
           />
         </View>
       </View>
@@ -212,19 +277,20 @@ export default function NewMatchScreen() {
       <View className="flex-row gap-3 mb-6">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="flex-1 border border-gray-300 rounded-2xl py-4 items-center"
+          style={{ borderColor: border, borderWidth: 1 }}
+          className="flex-1 rounded-2xl py-4 items-center"
         >
-          <Text className="text-gray-700 font-semibold">Cancel</Text>
+          <Text style={{ color: textPrimary }} className="font-semibold">Cancel</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={handleSend}
           disabled={sendRequest.isPending || !selectedPlayerId}
-          className={`flex-1 rounded-2xl py-4 items-center ${
-            selectedPlayerId ? "bg-green-600" : "bg-gray-200"
-          }`}
+          style={{ backgroundColor: selectedPlayerId ? "#16a34a" : isDark ? "#334155" : "#e5e7eb" }}
+          className="flex-1 rounded-2xl py-4 items-center"
         >
           <Text
-            className={`font-semibold ${selectedPlayerId ? "text-white" : "text-gray-400"}`}
+            style={{ color: selectedPlayerId ? "#ffffff" : textSecondary }}
+            className="font-semibold"
           >
             {sendRequest.isPending ? "Sending…" : "Send Request"}
           </Text>

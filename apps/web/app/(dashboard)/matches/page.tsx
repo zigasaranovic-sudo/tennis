@@ -63,7 +63,7 @@ export default function MatchesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">My Matches</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">My Matches</h1>
         <Link
           href="/players"
           className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-sm"
@@ -73,15 +73,15 @@ export default function MatchesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+      <div className="flex gap-1 bg-gray-100 dark:bg-slate-800 rounded-xl p-1">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
               activeTab === tab.key
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm"
+                : "text-gray-500 dark:text-slate-400 hover:text-gray-700"
             }`}
           >
             {tab.label}
@@ -109,7 +109,7 @@ export default function MatchesPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-gray-900 dark:text-slate-100">
                         vs{" "}
                         {match.player1?.id === profile?.id
                           ? match.player2?.full_name
@@ -130,19 +130,19 @@ export default function MatchesPage() {
               <Link
                 key={match.id}
                 href={`/matches/${match.id}`}
-                className="block bg-white border border-gray-200 rounded-xl p-4 hover:border-green-300 hover:shadow-sm transition-all"
+                className="block bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 hover:border-green-300 hover:shadow-sm transition-all"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">🎾</span>
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-gray-900 dark:text-slate-100">
                         vs{" "}
                         {match.player1?.id === profile?.id
                           ? match.player2?.full_name
                           : match.player1?.full_name}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-slate-400">
                         {match.scheduled_at
                           ? new Date(match.scheduled_at).toLocaleDateString("en-US", {
                               weekday: "long",
@@ -164,9 +164,9 @@ export default function MatchesPage() {
             ))
           ) : (
             !pendingConfirmation?.length && (
-              <div className="text-center py-12 bg-white border border-dashed border-gray-300 rounded-xl">
+              <div className="text-center py-12 bg-white dark:bg-slate-800 border border-dashed border-gray-300 dark:border-slate-600 rounded-xl">
                 <p className="text-4xl mb-4">🎾</p>
-                <p className="font-medium text-gray-900">No upcoming matches</p>
+                <p className="font-medium text-gray-900 dark:text-slate-100">No upcoming matches</p>
                 <Link
                   href="/players"
                   className="mt-3 inline-block text-sm text-green-600 font-medium hover:underline"
@@ -189,22 +189,22 @@ export default function MatchesPage() {
               return (
                 <div
                   key={req.id}
-                  className="bg-white border border-gray-200 rounded-xl p-5"
+                  className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-5"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                        <span className="text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
                           {isIncoming ? "Incoming" : "Sent"}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-400 dark:text-slate-600">
                           {new Date(req.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="font-medium text-gray-900 mt-1">
+                      <p className="font-medium text-gray-900 dark:text-slate-100 mt-1">
                         {(otherPlayer as { full_name?: string })?.full_name}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-slate-400">
                         {new Date(req.proposed_at).toLocaleDateString("en-US", {
                           weekday: "short",
                           month: "short",
@@ -215,7 +215,7 @@ export default function MatchesPage() {
                         {req.location_city && ` · ${req.location_city}`}
                       </p>
                       {req.message && (
-                        <p className="text-sm text-gray-600 mt-1 italic">&ldquo;{req.message}&rdquo;</p>
+                        <p className="text-sm text-gray-600 dark:text-slate-400 mt-1 italic">&ldquo;{req.message}&rdquo;</p>
                       )}
                     </div>
                     {isIncoming && (
@@ -227,7 +227,7 @@ export default function MatchesPage() {
                               response: "declined",
                             })
                           }
-                          className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                          className="px-3 py-1.5 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                         >
                           Decline
                         </button>
@@ -249,9 +249,9 @@ export default function MatchesPage() {
               );
             })
           ) : (
-            <div className="text-center py-12 bg-white border border-dashed border-gray-300 rounded-xl">
+            <div className="text-center py-12 bg-white dark:bg-slate-800 border border-dashed border-gray-300 dark:border-slate-600 rounded-xl">
               <p className="text-4xl mb-4">📬</p>
-              <p className="font-medium text-gray-900">No pending requests</p>
+              <p className="font-medium text-gray-900 dark:text-slate-100">No pending requests</p>
             </div>
           )}
         </div>
@@ -270,7 +270,7 @@ export default function MatchesPage() {
                 <Link
                   key={match.id}
                   href={`/matches/${match.id}`}
-                  className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:border-green-300 transition-colors"
+                  className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 hover:border-green-300 transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     <span
@@ -283,10 +283,10 @@ export default function MatchesPage() {
                       {won ? "WIN" : "LOSS"}
                     </span>
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-gray-900 dark:text-slate-100">
                         vs {opponent?.full_name}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-400 dark:text-slate-600">
                         {match.played_at
                           ? new Date(match.played_at).toLocaleDateString()
                           : ""}
@@ -307,9 +307,9 @@ export default function MatchesPage() {
               );
             })
           ) : (
-            <div className="text-center py-12 bg-white border border-dashed border-gray-300 rounded-xl">
+            <div className="text-center py-12 bg-white dark:bg-slate-800 border border-dashed border-gray-300 dark:border-slate-600 rounded-xl">
               <p className="text-4xl mb-4">📊</p>
-              <p className="font-medium text-gray-900">No match history yet</p>
+              <p className="font-medium text-gray-900 dark:text-slate-100">No match history yet</p>
             </div>
           )}
         </div>

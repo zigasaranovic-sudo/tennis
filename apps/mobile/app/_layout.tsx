@@ -58,6 +58,22 @@ export default function RootLayout() {
               title: "Request Match",
             }}
           />
+          <Stack.Screen
+            name="messages/[conversationId]"
+            options={{ headerShown: true, title: "Chat", headerBackTitle: "Back" }}
+          />
+          <Stack.Screen
+            name="courts/[venueId]/index"
+            options={{ headerShown: true, title: "Venue", headerBackTitle: "Back" }}
+          />
+          <Stack.Screen
+            name="courts/[venueId]/[courtId]"
+            options={{ headerShown: true, title: "Book Court", headerBackTitle: "Back" }}
+          />
+          <Stack.Screen
+            name="courts/bookings"
+            options={{ headerShown: true, title: "My Bookings", headerBackTitle: "Back" }}
+          />
         </Stack>
       </QueryClientProvider>
     </trpc.Provider>
