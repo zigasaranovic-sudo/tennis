@@ -33,10 +33,6 @@ export default function RankingScreen() {
             <Text className="text-green-100 text-sm">Your rank</Text>
             <Text className="text-white text-3xl font-bold">#{myRank.rank}</Text>
           </View>
-          <View className="items-end">
-            <Text className="text-green-100 text-sm">ELO Rating</Text>
-            <Text className="text-white text-2xl font-bold">{myRank.elo_rating}</Text>
-          </View>
         </View>
       )}
 
@@ -74,9 +70,6 @@ export default function RankingScreen() {
             <View className="flex-1 min-w-0">
               <Text style={{ color: textPrimary }} className="font-semibold" numberOfLines={1}>
                 {player.full_name}
-                {player.elo_provisional ? (
-                  <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="font-normal">*</Text>
-                ) : null}
               </Text>
               <Text style={{ color: textSecondary }} className="text-sm">
                 {player.matches_won}W – {player.matches_lost}L
@@ -85,8 +78,8 @@ export default function RankingScreen() {
             </View>
 
             <View className="items-end">
-              <Text style={{ color: textPrimary }} className="text-lg font-bold">{player.elo_rating}</Text>
-              <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs">ELO</Text>
+              <Text style={{ color: textPrimary }} className="text-sm font-bold">{player.matches_won}W</Text>
+              <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs">{player.matches_played} played</Text>
             </View>
           </TouchableOpacity>
         )}

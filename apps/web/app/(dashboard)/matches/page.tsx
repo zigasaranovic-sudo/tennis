@@ -15,8 +15,6 @@ type MatchItem = {
   location_city: string | null;
   format: string | null;
   winner_id: string | null;
-  player1_elo_delta: number | null;
-  player2_elo_delta: number | null;
 };
 
 export default function MatchesPage() {
@@ -265,7 +263,6 @@ export default function MatchesPage() {
               const isP1 = match.player1?.id === profile?.id;
               const opponent = isP1 ? match.player2 : match.player1;
               const won = match.winner_id === profile?.id;
-              const eloDelta = isP1 ? match.player1_elo_delta : match.player2_elo_delta;
               return (
                 <Link
                   key={match.id}
@@ -293,16 +290,6 @@ export default function MatchesPage() {
                       </p>
                     </div>
                   </div>
-                  {eloDelta !== null && eloDelta !== undefined && (
-                    <span
-                      className={`text-sm font-semibold ${
-                        eloDelta > 0 ? "text-green-600" : "text-red-500"
-                      }`}
-                    >
-                      {eloDelta > 0 ? "+" : ""}
-                      {eloDelta} ELO
-                    </span>
-                  )}
                 </Link>
               );
             })

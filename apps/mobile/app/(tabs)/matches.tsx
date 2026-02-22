@@ -212,7 +212,6 @@ export default function MatchesScreen() {
             const isP1 = (match.player1 as { id?: string })?.id === profile?.id;
             const opponent = isP1 ? match.player2 : match.player1;
             const won = match.winner_id === profile?.id;
-            const delta = isP1 ? match.player1_elo_delta : match.player2_elo_delta;
             return (
               <TouchableOpacity
                 onPress={() => router.push(`/matches/${match.id}`)}
@@ -234,11 +233,6 @@ export default function MatchesScreen() {
                     </Text>
                   </View>
                 </View>
-                {delta !== null && delta !== undefined && (
-                  <Text className={`font-bold text-sm ${delta > 0 ? "text-green-600" : "text-red-500"}`}>
-                    {delta > 0 ? "+" : ""}{delta}
-                  </Text>
-                )}
               </TouchableOpacity>
             );
           }}

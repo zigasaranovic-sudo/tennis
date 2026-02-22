@@ -84,7 +84,7 @@ export default function MatchDetailScreen() {
   // @ts-ignore - return type includes recursive Json type that exceeds TS depth limit
   const confirmResult = trpc.match.confirmResult.useMutation({
     onSuccess: () => {
-      Alert.alert("Match confirmed!", "ELO ratings have been updated.");
+      Alert.alert("Match confirmed!", "Result has been recorded.");
       refetch();
     },
     onError: (err: { message: string }) => Alert.alert("Error", err.message),
@@ -237,74 +237,6 @@ export default function MatchDetailScreen() {
           </View>
         )}
 
-        {/* ELO changes */}
-        {match.status === "completed" && (
-          <View style={{ borderTopColor: border, borderTopWidth: 1 }} className="flex-row pt-4 mt-4">
-            {isPlayer1 ? (
-              <>
-                <View className="flex-1 items-center">
-                  <Text style={{ color: textSecondary }} className="text-xs">Your ELO</Text>
-                  <Text style={{ color: textPrimary }} className="text-base font-bold mt-0.5">
-                    {match.player1_elo_after ?? "—"}
-                  </Text>
-                  {match.player1_elo_delta != null && (
-                    <Text
-                      className={`text-xs font-semibold ${match.player1_elo_delta >= 0 ? "text-green-600" : "text-red-500"}`}
-                    >
-                      {match.player1_elo_delta >= 0 ? "+" : ""}
-                      {match.player1_elo_delta}
-                    </Text>
-                  )}
-                </View>
-                <View className="flex-1 items-center">
-                  <Text style={{ color: textSecondary }} className="text-xs">Opponent ELO</Text>
-                  <Text style={{ color: textPrimary }} className="text-base font-bold mt-0.5">
-                    {match.player2_elo_after ?? "—"}
-                  </Text>
-                  {match.player2_elo_delta != null && (
-                    <Text
-                      className={`text-xs font-semibold ${match.player2_elo_delta >= 0 ? "text-green-600" : "text-red-500"}`}
-                    >
-                      {match.player2_elo_delta >= 0 ? "+" : ""}
-                      {match.player2_elo_delta}
-                    </Text>
-                  )}
-                </View>
-              </>
-            ) : (
-              <>
-                <View className="flex-1 items-center">
-                  <Text style={{ color: textSecondary }} className="text-xs">Your ELO</Text>
-                  <Text style={{ color: textPrimary }} className="text-base font-bold mt-0.5">
-                    {match.player2_elo_after ?? "—"}
-                  </Text>
-                  {match.player2_elo_delta != null && (
-                    <Text
-                      className={`text-xs font-semibold ${match.player2_elo_delta >= 0 ? "text-green-600" : "text-red-500"}`}
-                    >
-                      {match.player2_elo_delta >= 0 ? "+" : ""}
-                      {match.player2_elo_delta}
-                    </Text>
-                  )}
-                </View>
-                <View className="flex-1 items-center">
-                  <Text style={{ color: textSecondary }} className="text-xs">Opponent ELO</Text>
-                  <Text style={{ color: textPrimary }} className="text-base font-bold mt-0.5">
-                    {match.player1_elo_after ?? "—"}
-                  </Text>
-                  {match.player1_elo_delta != null && (
-                    <Text
-                      className={`text-xs font-semibold ${match.player1_elo_delta >= 0 ? "text-green-600" : "text-red-500"}`}
-                    >
-                      {match.player1_elo_delta >= 0 ? "+" : ""}
-                      {match.player1_elo_delta}
-                    </Text>
-                  )}
-                </View>
-              </>
-            )}
-          </View>
-        )}
       </View>
 
       {/* Score entry */}

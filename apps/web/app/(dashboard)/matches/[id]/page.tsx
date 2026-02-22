@@ -48,8 +48,6 @@ export default function MatchDetailPage({
   const isP1 = (match.player1 as { id?: string })?.id === profile?.id;
   const myPlayer = isP1 ? match.player1 : match.player2;
   const opponent = isP1 ? match.player2 : match.player1;
-  const myElo = isP1 ? match.player1_elo_after : match.player2_elo_after;
-  const myDelta = isP1 ? match.player1_elo_delta : match.player2_elo_delta;
   const iWon = match.winner_id === profile?.id;
   const iSubmittedResult = match.result_submitted_by === profile?.id;
 
@@ -127,16 +125,6 @@ export default function MatchDetailPage({
                         .join(", ")
                     : "–"}
                 </div>
-                {myDelta !== null && myDelta !== undefined && (
-                  <p
-                    className={`text-sm font-semibold mt-1 ${
-                      myDelta > 0 ? "text-green-600" : "text-red-500"
-                    }`}
-                  >
-                    {myDelta > 0 ? "+" : ""}
-                    {myDelta} ELO
-                  </p>
-                )}
               </div>
             ) : (
               <p className="text-gray-400 dark:text-slate-600 text-xl">vs</p>
@@ -337,11 +325,6 @@ export default function MatchDetailPage({
           <p className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-1">
             {iWon ? "You won!" : "Match completed"}
           </p>
-          {myDelta !== null && myDelta !== undefined && (
-            <p className={`text-sm font-semibold ${myDelta > 0 ? "text-green-600" : "text-red-500"}`}>
-              ELO: {myElo} ({myDelta > 0 ? "+" : ""}{myDelta})
-            </p>
-          )}
         </div>
       )}
 

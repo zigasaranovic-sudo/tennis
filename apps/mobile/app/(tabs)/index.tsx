@@ -38,13 +38,9 @@ export default function HomeScreen() {
         <Text className="text-white text-xl font-bold">
           Welcome, {profile?.full_name?.split(" ")[0] ?? "Player"}! 👋
         </Text>
-        <View className="flex-row items-center gap-2 mt-2">
-          <Text className="text-green-100 text-base">Your ELO:</Text>
-          <Text className="text-white text-2xl font-bold">{profile?.elo_rating ?? 1200}</Text>
-          {profile?.elo_provisional && (
-            <Text className="text-green-200 text-xs">(provisional)</Text>
-          )}
-        </View>
+        {profile?.skill_level && (
+          <Text className="text-green-100 text-sm mt-1 capitalize">{profile.skill_level} level</Text>
+        )}
       </View>
 
       {/* Pending requests */}

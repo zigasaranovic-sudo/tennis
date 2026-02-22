@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Tenis — Find your match",
   description:
-    "Connect with tennis players, join tournaments, and track your ELO ranking.",
+    "Connect with tennis players, join tournaments, and track your ranking.",
 };
 
 export default function RootLayout({
