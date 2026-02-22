@@ -39,12 +39,6 @@ export default async function DashboardLayout({
                   Matches
                 </Link>
                 <Link
-                  href="/ranking"
-                  className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
-                >
-                  Ranking
-                </Link>
-                <Link
                   href="/messages"
                   className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
                 >

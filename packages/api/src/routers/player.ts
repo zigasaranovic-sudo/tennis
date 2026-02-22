@@ -139,7 +139,8 @@ export const playerRouter = router({
         query = query.ilike("full_name", `%${input.name}%`);
       }
       if (input.skill_level) query = query.eq("skill_level", input.skill_level);
-      if (input.club) query = query.ilike("home_club", `%${input.club}%`);
+      if (input.city) query = query.eq("city", input.city);
+      if (input.club) query = query.eq("home_club", input.club);
 
       const { data, error } = await query;
 
@@ -148,6 +149,29 @@ export const playerRouter = router({
       }
 
       return { players: data };
+    }),
+
+  /** Return distinct cities and clubs for filter dropdowns */
+  getFilterOptions: protectedProcedure
+    .input(z.object({ city: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      const base = ctx.supabase
+        .from("profiles")
+        .eq("is_public", true)
+        .eq("is_active", true)
+        .neq("id", ctx.user.id);
+
+      const { data: cityData } = await (base as typeof base)
+        .select("city")
+        .not("city", "is", null);
+      const cities = [...new Set((cityData ?? []).map((p) => p.city).filter(Boolean))].sort() as string[];
+
+      let clubQuery = (base as typeof base).select("home_club, city").not("home_club", "is", null);
+      if (input.city) clubQuery = clubQuery.eq("city", input.city);
+      const { data: clubData } = await clubQuery;
+      const clubs = [...new Set((clubData ?? []).map((p) => p.home_club).filter(Boolean))].sort() as string[];
+
+      return { cities, clubs };
     }),
 
   /** Set/replace the player's weekly availability slots */

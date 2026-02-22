@@ -60,6 +60,7 @@ export type AvailabilitySlot = z.infer<typeof AvailabilitySlotSchema>;
 export const SearchPlayersSchema = z.object({
   name: z.string().optional(),
   skill_level: SkillLevelSchema.optional(),
+  city: z.string().optional(),
   club: z.string().optional(),
   limit: z.number().int().min(1).max(50).default(20),
 });

@@ -14,17 +14,29 @@ const SKILL_LABELS: Record<SkillLevel, string> = {
 
 export default function PlayersPage() {
   const [name, setName] = useState("");
-  const [skillLevel, setSkillLevel] = useState<SkillLevel | undefined>();
+  const [skillLevel, setSkillLevel] = useState<SkillLevel | "">("");
+  const [city, setCity] = useState("");
   const [club, setClub] = useState("");
+
+  const { data: filterOptions } = trpc.player.getFilterOptions.useQuery(
+    { city: city || undefined },
+    { staleTime: 60_000 }
+  );
 
   const { data, isFetching } = trpc.player.searchPlayers.useQuery({
     name: name.length >= 3 ? name : undefined,
-    skill_level: skillLevel,
-    club: club.length >= 2 ? club : undefined,
+    skill_level: (skillLevel as SkillLevel) || undefined,
+    city: city || undefined,
+    club: club || undefined,
     limit: 50,
   });
 
   const players = data?.players ?? [];
+
+  const handleCityChange = (newCity: string) => {
+    setCity(newCity);
+    setClub(""); // reset club when city changes
+  };
 
   return (
     <div className="space-y-5">
@@ -44,24 +56,44 @@ export default function PlayersPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {/* Club filter */}
+        <div className="grid grid-cols-3 gap-3">
+          {/* City dropdown */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">City</label>
+            <select
+              value={city}
+              onChange={(e) => handleCityChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="">Any city</option>
+              {(filterOptions?.cities ?? []).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Club dropdown (filtered by city) */}
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Club</label>
-            <input
-              type="text"
+            <select
               value={club}
               onChange={(e) => setClub(e.target.value)}
-              placeholder="Any club"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:placeholder-slate-500"
-            />
+              disabled={!filterOptions?.clubs?.length}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+            >
+              <option value="">Any club</option>
+              {(filterOptions?.clubs ?? []).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
+
           {/* Skill level */}
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Skill Level</label>
             <select
-              value={skillLevel ?? ""}
-              onChange={(e) => setSkillLevel((e.target.value as SkillLevel) || undefined)}
+              value={skillLevel}
+              onChange={(e) => setSkillLevel(e.target.value as SkillLevel | "")}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="">All levels</option>
@@ -84,7 +116,6 @@ export default function PlayersPage() {
               href={`/players/${player.id}`}
               className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 hover:border-green-300 dark:hover:border-green-700 hover:shadow-sm transition-all"
             >
-              {/* Avatar */}
               <div className="w-10 h-10 shrink-0 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center text-green-700 dark:text-green-400 font-semibold overflow-hidden">
                 {player.avatar_url ? (
                   <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
@@ -93,7 +124,6 @@ export default function PlayersPage() {
                 )}
               </div>
 
-              {/* Info */}
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-gray-900 dark:text-slate-100 truncate text-sm">{player.full_name}</p>
                 <p className="text-xs text-gray-400 dark:text-slate-500 truncate">
@@ -105,7 +135,6 @@ export default function PlayersPage() {
                 </p>
               </div>
 
-              {/* Skill badge */}
               {player.skill_level && (
                 <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize">
                   {SKILL_LABELS[player.skill_level as SkillLevel]}
@@ -121,7 +150,7 @@ export default function PlayersPage() {
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             {name.length > 0 && name.length < 3
               ? "Keep typing — search starts at 3 characters"
-              : "Try a different name or club"}
+              : "Try adjusting your filters"}
           </p>
         </div>
       )}
