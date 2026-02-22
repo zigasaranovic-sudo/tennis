@@ -83,41 +83,43 @@ export default function PlayerProfilePage({
     <div className="space-y-6">
       {/* Profile header */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
+          {/* Avatar + info */}
           <div className="flex items-center gap-5">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-3xl overflow-hidden">
+            <div className="w-20 h-20 shrink-0 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-3xl overflow-hidden">
               {player.avatar_url ? (
                 <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
               ) : (
                 player.full_name[0]
               )}
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{player.full_name}</h1>
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 truncate">{player.full_name}</h1>
               <p className="text-gray-500 dark:text-slate-400">@{player.username}</p>
               {player.city && (
-                <p className="text-sm text-gray-400 dark:text-slate-600 mt-1">📍 {player.city}, {player.country}</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">📍 {player.city}, {player.country}</p>
               )}
               {(player as { home_club?: string | null }).home_club && (
-                <p className="text-sm text-gray-400 dark:text-slate-600 mt-0.5">🎾 {(player as { home_club?: string | null }).home_club}</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500 mt-0.5">🎾 {(player as { home_club?: string | null }).home_club}</p>
               )}
               {player.bio && <p className="text-sm text-gray-600 dark:text-slate-400 mt-2 max-w-md">{player.bio}</p>}
             </div>
           </div>
 
-          <div className="flex gap-2">
+          {/* Action buttons — full-width row on mobile, column on desktop */}
+          <div className="flex gap-3 md:flex-col md:items-end shrink-0">
             <button
               onClick={handleMessage}
               disabled={startingConv}
-              className="px-4 py-2.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-50 text-sm"
+              className="flex-1 md:flex-none px-5 py-2.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-50 text-sm"
             >
               {startingConv ? "..." : "💬 Message"}
             </button>
             <button
               onClick={() => setShowRequestModal(true)}
-              className="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm"
+              className="flex-1 md:flex-none px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm"
             >
-              Request Match
+              🎾 Request Match
             </button>
           </div>
         </div>
