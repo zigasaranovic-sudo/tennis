@@ -29,7 +29,6 @@ export default function PlayerProfilePage({
   const [startingConv, setStartingConv] = useState(false);
 
   const { data: player, isLoading } = trpc.player.getPublicProfile.useQuery({ id });
-  const { data: eloHistory } = trpc.player.getEloHistory.useQuery({ player_id: id });
   const { data: matchHistory } = trpc.player.getMatchHistory.useQuery({
     player_id: id,
     limit: 5,
@@ -125,14 +124,7 @@ export default function PlayerProfilePage({
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-              {player.elo_rating}
-              {player.elo_provisional && <span className="text-sm text-gray-400 dark:text-slate-600">*</span>}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">ELO Rating</p>
-          </div>
+        <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{player.matches_played}</p>
             <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Matches</p>
@@ -149,36 +141,6 @@ export default function PlayerProfilePage({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* ELO history chart (simple sparkline) */}
-        {eloHistory && eloHistory.length > 1 && (
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">ELO Progress</h2>
-            <div className="h-32 flex items-end gap-1">
-              {eloHistory.slice(-20).map((point, i) => {
-                const values = eloHistory.slice(-20).map((p) => p.elo_after);
-                const min = Math.min(...values);
-                const max = Math.max(...values);
-                const range = max - min || 1;
-                const height = ((point.elo_after - min) / range) * 100;
-                return (
-                  <div
-                    key={i}
-                    className={`flex-1 rounded-t transition-all ${
-                      point.elo_delta > 0 ? "bg-green-400" : "bg-red-400"
-                    }`}
-                    style={{ height: `${Math.max(height, 4)}%` }}
-                    title={`${point.elo_after} (${point.elo_delta > 0 ? "+" : ""}${point.elo_delta})`}
-                  />
-                );
-              })}
-            </div>
-            <div className="flex justify-between text-xs text-gray-400 dark:text-slate-600 mt-1">
-              <span>Earlier</span>
-              <span>Latest: {eloHistory[eloHistory.length - 1]?.elo_after}</span>
-            </div>
-          </div>
-        )}
-
         {/* Availability */}
         {availability && availability.length > 0 && (
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">

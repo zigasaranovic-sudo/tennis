@@ -25,10 +25,7 @@ export default function ProfileScreen() {
 
   const { data: profile } = trpc.player.getProfile.useQuery();
   const { data: myRank } = trpc.ranking.getPlayerRank.useQuery();
-  const { data: eloHistory } = trpc.player.getEloHistory.useQuery(
-    { player_id: profile?.id ?? "" },
-    { enabled: !!profile?.id }
-  );
+
   const { data: availability } = trpc.player.getAvailability.useQuery(
     { player_id: profile?.id ?? "" },
     { enabled: !!profile?.id }
@@ -77,15 +74,7 @@ export default function ProfileScreen() {
 
         {/* Stats */}
         <View style={{ borderTopColor: divider, borderTopWidth: 1 }} className="flex-row pt-4 gap-2">
-          <View className="flex-1 items-center">
-            <Text style={{ color: textPrimary }} className="text-2xl font-bold">
-              {profile.elo_rating}
-              {profile.elo_provisional && (
-                <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-sm">*</Text>
-              )}
-            </Text>
-            <Text style={{ color: textSecondary }} className="text-xs mt-0.5">ELO</Text>
-          </View>
+
           <View className="flex-1 items-center">
             <Text style={{ color: textPrimary }} className="text-2xl font-bold">
               {myRank?.rank ? `#${myRank.rank}` : "–"}
@@ -103,31 +92,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* ELO Progress bar chart */}
-      {eloHistory && eloHistory.length > 1 && (
-        <View style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }} className="rounded-2xl p-5 mb-4">
-          <Text style={{ color: textPrimary }} className="text-base font-semibold mb-3">ELO Progress</Text>
-          <View className="h-20 flex-row items-end gap-0.5">
-            {eloHistory.slice(-20).map((point, i) => {
-              const values = eloHistory.slice(-20).map((p) => p.elo_after);
-              const min = Math.min(...values);
-              const max = Math.max(...values);
-              const range = max - min || 1;
-              const heightPct = ((point.elo_after - min) / range) * 100;
-              return (
-                <View
-                  key={i}
-                  className={`flex-1 rounded-t ${point.elo_delta > 0 ? "bg-green-400" : "bg-red-400"}`}
-                  style={{ height: `${Math.max(heightPct, 5)}%` }}
-                />
-              );
-            })}
-          </View>
-          {profile.elo_provisional && (
-            <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs mt-2">
-              * Provisional — {Math.max(0, 10 - profile.matches_played)} more matches to establish rating
-            </Text>
-          )}
+
         </View>
       )}
 

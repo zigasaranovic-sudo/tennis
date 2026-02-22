@@ -36,63 +36,89 @@ export default function SearchScreen() {
   const chipBorder = isDark ? "#475569" : "#e5e7eb";
   const chipText = isDark ? "#94a3b8" : "#4b5563";
 
+  const [name, setName] = useState("");
+  const [club, setClub] = useState("");
   const [skill, setSkill] = useState<SkillLevel | "">("");
-  const [city, setCity] = useState("");
 
-  const { data, isFetching, fetchNextPage, hasNextPage } =
-    trpc.player.searchPlayers.useInfiniteQuery(
-      {
-        skill_level: skill || undefined,
-        city: city || undefined,
-        limit: 20,
-      },
-      {
-        getNextPageParam: (page) => page.nextCursor,
-        initialCursor: undefined,
-      }
-    );
+  const { data, isFetching } = trpc.player.searchPlayers.useQuery({
+    name: name.length >= 3 ? name : undefined,
+    club: club.length >= 2 ? club : undefined,
+    skill_level: skill || undefined,
+    limit: 50,
+  });
 
-  const players = data?.pages.flatMap((p) => p.players) ?? [];
+  const players = data?.players ?? [];
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       {/* Search inputs */}
-      <View style={{ backgroundColor: cardBg, borderBottomColor: border, borderBottomWidth: 1, paddingHorizontal: 16, paddingVertical: 12 }}>
+      <View
+        style={{
+          backgroundColor: cardBg,
+          borderBottomColor: border,
+          borderBottomWidth: 1,
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          gap: 10,
+        }}
+      >
+        {/* Name search */}
         <TextInput
-          value={city}
-          onChangeText={setCity}
-          placeholder="Search by city..."
+          value={name}
+          onChangeText={setName}
+          placeholder="Search by name (min. 3 letters)…"
           style={{
-            width: "100%",
             paddingHorizontal: 16,
             paddingVertical: 12,
             backgroundColor: inputBg,
             borderRadius: 12,
-            fontSize: 16,
+            fontSize: 15,
             color: inputText,
             borderColor: border,
             borderWidth: 1,
           }}
           placeholderTextColor={placeholder}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+
+        {/* Club search */}
+        <TextInput
+          value={club}
+          onChangeText={setClub}
+          placeholder="Filter by club…"
+          style={{
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            backgroundColor: inputBg,
+            borderRadius: 12,
+            fontSize: 14,
+            color: inputText,
+            borderColor: border,
+            borderWidth: 1,
+          }}
+          placeholderTextColor={placeholder}
+          autoCapitalize="words"
+          autoCorrect={false}
         />
 
         {/* Skill filter chips */}
-        <View className="flex-row gap-2 mt-3 flex-wrap">
+        <View className="flex-row gap-2 flex-wrap">
           {SKILL_OPTIONS.map((opt) => (
             <TouchableOpacity
               key={opt.value}
               onPress={() => setSkill(opt.value)}
               style={
                 skill === opt.value
-                  ? { backgroundColor: "#16a34a", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }
-                  : { backgroundColor: chipBg, borderColor: chipBorder, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }
+                  ? { backgroundColor: "#16a34a", paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 }
+                  : { backgroundColor: chipBg, borderColor: chipBorder, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 }
               }
             >
               <Text
                 style={
                   skill === opt.value
-                    ? { color: "#ffffff", fontSize: 14, fontWeight: "500" }
-                    : { color: chipText, fontSize: 14, fontWeight: "500" }
+                    ? { color: "#ffffff", fontSize: 13, fontWeight: "500" }
+                    : { color: chipText, fontSize: 13, fontWeight: "500" }
                 }
               >
                 {opt.label}
@@ -106,43 +132,42 @@ export default function SearchScreen() {
       <FlatList
         data={players}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: 12 }}
         renderItem={({ item: player }) => (
           <TouchableOpacity
             onPress={() => router.push(`/players/${player.id}`)}
             style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
-            className="rounded-2xl p-4 mb-3 flex-row items-center justify-between"
+            className="rounded-2xl px-4 py-3 mb-2 flex-row items-center gap-3"
           >
-            <View className="flex-row items-center gap-3 flex-1">
-              <View className="w-14 h-14 bg-green-100 rounded-full items-center justify-center">
-                <Text className="text-green-700 font-bold text-2xl">
-                  {player.full_name[0]}
-                </Text>
-              </View>
-              <View className="flex-1 min-w-0">
-                <Text style={{ color: textPrimary }} className="font-semibold" numberOfLines={1}>
-                  {player.full_name}
-                </Text>
-                <Text style={{ color: textSecondary }} className="text-sm">@{player.username}</Text>
-                {player.city && (
-                  <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs mt-0.5">📍 {player.city}</Text>
-                )}
-              </View>
-            </View>
-            <View className="items-end ml-2">
-              <Text style={{ color: textPrimary }} className="text-xl font-bold">
-                {player.elo_rating}
-                {player.elo_provisional && (
-                  <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-sm font-normal">*</Text>
-                )}
+            {/* Avatar */}
+            <View className="w-10 h-10 bg-green-100 rounded-full items-center justify-center shrink-0">
+              <Text className="text-green-700 font-bold text-base">
+                {player.full_name[0]}
               </Text>
-              <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs">ELO</Text>
-              <View style={{ backgroundColor: chipBg }} className="rounded-lg px-2 py-0.5 mt-1">
+            </View>
+
+            {/* Info */}
+            <View className="flex-1 min-w-0">
+              <Text style={{ color: textPrimary }} className="font-semibold text-sm" numberOfLines={1}>
+                {player.full_name}
+              </Text>
+              <Text style={{ color: textSecondary }} className="text-xs" numberOfLines={1}>
+                {(player as { home_club?: string | null }).home_club
+                  ? `🎾 ${(player as { home_club?: string | null }).home_club}`
+                  : player.city
+                  ? `📍 ${player.city}`
+                  : `@${player.username}`}
+              </Text>
+            </View>
+
+            {/* Skill badge */}
+            {player.skill_level && (
+              <View style={{ backgroundColor: chipBg }} className="rounded-full px-2.5 py-1 shrink-0">
                 <Text style={{ color: chipText }} className="text-xs capitalize">
                   {player.skill_level}
                 </Text>
               </View>
-            </View>
+            )}
           </TouchableOpacity>
         )}
         ListEmptyComponent={
@@ -154,14 +179,14 @@ export default function SearchScreen() {
             <View className="items-center py-16">
               <Text className="text-5xl mb-4">🔍</Text>
               <Text style={{ color: textPrimary }} className="font-semibold">No players found</Text>
-              <Text style={{ color: textSecondary }} className="text-sm mt-1">Try different filters</Text>
+              <Text style={{ color: textSecondary }} className="text-sm mt-1 text-center px-8">
+                {name.length > 0 && name.length < 3
+                  ? "Keep typing — search starts at 3 letters"
+                  : "Try a different name or club"}
+              </Text>
             </View>
           )
         }
-        onEndReached={() => {
-          if (hasNextPage && !isFetching) fetchNextPage();
-        }}
-        onEndReachedThreshold={0.3}
       />
     </View>
   );

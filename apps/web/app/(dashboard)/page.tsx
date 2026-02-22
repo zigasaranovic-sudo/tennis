@@ -23,13 +23,9 @@ export default function HomePage() {
             Welcome back, {profile?.full_name?.split(" ")[0] ?? "Player"}
           </h1>
           <p className="text-gray-500 dark:text-slate-400 mt-1">
-            Your ELO:{" "}
-            <span className="font-semibold text-green-600">
-              {profile?.elo_rating ?? 1200}
-            </span>
-            {profile?.elo_provisional && (
-              <span className="ml-1 text-xs text-gray-400 dark:text-slate-600">(provisional)</span>
-            )}
+            {profile?.skill_level ? (
+              <span className="capitalize font-medium text-green-600">{profile.skill_level}</span>
+            ) : "Find players and schedule matches"}
           </p>
         </div>
         <Link

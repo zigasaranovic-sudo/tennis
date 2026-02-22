@@ -45,8 +45,8 @@ export default function NewMatchScreen() {
   const [message, setMessage] = useState("");
 
   const { data: searchResults, isLoading: searching } = trpc.player.searchPlayers.useQuery(
-    { city: query.trim() || undefined, limit: 10 },
-    { enabled: query.length >= 2 }
+    { name: query.trim() || undefined, limit: 10 },
+    { enabled: query.length >= 3 }
   );
 
   const { data: prefillPlayer } = trpc.player.getPublicProfile.useQuery(
@@ -127,7 +127,7 @@ export default function NewMatchScreen() {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Filter by city…"
+              placeholder="Search by name…"
               style={{
                 borderWidth: 1,
                 borderColor: border,
@@ -170,14 +170,14 @@ export default function NewMatchScreen() {
                         {item.full_name}
                       </Text>
                       <Text style={{ color: textSecondary }} className="text-xs">
-                        @{item.username} · ELO {item.elo_rating}
+                        @{item.username}{item.city ? ` · ${item.city}` : ""}
                       </Text>
                     </View>
                   </TouchableOpacity>
                 )}
               />
             )}
-            {query.length >= 2 && !searching && searchResults?.players.length === 0 && (
+            {query.length >= 3 && !searching && searchResults?.players.length === 0 && (
               <Text style={{ color: textSecondary }} className="text-sm mt-3 text-center">
                 No players found
               </Text>

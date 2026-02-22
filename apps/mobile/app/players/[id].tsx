@@ -38,10 +38,7 @@ export default function PlayerProfileScreen() {
     { player_id: id },
     { enabled: !!id }
   );
-  const { data: eloHistory } = trpc.player.getEloHistory.useQuery(
-    { player_id: id },
-    { enabled: !!id }
-  );
+
   const { data: matchHistory } = trpc.player.getMatchHistory.useQuery(
     { player_id: id, limit: 5 },
     { enabled: !!id }
@@ -145,15 +142,7 @@ export default function PlayerProfileScreen() {
           style={{ borderTopColor: border, borderTopWidth: 1 }}
           className="flex-row pt-4 gap-2"
         >
-          <View className="flex-1 items-center">
-            <Text style={{ color: textPrimary }} className="text-2xl font-bold">
-              {player.elo_rating}
-              {player.elo_provisional && (
-                <Text style={{ color: textSecondary }} className="text-sm">*</Text>
-              )}
-            </Text>
-            <Text style={{ color: textSecondary }} className="text-xs mt-0.5">ELO</Text>
-          </View>
+
           <View className="flex-1 items-center">
             <Text style={{ color: textPrimary }} className="text-2xl font-bold">
               {player.matches_played}
@@ -167,33 +156,7 @@ export default function PlayerProfileScreen() {
         </View>
       </View>
 
-      {/* ELO chart */}
-      {eloHistory && eloHistory.length > 1 && (
-        <View
-          style={{ backgroundColor: cardBg, borderColor: border, borderWidth: 1 }}
-          className="rounded-2xl p-5 mb-4"
-        >
-          <Text style={{ color: textPrimary }} className="text-base font-semibold mb-3">
-            ELO Progress
-          </Text>
-          <View className="h-20 flex-row items-end gap-0.5">
-            {eloHistory.slice(-20).map((point, i) => {
-              const values = eloHistory.slice(-20).map((p) => p.elo_after);
-              const min = Math.min(...values);
-              const max = Math.max(...values);
-              const range = max - min || 1;
-              const heightPct = ((point.elo_after - min) / range) * 100;
-              return (
-                <View
-                  key={i}
-                  className={`flex-1 rounded-t ${point.elo_delta > 0 ? "bg-green-400" : "bg-red-400"}`}
-                  style={{ height: `${Math.max(heightPct, 5)}%` }}
-                />
-              );
-            })}
-          </View>
-        </View>
-      )}
+
 
       {/* Availability */}
       {availability && availability.length > 0 && (

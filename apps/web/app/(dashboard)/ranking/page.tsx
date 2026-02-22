@@ -18,7 +18,6 @@ export default function RankingPage() {
   });
 
   const { data: myRank } = trpc.ranking.getPlayerRank.useQuery();
-  const { data: topMovers } = trpc.ranking.getTopMovers.useQuery({ limit: 5 });
 
   return (
     <div className="space-y-6">
@@ -32,28 +31,6 @@ export default function RankingPage() {
         )}
       </div>
 
-      {/* Top movers this week */}
-      {topMovers && topMovers.length > 0 && (
-        <div className="bg-green-50 rounded-xl border border-green-200 p-5">
-          <h2 className="text-sm font-semibold text-green-800 mb-3">📈 Rising this week</h2>
-          <div className="flex gap-3 overflow-x-auto pb-1">
-            {topMovers.map((mover) => (
-              <Link
-                key={mover.player_id}
-                href={`/players/${mover.player_id}`}
-                className="flex-shrink-0 bg-white rounded-lg px-3 py-2 flex items-center gap-2 hover:bg-green-50 transition-colors border border-green-100"
-              >
-                <span className="text-sm font-medium text-gray-900">
-                  {(mover.player as { full_name?: string })?.full_name}
-                </span>
-                <span className="text-xs font-bold text-green-600">
-                  +{mover.elo_delta}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex gap-4">
@@ -85,9 +62,6 @@ export default function RankingPage() {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                   Player
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                  ELO
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden sm:table-cell">
                   W/L
@@ -133,18 +107,12 @@ export default function RankingPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-slate-100 hover:text-green-600 transition-colors">
                           {player.full_name}
-                          {player.elo_provisional && (
-                            <span className="ml-1 text-xs text-gray-400 dark:text-slate-600">*</span>
-                          )}
                         </p>
                         {player.city && (
                           <p className="text-xs text-gray-400 dark:text-slate-600">{player.city}</p>
                         )}
                       </div>
                     </Link>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="text-sm font-bold text-gray-900 dark:text-slate-100">{player.elo_rating}</span>
                   </td>
                   <td className="px-4 py-3 text-right hidden sm:table-cell">
                     <span className="text-sm text-gray-600 dark:text-slate-400">

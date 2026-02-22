@@ -58,13 +58,9 @@ export const AvailabilitySlotSchema = z.object({
 export type AvailabilitySlot = z.infer<typeof AvailabilitySlotSchema>;
 
 export const SearchPlayersSchema = z.object({
+  name: z.string().optional(),
   skill_level: SkillLevelSchema.optional(),
-  city: z.string().optional(),
-  country: z.string().length(2).optional(),
-  available_day: z.number().int().min(0).max(6).optional(),
-  min_elo: z.number().int().min(800).optional(),
-  max_elo: z.number().int().max(3000).optional(),
+  club: z.string().optional(),
   limit: z.number().int().min(1).max(50).default(20),
-  cursor: z.string().uuid().optional(),
 });
 export type SearchPlayers = z.infer<typeof SearchPlayersSchema>;

@@ -10,10 +10,6 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 export default function ProfilePage() {
   const router = useRouter();
   const { data: profile, isLoading } = trpc.player.getProfile.useQuery();
-  const { data: eloHistory } = trpc.player.getEloHistory.useQuery(
-    { player_id: profile?.id ?? "" },
-    { enabled: !!profile?.id }
-  );
   const { data: myRank } = trpc.ranking.getPlayerRank.useQuery();
   const { data: availability } = trpc.player.getAvailability.useQuery(
     { player_id: profile?.id ?? "" },
@@ -75,16 +71,7 @@ export default function ProfilePage() {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mt-6 pt-5 border-t border-gray-100 dark:border-slate-700">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-              {profile.elo_rating}
-              {profile.elo_provisional && (
-                <span className="text-sm text-gray-400 dark:text-slate-600 font-normal ml-0.5">*</span>
-              )}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">ELO Rating</p>
-          </div>
+        <div className="grid grid-cols-3 gap-4 mt-6 pt-5 border-t border-gray-100 dark:border-slate-700">
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
               {myRank?.rank ? `#${myRank.rank}` : "–"}
@@ -101,41 +88,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-
-      {/* ELO Progress */}
-      {eloHistory && eloHistory.length > 1 && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">ELO Progress</h2>
-          <div className="h-32 flex items-end gap-1">
-            {eloHistory.slice(-30).map((point, i) => {
-              const values = eloHistory.slice(-30).map((p) => p.elo_after);
-              const min = Math.min(...values);
-              const max = Math.max(...values);
-              const range = max - min || 1;
-              const height = ((point.elo_after - min) / range) * 100;
-              return (
-                <div
-                  key={i}
-                  className={`flex-1 rounded-t ${point.elo_delta > 0 ? "bg-green-400" : "bg-red-400"}`}
-                  style={{ height: `${Math.max(height, 3)}%` }}
-                  title={`${point.elo_after} (${point.elo_delta > 0 ? "+" : ""}${point.elo_delta})`}
-                />
-              );
-            })}
-          </div>
-          <div className="flex justify-between text-xs text-gray-400 dark:text-slate-600 mt-1">
-            <span>Earlier</span>
-            <span>
-              Current: {eloHistory[eloHistory.length - 1]?.elo_after} ELO
-            </span>
-          </div>
-          {profile.elo_provisional && (
-            <p className="text-xs text-gray-400 dark:text-slate-600 mt-2">
-              * Provisional rating — play {10 - profile.matches_played} more matches to establish your ELO
-            </p>
-          )}
-        </div>
-      )}
 
       {/* Availability */}
       {availability && availability.length > 0 && (

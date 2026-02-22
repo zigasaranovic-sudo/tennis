@@ -128,31 +128,18 @@ export const playerRouter = router({
     .query(async ({ ctx, input }) => {
       let query = ctx.supabase
         .from("profiles")
-        .select("id, username, full_name, avatar_url, skill_level, elo_rating, elo_provisional, matches_played, city, country")
+        .select("id, username, full_name, avatar_url, skill_level, matches_played, city, home_club")
         .eq("is_public", true)
         .eq("is_active", true)
         .neq("id", ctx.user.id)
-        .order("elo_rating", { ascending: false })
-        .limit(input.limit + 1); // fetch one extra to determine hasNextPage
+        .order("full_name", { ascending: true })
+        .limit(input.limit);
 
-      if (input.skill_level) query = query.eq("skill_level", input.skill_level);
-      if (input.city) query = query.ilike("city", `%${input.city}%`);
-      if (input.country) query = query.eq("country", input.country);
-      if (input.min_elo) query = query.gte("elo_rating", input.min_elo);
-      if (input.max_elo) query = query.lte("elo_rating", input.max_elo);
-
-      // Cursor: filter results after the cursor player's ELO
-      if (input.cursor) {
-        const { data: cursorPlayer } = await ctx.supabase
-          .from("profiles")
-          .select("elo_rating")
-          .eq("id", input.cursor)
-          .single();
-
-        if (cursorPlayer) {
-          query = query.lt("elo_rating", cursorPlayer.elo_rating);
-        }
+      if (input.name && input.name.length >= 3) {
+        query = query.ilike("full_name", `%${input.name}%`);
       }
+      if (input.skill_level) query = query.eq("skill_level", input.skill_level);
+      if (input.club) query = query.ilike("home_club", `%${input.club}%`);
 
       const { data, error } = await query;
 
@@ -160,11 +147,7 @@ export const playerRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
       }
 
-      const hasNextPage = data.length > input.limit;
-      const players = hasNextPage ? data.slice(0, -1) : data;
-      const nextCursor = hasNextPage ? players[players.length - 1]?.id : undefined;
-
-      return { players, nextCursor, hasNextPage };
+      return { players: data };
     }),
 
   /** Set/replace the player's weekly availability slots */
