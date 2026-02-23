@@ -5,9 +5,21 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   useColorScheme,
+  Image,
 } from "react-native";
 import { Link, router } from "expo-router";
 import { trpc } from "@/lib/trpc";
+import type { SkillLevel } from "@tenis/types";
+
+type SuggestedPlayer = {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  skill_level: string | null;
+  city: string | null;
+  home_club: string | null;
+};
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -18,6 +30,7 @@ export default function HomeScreen() {
   const border = isDark ? "#334155" : "#e5e7eb";
   const textPrimary = isDark ? "#f1f5f9" : "#111827";
   const textSecondary = isDark ? "#94a3b8" : "#6b7280";
+  const sectionBg = isDark ? "#0f172a" : "#f9fafb";
 
   const { data: profile } = trpc.player.getProfile.useQuery();
   const { data: requests } = trpc.match.getRequests.useQuery({
@@ -28,8 +41,19 @@ export default function HomeScreen() {
     status: "accepted",
     limit: 5,
   });
+  const { data: suggestedData } = trpc.player.searchPlayers.useQuery(
+    { skill_level: (profile?.skill_level ?? undefined) as SkillLevel | undefined, limit: 3 },
+    { enabled: !!profile?.skill_level }
+  );
 
   const respondToRequest = trpc.match.respondToRequest.useMutation();
+
+  const matchesPlayed = profile?.matches_played ?? 0;
+  const matchesWon = profile?.matches_won ?? 0;
+  const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0;
+  const hasProfileComplete = !!(profile?.city && profile?.home_club);
+
+  const suggestedPlayers = (suggestedData?.players ?? []) as unknown as SuggestedPlayer[];
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ padding: 16 }}>
@@ -42,6 +66,82 @@ export default function HomeScreen() {
           <Text className="text-green-100 text-sm mt-1 capitalize">{profile.skill_level} level</Text>
         )}
       </View>
+
+      {/* Stats row or onboarding */}
+      {profile && (
+        matchesPlayed > 0 ? (
+          <View
+            style={{ backgroundColor: cardBg, borderColor: border }}
+            className="rounded-2xl border p-4 mb-6"
+          >
+            <Text style={{ color: textSecondary }} className="text-xs font-semibold uppercase tracking-wide mb-3">
+              Your Stats
+            </Text>
+            <View className="flex-row">
+              {/* Win Rate */}
+              <View className="flex-1 items-center">
+                <Text className="text-2xl font-bold text-green-600">{winRate}%</Text>
+                <Text style={{ color: textSecondary }} className="text-xs mt-1">Win Rate</Text>
+              </View>
+              {/* Divider */}
+              <View style={{ width: 1, backgroundColor: border }} className="my-1" />
+              {/* Matches */}
+              <View className="flex-1 items-center">
+                <Text style={{ color: textPrimary }} className="text-2xl font-bold">{matchesPlayed}</Text>
+                <Text style={{ color: textSecondary }} className="text-xs mt-1">Matches</Text>
+              </View>
+              {/* Divider */}
+              <View style={{ width: 1, backgroundColor: border }} className="my-1" />
+              {/* Wins */}
+              <View className="flex-1 items-center">
+                <Text style={{ color: textPrimary }} className="text-2xl font-bold">{matchesWon}</Text>
+                <Text style={{ color: textSecondary }} className="text-xs mt-1">Wins</Text>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View
+            style={{ backgroundColor: cardBg, borderColor: border }}
+            className="rounded-2xl border p-4 mb-6"
+          >
+            <Text style={{ color: textPrimary }} className="font-semibold mb-3">Get started</Text>
+            {/* Step 1 */}
+            <View className="flex-row items-center mb-2">
+              <View
+                style={{ backgroundColor: hasProfileComplete ? "#16a34a" : (isDark ? "#334155" : "#e5e7eb") }}
+                className="w-6 h-6 rounded-full items-center justify-center mr-3"
+              >
+                <Text className="text-white text-xs font-bold">{hasProfileComplete ? "✓" : "1"}</Text>
+              </View>
+              <Text style={{ color: hasProfileComplete ? "#16a34a" : textPrimary }} className="flex-1 text-sm">
+                Complete your profile (city &amp; club)
+              </Text>
+            </View>
+            {/* Step 2 */}
+            <View className="flex-row items-center mb-2">
+              <View
+                style={{ backgroundColor: isDark ? "#334155" : "#e5e7eb" }}
+                className="w-6 h-6 rounded-full items-center justify-center mr-3"
+              >
+                <Text style={{ color: textSecondary }} className="text-xs font-bold">2</Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/search")}>
+                <Text className="text-green-600 text-sm">Find a player</Text>
+              </TouchableOpacity>
+            </View>
+            {/* Step 3 */}
+            <View className="flex-row items-center">
+              <View
+                style={{ backgroundColor: isDark ? "#334155" : "#e5e7eb" }}
+                className="w-6 h-6 rounded-full items-center justify-center mr-3"
+              >
+                <Text style={{ color: textSecondary }} className="text-xs font-bold">3</Text>
+              </View>
+              <Text style={{ color: textSecondary }} className="text-sm">Play your first match</Text>
+            </View>
+          </View>
+        )
+      )}
 
       {/* Pending requests */}
       {requests && requests.length > 0 && (
@@ -98,6 +198,58 @@ export default function HomeScreen() {
               </View>
             </View>
           ))}
+        </View>
+      )}
+
+      {/* Suggested players */}
+      {suggestedPlayers.length > 0 && (
+        <View className="mb-6">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text style={{ color: textPrimary }} className="text-lg font-bold">Players near your level</Text>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/search")}>
+              <Text className="text-green-600 text-sm font-medium">See all</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-1">
+            {suggestedPlayers.map((player) => (
+              <TouchableOpacity
+                key={player.id}
+                onPress={() => router.push(`/players/${player.id}` as any)}
+                style={{ backgroundColor: cardBg, borderColor: border }}
+                className="rounded-2xl border p-3 mx-1 w-36 items-center"
+              >
+                {player.avatar_url ? (
+                  <Image
+                    source={{ uri: player.avatar_url }}
+                    style={{ width: 48, height: 48, borderRadius: 24 }}
+                    className="mb-2"
+                  />
+                ) : (
+                  <View className="w-12 h-12 bg-green-100 rounded-full items-center justify-center mb-2">
+                    <Text className="text-green-700 font-bold text-xl">
+                      {player.full_name?.[0] ?? "?"}
+                    </Text>
+                  </View>
+                )}
+                <Text style={{ color: textPrimary }} className="font-semibold text-sm text-center" numberOfLines={1}>
+                  {player.full_name ?? player.username ?? "Player"}
+                </Text>
+                <Text style={{ color: textSecondary }} className="text-xs text-center mt-0.5" numberOfLines={1}>
+                  {player.home_club ?? player.city ?? ""}
+                </Text>
+                {player.skill_level && (
+                  <View
+                    style={{ backgroundColor: isDark ? "#14532d" : "#dcfce7" }}
+                    className="mt-1.5 px-2 py-0.5 rounded-full"
+                  >
+                    <Text style={{ color: isDark ? "#86efac" : "#15803d" }} className="text-xs capitalize">
+                      {player.skill_level}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
 
