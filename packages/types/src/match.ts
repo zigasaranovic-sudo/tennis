@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SkillLevelSchema } from "./user";
 
 export const MatchFormatSchema = z.enum(["best_of_1", "best_of_3", "best_of_5"]);
 export type MatchFormat = z.infer<typeof MatchFormatSchema>;
@@ -102,3 +103,14 @@ export const GetLeaderboardSchema = z.object({
   offset: z.number().int().min(0).default(0),
 });
 export type GetLeaderboard = z.infer<typeof GetLeaderboardSchema>;
+
+export const OpenMatchCreateSchema = z.object({
+  scheduled_at: z.string().datetime(),
+  location_city: z.string().max(100).optional(),
+  location_name: z.string().max(200).optional(),
+  skill_min: SkillLevelSchema.optional(),
+  skill_max: SkillLevelSchema.optional(),
+  format: MatchFormatSchema.optional(),
+  message: z.string().max(300).optional(),
+});
+export type OpenMatchCreate = z.infer<typeof OpenMatchCreateSchema>;

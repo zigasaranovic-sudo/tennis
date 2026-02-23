@@ -5,6 +5,7 @@ import { matchRouter } from "./routers/match";
 import { rankingRouter } from "./routers/ranking";
 import { messagingRouter } from "./routers/messaging";
 import { courtsRouter } from "./routers/courts";
+import { openMatchRouter } from "./routers/openMatch";
 
 export const appRouter = router({
   auth: authRouter,
@@ -13,6 +14,7 @@ export const appRouter = router({
   ranking: rankingRouter,
   messaging: messagingRouter,
   courts: courtsRouter,
+  openMatch: openMatchRouter,
 });
 
 /** The type shared between server and all clients (web + mobile) */
