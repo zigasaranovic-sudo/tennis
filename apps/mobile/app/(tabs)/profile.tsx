@@ -12,6 +12,13 @@ import { supabase } from "@/lib/supabase";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+type RecentMatch = {
+  id: string;
+  winner_id: string | null;
+  player1_id: string;
+  player2_id: string;
+};
+
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -28,6 +35,11 @@ export default function ProfileScreen() {
 
   const { data: availability } = trpc.player.getAvailability.useQuery(
     { player_id: profile?.id ?? "" },
+    { enabled: !!profile?.id }
+  );
+
+  const { data: recentMatchesRaw } = trpc.match.getMyMatches.useQuery(
+    { status: "completed", limit: 5 },
     { enabled: !!profile?.id }
   );
 
@@ -50,6 +62,9 @@ export default function ProfileScreen() {
     profile.matches_played > 0
       ? Math.round((profile.matches_won / profile.matches_played) * 100)
       : 0;
+
+  const recentMatches = (recentMatchesRaw as unknown as RecentMatch[] | undefined) ?? [];
+  const recentForm = recentMatches.slice(0, 5).map((m) => m.winner_id === profile.id);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ padding: 16 }}>
@@ -90,11 +105,43 @@ export default function ProfileScreen() {
             <Text style={{ color: textSecondary }} className="text-xs mt-0.5">Win Rate</Text>
           </View>
         </View>
+
+        {/* Recent Form */}
+        {recentForm.length > 0 && (
+          <View style={{ borderTopColor: divider, borderTopWidth: 1, marginTop: 12, paddingTop: 12 }}>
+            <Text style={{ color: textSecondary, fontSize: 12, marginBottom: 8 }}>Recent Form</Text>
+            <View style={{ flexDirection: "row", gap: 6 }}>
+              {Array.from({ length: 5 }).map((_, i) => {
+                const result = recentForm[i];
+                const filled = result !== undefined;
+                return (
+                  <View
+                    key={i}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: !filled
+                        ? (isDark ? "#334155" : "#e5e7eb")
+                        : result
+                        ? "#16a34a"
+                        : "#dc2626",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {filled && (
+                      <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
+                        {result ? "W" : "L"}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
       </View>
-
-
-        </View>
-      )}
 
       {/* Availability */}
       {availability && availability.length > 0 && (
