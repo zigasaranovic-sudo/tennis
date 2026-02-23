@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import type { SkillLevel } from "@tenis/types";
 
 export default function HomePage() {
   const { data: profile } = trpc.player.getProfile.useQuery();
@@ -13,6 +14,10 @@ export default function HomePage() {
     status: "accepted",
     limit: 5,
   });
+  const { data: suggestedPlayersData } = trpc.player.searchPlayers.useQuery(
+    { skill_level: (profile?.skill_level ?? undefined) as SkillLevel | undefined, limit: 3 },
+    { enabled: !!profile?.skill_level }
+  );
 
   const matchesPlayed = profile?.matches_played ?? 0;
   const matchesWon = profile?.matches_won ?? 0;
@@ -208,6 +213,53 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Players near your level */}
+      {profile?.skill_level && suggestedPlayersData && suggestedPlayersData.players.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Players near your level</h2>
+            <Link href="/players" className="text-sm text-green-600 font-medium hover:underline">
+              See all
+            </Link>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            {suggestedPlayersData.players.map((player) => (
+              <Link
+                key={player.id}
+                href={`/players/${player.id}`}
+                className="flex-shrink-0 w-44 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 hover:border-green-300 dark:hover:border-green-700 transition-colors"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-400 font-semibold text-lg">
+                    {player.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={player.avatar_url}
+                        alt={player.full_name ?? "Player"}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      (player.full_name?.[0] ?? "?").toUpperCase()
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate max-w-full">
+                      {player.full_name ?? player.username ?? "Player"}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                      {player.home_club ?? player.city ?? ""}
+                    </p>
+                    <span className="inline-block mt-1 text-xs font-medium capitalize text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
+                      {player.skill_level}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
