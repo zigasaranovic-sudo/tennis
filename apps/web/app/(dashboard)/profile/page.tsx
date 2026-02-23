@@ -7,12 +7,23 @@ import { useRouter } from "next/navigation";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+type RecentMatch = {
+  id: string;
+  winner_id: string | null;
+  player1: { id: string } | null;
+  player2: { id: string } | null;
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const { data: profile, isLoading } = trpc.player.getProfile.useQuery();
   const { data: myRank } = trpc.ranking.getPlayerRank.useQuery();
   const { data: availability } = trpc.player.getAvailability.useQuery(
     { player_id: profile?.id ?? "" },
+    { enabled: !!profile?.id }
+  );
+  const { data: recentMatches } = trpc.match.getMyMatches.useQuery(
+    { status: "completed", limit: 10 },
     { enabled: !!profile?.id }
   );
 
@@ -36,6 +47,10 @@ export default function ProfilePage() {
     profile.matches_played > 0
       ? Math.round((profile.matches_won / profile.matches_played) * 100)
       : 0;
+
+  const recentForm = recentMatches
+    ? (recentMatches as unknown as RecentMatch[]).slice(0, 5).map((m) => m.winner_id === profile.id)
+    : [];
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -88,6 +103,43 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Recent Form */}
+      {recentMatches && recentMatches.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Recent Form</h2>
+            {winRate > 0 && (
+              <span className="text-sm font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-3 py-1 rounded-full">
+                {winRate}% win rate
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {recentForm.map((won, i) => (
+              <div
+                key={i}
+                title={won ? "Win" : "Loss"}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${
+                  won ? "bg-green-500 dark:bg-green-600" : "bg-red-400 dark:bg-red-600"
+                }`}
+              >
+                {won ? "W" : "L"}
+              </div>
+            ))}
+            {recentForm.length < 5 &&
+              Array.from({ length: 5 - recentForm.length }).map((_, i) => (
+                <div
+                  key={`empty-${i}`}
+                  className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 border border-dashed border-gray-300 dark:border-slate-600"
+                />
+              ))}
+          </div>
+          <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
+            Last {recentForm.length} completed {recentForm.length === 1 ? "match" : "matches"}
+          </p>
+        </div>
+      )}
 
       {/* Availability */}
       {availability && availability.length > 0 && (
