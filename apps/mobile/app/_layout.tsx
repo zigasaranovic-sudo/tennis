@@ -74,6 +74,10 @@ export default function RootLayout() {
             name="courts/bookings"
             options={{ headerShown: true, title: "My Bookings", headerBackTitle: "Back" }}
           />
+          <Stack.Screen
+            name="open-matches"
+            options={{ headerShown: true, title: "Open Matches", headerBackTitle: "Back" }}
+          />
         </Stack>
       </QueryClientProvider>
     </trpc.Provider>

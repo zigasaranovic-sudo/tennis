@@ -143,6 +143,23 @@ export default function HomeScreen() {
         )
       )}
 
+      {/* Open Matches promo */}
+      <TouchableOpacity
+        onPress={() => router.push("/open-matches" as any)}
+        style={{ backgroundColor: isDark ? "#14532d" : "#dcfce7", borderColor: isDark ? "#166534" : "#bbf7d0", borderWidth: 1 }}
+        className="rounded-2xl p-4 mb-6 flex-row items-center justify-between"
+      >
+        <View className="flex-1">
+          <Text style={{ color: isDark ? "#86efac" : "#15803d" }} className="font-bold text-base">
+            🎾 Open Matches
+          </Text>
+          <Text style={{ color: isDark ? "#4ade80" : "#16a34a" }} className="text-sm mt-0.5">
+            Find a game or post one for others
+          </Text>
+        </View>
+        <Text style={{ color: isDark ? "#86efac" : "#16a34a" }} className="text-lg font-bold">→</Text>
+      </TouchableOpacity>
+
       {/* Pending requests */}
       {requests && requests.length > 0 && (
         <View className="mb-6">
