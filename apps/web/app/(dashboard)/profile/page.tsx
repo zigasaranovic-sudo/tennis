@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +17,19 @@ type RecentMatch = {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem("profile-banner-dismissed") === "true") {
+      setBannerDismissed(true);
+    }
+  }, []);
+
+  const handleDismissBanner = () => {
+    localStorage.setItem("profile-banner-dismissed", "true");
+    setBannerDismissed(true);
+  };
+
   const { data: profile, isLoading } = trpc.player.getProfile.useQuery();
   const { data: myRank } = trpc.ranking.getPlayerRank.useQuery();
   const { data: availability } = trpc.player.getAvailability.useQuery(
@@ -48,12 +62,51 @@ export default function ProfilePage() {
       ? Math.round((profile.matches_won / profile.matches_played) * 100)
       : 0;
 
+  const missingFields = [
+    !profile.city && { key: "city", label: "City" },
+    !profile.home_club && { key: "home_club", label: "Home club" },
+    !profile.bio && { key: "bio", label: "Bio" },
+  ].filter(Boolean) as { key: string; label: string }[];
+
   const recentForm = recentMatches
     ? (recentMatches as unknown as RecentMatch[]).slice(0, 5).map((m) => m.winner_id === profile.id)
     : [];
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Profile completeness banner */}
+      {!bannerDismissed && missingFields.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                Complete your profile to be found by more players
+              </p>
+              <ul className="mt-2 space-y-1">
+                {missingFields.map((field) => (
+                  <li key={field.key} className="text-sm text-amber-600 dark:text-amber-500">
+                    · Missing: <span className="font-medium">{field.label}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/profile/edit"
+                className="inline-block mt-3 text-sm font-medium text-amber-700 dark:text-amber-400 underline underline-offset-2 hover:text-amber-800 dark:hover:text-amber-300"
+              >
+                Complete profile →
+              </Link>
+            </div>
+            <button
+              onClick={handleDismissBanner}
+              aria-label="Dismiss"
+              className="text-amber-400 dark:text-amber-600 hover:text-amber-700 dark:hover:text-amber-300 shrink-0 text-lg leading-none"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Profile header */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
         <div className="flex items-start justify-between">
