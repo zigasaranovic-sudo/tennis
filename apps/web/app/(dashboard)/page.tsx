@@ -2,7 +2,27 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
-import type { SkillLevel } from "@tenis/types";
+import type { SkillLevel, MatchFormat } from "@tenis/types";
+
+type OpenGameItem = {
+  id: string;
+  scheduled_at: string;
+  location_city: string | null;
+  location_name: string | null;
+  format: string;
+  message: string | null;
+  creator: {
+    full_name: string | null;
+    username: string | null;
+    skill_level: string | null;
+  } | null;
+};
+
+const FORMAT_LABELS: Record<MatchFormat, string> = {
+  best_of_1: "Best of 1",
+  best_of_3: "Best of 3",
+  best_of_5: "Best of 5",
+};
 
 export default function HomePage() {
   const { data: profile } = trpc.player.getProfile.useQuery();
@@ -18,11 +38,16 @@ export default function HomePage() {
     { skill_level: (profile?.skill_level ?? undefined) as SkillLevel | undefined, limit: 3 },
     { enabled: !!profile?.skill_level }
   );
+  const { data: rawOpenGames } = trpc.openMatch.list.useQuery(
+    { city: profile?.city ?? undefined, limit: 3 },
+    { enabled: !!profile }
+  );
 
   const matchesPlayed = profile?.matches_played ?? 0;
   const matchesWon = profile?.matches_won ?? 0;
   const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0;
   const hasProfileComplete = !!(profile?.city && profile?.home_club);
+  const openGames = (rawOpenGames ?? []) as unknown as OpenGameItem[];
 
   return (
     <div className="space-y-8">
@@ -213,6 +238,64 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Open Games */}
+      {openGames.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Open Games</h2>
+            <Link href="/open-matches" className="text-sm text-green-600 font-medium hover:underline">
+              See all
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {openGames.map((game) => (
+              <div
+                key={game.id}
+                className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex items-center justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-gray-900 dark:text-slate-100 text-sm">
+                      {game.creator?.full_name ?? game.creator?.username ?? "A player"}
+                    </span>
+                    {game.creator?.skill_level && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize">
+                        {game.creator.skill_level}
+                      </span>
+                    )}
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
+                      {FORMAT_LABELS[game.format as MatchFormat] ?? game.format}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+                    {new Date(game.scheduled_at).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    {game.location_city && ` · ${game.location_city}`}
+                    {game.location_name && ` · ${game.location_name}`}
+                  </p>
+                  {game.message && (
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5 italic truncate">
+                      &ldquo;{game.message}&rdquo;
+                    </p>
+                  )}
+                </div>
+                <Link
+                  href="/open-matches"
+                  className="flex-shrink-0 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Join
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Players near your level */}
       {profile?.skill_level && suggestedPlayersData && suggestedPlayersData.players.length > 0 && (

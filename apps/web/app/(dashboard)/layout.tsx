@@ -33,6 +33,12 @@ export default async function DashboardLayout({
                   Find Players
                 </Link>
                 <Link
+                  href="/open-matches"
+                  className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
+                >
+                  Open Matches
+                </Link>
+                <Link
                   href="/matches"
                   className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
                 >
