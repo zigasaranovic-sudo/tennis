@@ -1,0 +1,15 @@
+# Ralph Progress Log
+Started: initial setup
+---
+
+## Codebase Patterns
+- Quality check command: `pnpm --filter @tenis/web build` — must pass zero errors
+- Supabase joins like `player1:player1_id(...)` return SelectQueryError types — always cast with `as unknown as LocalType[]`
+- Json type from Supabase DB types is recursive — use `as unknown as YourType` to unwrap score_detail etc.
+- All web UI must have dark: Tailwind variants. Standard mapping: bg-white→dark:bg-slate-800, text-gray-900→dark:text-slate-100, border-gray-200→dark:border-slate-700
+- Mobile dark mode uses useColorScheme() from react-native + inline style objects (NOT dark: NativeWind variants)
+- tRPC router registration: add to packages/api/src/root.ts, export from there
+- score_detail shape: [{p1: number, p2: number}] — one entry per set
+- No ELO displayed in UI anywhere (still stored in DB, never shown to users)
+- pnpm workspace: always use `pnpm --filter @tenis/web build` not `cd apps/web && pnpm build`
+- Git: commit with `feat: [STORY-ID] - [Story Title]` then `git push`

@@ -47,5 +47,8 @@ coverage
 *.pem
 
 # Seed scripts (contain credentials)
-scripts/
+scripts/seed*
+scripts/*.ts
+scripts/*.js
+!scripts/ralph/
 .claude/
