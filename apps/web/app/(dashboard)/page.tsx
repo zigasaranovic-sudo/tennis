@@ -14,6 +14,11 @@ export default function HomePage() {
     limit: 5,
   });
 
+  const matchesPlayed = profile?.matches_played ?? 0;
+  const matchesWon = profile?.matches_won ?? 0;
+  const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0;
+  const hasProfileComplete = !!(profile?.city && profile?.home_club);
+
   return (
     <div className="space-y-8">
       {/* Welcome header */}
@@ -35,6 +40,57 @@ export default function HomePage() {
           Find a match
         </Link>
       </div>
+
+      {/* Stats card / Onboarding checklist */}
+      {profile && matchesPlayed > 0 ? (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">Your Stats</h2>
+          <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-slate-700">
+            <div className="text-center px-4 first:pl-0">
+              <div className="text-2xl font-bold text-green-600">{winRate}%</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">Win Rate</div>
+            </div>
+            <div className="text-center px-4">
+              <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">{matchesPlayed}</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">Matches</div>
+            </div>
+            <div className="text-center px-4">
+              <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">{matchesWon}</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">Wins</div>
+            </div>
+          </div>
+        </div>
+      ) : profile ? (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">Getting Started</h2>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${hasProfileComplete ? "bg-green-500 text-white" : "bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 border border-gray-300 dark:border-slate-600"}`}>
+                {hasProfileComplete ? "✓" : "1"}
+              </div>
+              <span className={`text-sm font-medium flex-1 ${hasProfileComplete ? "line-through text-gray-400 dark:text-slate-600" : "text-gray-900 dark:text-slate-100"}`}>
+                Complete your profile
+              </span>
+              {!hasProfileComplete && (
+                <Link href="/profile/edit" className="text-xs text-green-600 hover:underline">Set city &amp; club →</Link>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 border border-gray-300 dark:border-slate-600">
+                2
+              </div>
+              <span className="text-sm font-medium flex-1 text-gray-900 dark:text-slate-100">Find a player</span>
+              <Link href="/players" className="text-xs text-green-600 hover:underline">Browse →</Link>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 border border-gray-300 dark:border-slate-600">
+                3
+              </div>
+              <span className="text-sm font-medium flex-1 text-gray-900 dark:text-slate-100">Play your first match</span>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Pending requests */}
       {requests && requests.length > 0 && (
