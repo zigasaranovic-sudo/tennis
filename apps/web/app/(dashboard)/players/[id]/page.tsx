@@ -102,6 +102,11 @@ export default function PlayerProfilePage({
                 <p className="text-sm text-gray-400 dark:text-slate-500 mt-0.5">🎾 {(player as { home_club?: string | null }).home_club}</p>
               )}
               {player.bio && <p className="text-sm text-gray-600 dark:text-slate-400 mt-2 max-w-md">{player.bio}</p>}
+              {player.matches_played > 0 && (
+                <span className="inline-block mt-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-semibold rounded-full">
+                  {winRate}% win rate
+                </span>
+              )}
             </div>
           </div>
 
