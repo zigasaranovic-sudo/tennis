@@ -11,6 +11,33 @@ import { trpc } from "@/lib/trpc";
 
 type Tab = "upcoming" | "requests" | "history";
 
+type SetScore = { p1: number; p2: number };
+
+type MatchWithScore = {
+  id: string;
+  status: string;
+  winner_id?: string | null;
+  played_at?: string | null;
+  scheduled_at?: string | null;
+  location_city?: string | null;
+  format?: string | null;
+  score_detail?: SetScore[] | null;
+  player1?: unknown;
+  player2?: unknown;
+  [key: string]: unknown;
+};
+
+function formatScore(sets: SetScore[], isP1: boolean): string {
+  return sets.map((s) => (isP1 ? `${s.p1}-${s.p2}` : `${s.p2}-${s.p1}`)).join(", ");
+}
+
+function formatLabel(format: string | null | undefined): string {
+  if (!format) return "";
+  return format
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function MatchesScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -205,13 +232,16 @@ export default function MatchesScreen() {
       {/* History tab */}
       {tab === "history" && (
         <FlatList
-          data={history ?? []}
+          data={(history ?? []) as unknown as MatchWithScore[]}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item: match }) => {
             const isP1 = (match.player1 as { id?: string })?.id === profile?.id;
             const opponent = isP1 ? match.player2 : match.player1;
             const won = match.winner_id === profile?.id;
+            const sets = match.score_detail ?? [];
+            const scoreStr = sets.length > 0 ? formatScore(sets, isP1) : null;
+            const fmtLabel = formatLabel(match.format);
             return (
               <TouchableOpacity
                 onPress={() => router.push(`/matches/${match.id}`)}
@@ -228,9 +258,23 @@ export default function MatchesScreen() {
                     <Text style={{ color: textPrimary }} className="font-semibold" numberOfLines={1}>
                       vs {(opponent as { full_name?: string })?.full_name}
                     </Text>
-                    <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs">
-                      {match.played_at ? new Date(match.played_at).toLocaleDateString() : ""}
-                    </Text>
+                    {scoreStr ? (
+                      <Text style={{ color: textPrimary, fontVariant: ["tabular-nums"] }} className="text-sm font-mono">
+                        {scoreStr}
+                      </Text>
+                    ) : null}
+                    <View className="flex-row items-center gap-2 mt-0.5">
+                      <Text style={{ color: isDark ? "#64748b" : "#9ca3af" }} className="text-xs">
+                        {match.played_at ? new Date(match.played_at).toLocaleDateString() : ""}
+                      </Text>
+                      {fmtLabel ? (
+                        <View style={{ backgroundColor: isDark ? "#334155" : "#f3f4f6" }} className="px-1.5 py-0.5 rounded">
+                          <Text style={{ color: isDark ? "#94a3b8" : "#6b7280" }} className="text-xs">
+                            {fmtLabel}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
                   </View>
                 </View>
               </TouchableOpacity>
