@@ -368,6 +368,51 @@ export type Database = {
           }
         ];
       };
+      open_matches: {
+        Row: {
+          id: string;
+          creator_id: string;
+          scheduled_at: string;
+          location_city: string | null;
+          location_name: string | null;
+          skill_min: "beginner" | "intermediate" | "advanced" | "professional" | null;
+          skill_max: "beginner" | "intermediate" | "advanced" | "professional" | null;
+          format: "best_of_1" | "best_of_3" | "best_of_5";
+          message: string | null;
+          status: "open" | "filled" | "cancelled";
+          filled_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          creator_id: string;
+          scheduled_at: string;
+          location_city?: string | null;
+          location_name?: string | null;
+          skill_min?: "beginner" | "intermediate" | "advanced" | "professional" | null;
+          skill_max?: "beginner" | "intermediate" | "advanced" | "professional" | null;
+          format?: "best_of_1" | "best_of_3" | "best_of_5";
+          message?: string | null;
+          status?: "open" | "filled" | "cancelled";
+          filled_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["open_matches"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "open_matches_creator_id_fkey";
+            columns: ["creator_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "open_matches_filled_by_fkey";
+            columns: ["filled_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       court_bookings: {
         Row: {
           id: string;
