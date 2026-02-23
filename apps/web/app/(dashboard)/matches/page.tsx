@@ -6,6 +6,8 @@ import { trpc } from "@/lib/trpc/client";
 
 type Tab = "upcoming" | "requests" | "history";
 
+type SetScore = { p1: number; p2: number };
+
 type MatchItem = {
   id: string;
   player1: { id: string; full_name: string } | null;
@@ -15,7 +17,17 @@ type MatchItem = {
   location_city: string | null;
   format: string | null;
   winner_id: string | null;
+  score_detail: SetScore[] | null;
 };
+
+function formatScore(sets: SetScore[], isP1: boolean): string {
+  return sets.map((s) => (isP1 ? `${s.p1}-${s.p2}` : `${s.p2}-${s.p1}`)).join(", ");
+}
+
+function formatLabel(fmt: string | null): string {
+  if (!fmt) return "";
+  return fmt.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export default function MatchesPage() {
   const [activeTab, setActiveTab] = useState<Tab>("upcoming");
@@ -263,6 +275,10 @@ export default function MatchesPage() {
               const isP1 = match.player1?.id === profile?.id;
               const opponent = isP1 ? match.player2 : match.player1;
               const won = match.winner_id === profile?.id;
+              const scoreStr =
+                match.score_detail && match.score_detail.length > 0
+                  ? formatScore(match.score_detail, isP1)
+                  : null;
               return (
                 <Link
                   key={match.id}
@@ -273,8 +289,8 @@ export default function MatchesPage() {
                     <span
                       className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
                         won
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                          : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
                       }`}
                     >
                       {won ? "WIN" : "LOSS"}
@@ -283,13 +299,26 @@ export default function MatchesPage() {
                       <p className="font-medium text-gray-900 dark:text-slate-100">
                         vs {opponent?.full_name}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-slate-600">
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {scoreStr && (
+                          <p className="text-sm font-mono text-gray-700 dark:text-slate-300">
+                            {scoreStr}
+                          </p>
+                        )}
+                        {match.format && (
+                          <span className="text-xs text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">
+                            {formatLabel(match.format)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 dark:text-slate-600 mt-0.5">
                         {match.played_at
                           ? new Date(match.played_at).toLocaleDateString()
                           : ""}
                       </p>
                     </div>
                   </div>
+                  <span className="text-gray-300 dark:text-slate-600">›</span>
                 </Link>
               );
             })
