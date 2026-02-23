@@ -6,7 +6,7 @@
       "id": "SCORE-1",
       "title": "Show match score in web match history",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "description": "In apps/web/app/(dashboard)/matches/page.tsx the history tab shows WIN/LOSS with no score. Parse score_detail JSON (array of {p1, p2} objects per set) and display the score string (e.g. '6-4, 3-6, 7-5') next to the WIN/LOSS badge. The score_detail field comes from the match object returned by trpc.match.getMyMatches. Cast match items to include score_detail: {p1: number, p2: number}[] | null. Also show the format (e.g. 'Best of 3') as a small tag.",
       "files": [
         "apps/web/app/(dashboard)/matches/page.tsx"
@@ -16,7 +16,7 @@
       "id": "SCORE-2",
       "title": "Show match score in mobile match history",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "description": "In apps/mobile/app/(tabs)/matches.tsx the history tab shows WIN/LOSS only. Parse score_detail from match items and display the score string (e.g. '6-4, 7-5') as a small Text below the opponent name. Use the same pattern as SCORE-1. Cast match type to include score_detail.",
       "files": [
         "apps/mobile/app/(tabs)/matches.tsx"
@@ -26,7 +26,7 @@
       "id": "STATS-1",
       "title": "Add win rate and recent form to web own profile",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "description": "In apps/web/app/(dashboard)/profile/page.tsx add a 'Recent Form' section below the stats grid. Fetch the last 10 completed matches using trpc.match.getMyMatches({status:'completed', limit:10}). Compute: (1) win rate percentage (matches_won / matches_played * 100, from profile), (2) recent form dots from last 5 matches (green dot for win, red for loss). Display win rate as a badge like '68% win rate' and recent form as 5 colored circles. Use dark: variants for all new elements.",
       "files": [
         "apps/web/app/(dashboard)/profile/page.tsx"
@@ -36,7 +36,7 @@
       "id": "STATS-2",
       "title": "Add win rate and recent form to web player profile",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "description": "In apps/web/app/(dashboard)/players/[id]/page.tsx add win rate % and recent form display to the public player profile. The profile data from trpc.player.getPublicProfile already includes matches_played, matches_won, matches_lost. Compute win rate = matches_won / matches_played. Show as a badge. For recent form, use trpc.match.getMyMatches is not available for other players — instead derive recent form from matches_won/matches_played ratio displayed visually (no per-match dots, just the ratio badge + a small sparkline of wins). Keep it simple: just show win rate % badge + matches_played + matches_won.",
       "files": [
         "apps/web/app/(dashboard)/players/[id]/page.tsx"
@@ -46,7 +46,7 @@
       "id": "STATS-3",
       "title": "Add win rate and recent form to mobile own profile",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "description": "In apps/mobile/app/(tabs)/profile.tsx add win rate % and recent form. Fetch last 5 completed matches using trpc.match.getMyMatches({status:'completed', limit:5}). Compute win rate from profile.matches_won / profile.matches_played. Show: (1) win rate badge in the stats row, (2) recent form as 5 small colored View circles (green/red) below the stats. Add dark mode support using useColorScheme().",
       "files": [
         "apps/mobile/app/(tabs)/profile.tsx"
@@ -56,7 +56,7 @@
       "id": "HOME-1",
       "title": "Add stats card to web home dashboard",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "description": "In apps/web/app/(dashboard)/page.tsx add a stats summary card between the welcome header and the pending requests section. The card should show: (1) Win Rate % (profile.matches_won / profile.matches_played), (2) Matches Played (profile.matches_played), (3) Matches Won (profile.matches_won). Show these as 3 columns in a card with green accent. Only show if profile.matches_played > 0. If matches_played === 0, show an onboarding checklist instead: 'Complete your profile → Find a player → Play your first match' with checkmarks for each completed step (check if profile has city, home_club set). Use full dark mode support.",
       "files": [
         "apps/web/app/(dashboard)/page.tsx"
@@ -66,7 +66,7 @@
       "id": "HOME-2",
       "title": "Add suggested players section to web home dashboard",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "description": "In apps/web/app/(dashboard)/page.tsx add a 'Players at your level' section below the upcoming matches section. Use trpc.player.searchPlayers({skill_level: profile.skill_level, limit: 3}) to fetch 3 suggested players at the same skill level. Show them as a horizontal row of player cards (avatar circle, name, club/city). Each links to /players/[id]. Only show if profile.skill_level is set and there are results. Title: 'Players near your level'. Add a 'See all' link to /players. Full dark mode.",
       "files": [
         "apps/web/app/(dashboard)/page.tsx"
@@ -76,7 +76,7 @@
       "id": "HOME-3",
       "title": "Add stats card and suggested players to mobile home",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "description": "In apps/mobile/app/(tabs)/index.tsx: (1) Replace the current ELO banner area (already removed) with a stats row showing Win Rate %, Matches Played, Wins — only if matches_played > 0. (2) Add a 'Players near your level' section below pending requests using trpc.player.searchPlayers({skill_level: profile.skill_level, limit: 3}). Show as horizontal ScrollView of small player cards. (3) If no matches played, show an onboarding card with steps. All with useColorScheme() dark mode.",
       "files": [
         "apps/mobile/app/(tabs)/index.tsx"
@@ -86,7 +86,7 @@
       "id": "PROFILE-1",
       "title": "Add profile completeness banner to web profile page",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "description": "In apps/web/app/(dashboard)/profile/page.tsx add a yellow/amber banner at the top if the profile is missing key fields. Check: city, home_club, bio. For each missing field, show it in a list with a link to /profile/edit. Banner style: amber-50 background, amber-600 text, dismissible (use localStorage to hide). Title: 'Complete your profile to be found by more players'. Only show if at least one field is missing. Full dark mode (dark:bg-amber-900/20 dark:text-amber-400).",
       "files": [
         "apps/web/app/(dashboard)/profile/page.tsx"
@@ -96,7 +96,7 @@
       "id": "OPENMATCH-1",
       "title": "DB migration for open_matches table",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "description": "Create a new Supabase migration file at supabase/migrations/20240102000000_open_matches.sql. The SQL should: (1) Create the open_matches table with columns: id UUID PK, creator_id UUID FK profiles, scheduled_at TIMESTAMPTZ NOT NULL, location_city TEXT, location_name TEXT, skill_min skill_level, skill_max skill_level, format match_format DEFAULT 'best_of_3', message TEXT CHECK char_length <= 300, status TEXT DEFAULT 'open' CHECK IN ('open','filled','cancelled'), filled_by UUID FK profiles nullable, created_at TIMESTAMPTZ DEFAULT NOW(). (2) Add RLS: authenticated users can SELECT open matches where status='open', creators can UPDATE their own, service_role can do all. (3) Add the table to packages/db/src/database.types.ts with correct Row/Insert/Update types and Relationships field. Apply the migration to the cloud DB using: npx supabase db push --db-url $SUPABASE_DB_URL (note: env var may not be available — if not, just create the migration file and the types, skip the push, and note in progress.txt that manual push is needed).",
       "files": [
         "supabase/migrations/20240102000000_open_matches.sql",
@@ -107,7 +107,7 @@
       "id": "OPENMATCH-2",
       "title": "tRPC API routes for open matches",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "description": "Create packages/api/src/routers/openMatch.ts with: (1) create: protectedProcedure — input: {scheduled_at: string, location_city?: string, location_name?: string, skill_min?: SkillLevel, skill_max?: SkillLevel, format?: MatchFormat, message?: string} — inserts into open_matches, returns the created record. (2) list: protectedProcedure — input: {city?: string, skill_level?: SkillLevel, limit?: number} — selects open_matches where status='open' and scheduled_at > now(), joins creator profile (full_name, username, avatar_url, skill_level), filters by city/skill if provided. (3) join: protectedProcedure — input: {open_match_id: string} — sets filled_by = user.id, status = 'filled', then creates a match_request from creator to user for the same time/location. Returns the created request. Register the router in packages/api/src/root.ts as openMatch: openMatchRouter. Also add OpenMatchCreateSchema to packages/types/src/index.ts.",
       "files": [
         "packages/api/src/routers/openMatch.ts",
@@ -119,7 +119,7 @@
       "id": "OPENMATCH-3",
       "title": "Web Open Matches page and home section",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "description": "Create apps/web/app/(dashboard)/open-matches/page.tsx: a page showing open match listings. Header 'Open Matches' + 'Post a match' button. City filter dropdown (reuse getFilterOptions). List of open match cards showing: creator avatar + name + skill level, date/time, location, message, 'Join' button (calls trpc.openMatch.join). 'Post a match' opens a modal/form with: date picker (input type datetime-local), city text input, optional message, skill level range, format dropdown. Submits trpc.openMatch.create. Also add to apps/web/app/(dashboard)/layout.tsx desktop nav: a link 'Open Matches' after 'Find Players'. Also add a small 'Open Games' section to apps/web/app/(dashboard)/page.tsx showing the next 2-3 open matches in your city with a 'See all' link. All with full dark mode.",
       "files": [
         "apps/web/app/(dashboard)/open-matches/page.tsx",
@@ -131,7 +131,7 @@
       "id": "OPENMATCH-4",
       "title": "Mobile Open Matches screen",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "description": "Create apps/mobile/app/open-matches.tsx: a full screen showing open match listings. Use trpc.openMatch.list to fetch. FlatList of match cards: creator name, skill level badge, date/time, location, message preview, 'Join' button. Add a FAB (floating action button) at bottom-right to post a new open match — opens a modal with fields: datetime picker (use @react-native-community/datetimepicker if available, otherwise TextInput), city text, message, format picker. Submits trpc.openMatch.create. Also add 'Open Matches' to apps/mobile/app/(tabs)/index.tsx as a prominent button/section linking to this screen. Dark mode with useColorScheme().",
       "files": [
         "apps/mobile/app/open-matches.tsx",

@@ -2,6 +2,193 @@
 Started: initial setup
 ---
 
+## 2026-02-23 - SCORE-1 - Show match score in web match history
+- Added `SetScore` type and `score_detail: SetScore[] | null` to `MatchItem`
+- Added `formatScore()` helper that formats sets from each player's perspective (e.g. "6-4, 3-6, 7-5")
+- Added `formatLabel()` helper to humanize format strings (e.g. "best_of_3" → "Best of 3")
+- History tab now shows: score string in monospace font, format badge, dark: variants on WIN/LOSS badges
+- Files changed: `apps/web/app/(dashboard)/matches/page.tsx`
+- Learnings:
+  - `score_detail` is included in `*` select on matches table — no router change needed
+  - Must cast `history as unknown as MatchItem[]` to get typed `score_detail`
+---
+
+## 2026-02-23 - SCORE-2 - Show match score in mobile match history
+- Added `SetScore` type and `MatchWithScore` local type with `score_detail: SetScore[] | null`
+- Added `formatScore()` helper (mirrors SCORE-1 web pattern) — shows score from current player's POV
+- Added `formatLabel()` helper to humanize format strings (e.g. "best_of_3" → "Best Of 3")
+- History tab: cast `history` to `MatchWithScore[]` with `as unknown as`, renders score string below opponent name and format badge with date
+- Files changed: `apps/mobile/app/(tabs)/matches.tsx`
+- Learnings:
+  - Mobile dark mode: use inline style objects with `isDark` flag for dynamic colors on new View backgrounds
+  - `fontVariant: ["tabular-nums"]` is valid in React Native style for monospace number alignment
+  - Cast FlatList `data` prop: `(history ?? []) as unknown as MatchWithScore[]`
+---
+
+## 2026-02-23 - STATS-1 - Add win rate and recent form to web own profile
+- Added `RecentMatch` local type with `winner_id`, `player1`, `player2`
+- Added `trpc.match.getMyMatches({status: 'completed', limit: 10})` query (enabled only when profile is loaded)
+- Computed `recentForm` as array of booleans (win=true) from last 5 completed matches using `winner_id === profile.id`
+- Added "Recent Form" card between the profile header card and availability section
+- Card shows: win rate badge ("68% win rate") in header, 5 colored circles (W/L), empty dashed circles as placeholders for fewer than 5 matches
+- Files changed: `apps/web/app/(dashboard)/profile/page.tsx`
+- Learnings:
+  - `winner_id` from matches table is directly available in `getMyMatches` (no extra query needed)
+  - `Array.from({ length: N })` is the clean way to render placeholder circles
+  - The section only renders when `recentMatches.length > 0` — no flicker on empty state
+---
+
+## 2026-02-23 - STATS-2 - Add win rate and recent form to web player profile
+- Added a prominent win rate badge (`XX% win rate`) in the player info section of the public profile header
+- Badge only renders when `player.matches_played > 0`
+- Badge styled with `bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full`
+- `winRate` variable was already computed in the page (lines 76-79), no new queries needed
+- Stats grid (matches, wins, win%) was already present — badge adds a visually distinct callout
+- Files changed: `apps/web/app/(dashboard)/players/[id]/page.tsx`
+- Learnings:
+  - Public player profile already had winRate computed and stats grid — STATS-2 only needed a badge-style callout added to the header
+---
+
+## 2026-02-23 - STATS-3 - Add win rate and recent form to mobile own profile
+- Added `RecentMatch` local type (id, winner_id, player1_id, player2_id)
+- Added `trpc.match.getMyMatches({ status: "completed", limit: 5 })` query with `{ enabled: !!profile?.id }`
+- Computed `recentForm` as array of booleans (true=win) by comparing `winner_id === profile.id`
+- Added "Recent Form" section inside the profile stats card, below the stats row
+- Shows 5 circles (W=green, L=red, empty=dark gray/light gray placeholder) using `Array.from({ length: 5 })`
+- Fixed orphaned closing tags (`</View>` and `)}`) that were present in the original file between the profile card and availability section
+- Files changed: `apps/mobile/app/(tabs)/profile.tsx`
+- Learnings:
+  - Mobile profile.tsx had orphaned JSX closing tags from a prior partial edit — rewrote the file to clean structure
+  - Win rate was already in the stats row, so STATS-3 only added the recent form circles
+  - `Array.from({ length: 5 }).map((_, i) => recentForm[i])` safely handles fewer than 5 matches
+---
+
+## 2026-02-23 - HOME-1 - Add stats card to web home dashboard
+- Added stats summary card (Win Rate %, Matches Played, Wins) between the welcome header and pending requests
+- Card shows as 3-column grid with green accent on win rate; only rendered when `matches_played > 0`
+- When `matches_played === 0`, shows a 3-step onboarding checklist: Complete profile → Find a player → Play your first match
+- Step 1 checked when profile has both `city` and `home_club` set; shows link to `/profile/edit` otherwise
+- Step 2 always pending until matches played, shows link to `/players`; step 3 always pending (no matches played)
+- Full dark mode: `dark:bg-slate-800`, `dark:border-slate-700`, `dark:divide-slate-700`, etc.
+- Files changed: `apps/web/app/(dashboard)/page.tsx`
+- Learnings:
+  - `matches_played` and `matches_won` are already on the profile from `getProfile` (select *) — no extra query needed
+  - `profile` can be `undefined` while loading — guard with `profile ? (...)` not just `matchesPlayed > 0`
+  - `&amp;` must be used in JSX for `&` in visible text (used for "city &amp; club" label)
+---
+
+## 2026-02-23 - HOME-2 - Add suggested players section to web home dashboard
+- Added `trpc.player.searchPlayers({ skill_level, limit: 3 })` query, enabled only when `profile?.skill_level` is set
+- Cast `profile.skill_level` to `SkillLevel | undefined` to satisfy the typed input schema (imported `SkillLevel` from `@tenis/types`)
+- Added "Players near your level" section below upcoming matches: horizontal flex row of 3 player cards
+- Each card: avatar circle (image if avatar_url else initial), name, home_club/city fallback, skill level badge
+- Each card links to `/players/[id]`; section header has "See all" → `/players`
+- Section only renders when `profile.skill_level` is set AND `suggestedPlayersData.players.length > 0`
+- Full dark mode: `dark:bg-slate-800`, `dark:border-slate-700`, `dark:text-slate-100`, etc.
+- Files changed: `apps/web/app/(dashboard)/page.tsx`
+- Learnings:
+  - `searchPlayers` input schema expects `skill_level: SkillLevel | undefined` — must import and cast from `@tenis/types`
+  - `profile.skill_level` from Supabase types is `string | null`, so cast via `(profile?.skill_level ?? undefined) as SkillLevel | undefined`
+  - `overflow-x-auto pb-1` on the flex container enables horizontal scroll if many cards
+---
+
+## 2026-02-23 - HOME-3 - Add stats card and suggested players to mobile home
+- Added stats row (Win Rate %, Matches Played, Wins) below welcome header when `matches_played > 0`
+- When `matches_played === 0`, shows 3-step onboarding card: Complete profile → Find a player → Play first match
+- Step 1 checked (green) when `profile.city && profile.home_club` are set; step 2 links to search tab
+- Added `trpc.player.searchPlayers({ skill_level, limit: 3 })` query (enabled when `profile.skill_level` set)
+- Cast `suggestedData.players` to `SuggestedPlayer[]` local type via `as unknown as`
+- Players near your level: horizontal ScrollView of small cards (avatar/initial, name, club/city, skill badge)
+- Each suggested player card links to `/players/[id]` via `router.push`; section has "See all" → search tab
+- Dark mode: all colors via `isDark` inline style objects (mobile pattern)
+- Files changed: `apps/mobile/app/(tabs)/index.tsx`
+- Learnings:
+  - `SkillLevel` type import from `@tenis/types` works in mobile (already used in search.tsx)
+  - `searchPlayers` returns `{ players: [...] }` — access via `suggestedData?.players`
+  - `router.push` with dynamic paths in Expo needs `as any` cast to avoid typed route errors
+  - Horizontal ScrollView with `-mx-1` + `mx-1` card margin gives correct edge-to-edge feel
+---
+
+## 2026-02-23 - PROFILE-1 - Add profile completeness banner to web profile page
+- Added dismissible amber banner at the top of the profile page when profile is missing city, home_club, or bio
+- Banner shows "Complete your profile to be found by more players" with a bullet list of missing fields and a link to /profile/edit
+- Dismiss button stores `profile-banner-dismissed=true` in localStorage via useEffect + useState
+- Full dark mode: `dark:bg-amber-900/20 dark:border-amber-700/30 dark:text-amber-400 dark:text-amber-500`
+- Files changed: `apps/web/app/(dashboard)/profile/page.tsx`
+- Learnings:
+  - `profile.home_club` is directly available on the profile object from `getProfile`
+  - `.filter(Boolean) as { key: string; label: string }[]` is the clean pattern to filter falsy entries from a typed array
+  - useState + useEffect for localStorage avoids hydration mismatch (banner defaults hidden, then shows after mount if not dismissed)
+---
+
+## 2026-02-23 - OPENMATCH-1 - DB migration for open_matches table
+- Created `supabase/migrations/20240102000000_open_matches.sql` with `open_matches` table
+- Table columns: id (UUID PK), creator_id (FK profiles), scheduled_at, location_city, location_name, skill_min/skill_max (skill_level enum), format (match_format enum DEFAULT 'best_of_3'), message (TEXT CHECK ≤300 chars), status TEXT DEFAULT 'open' CHECK IN ('open','filled','cancelled'), filled_by (FK profiles nullable), created_at
+- RLS: authenticated can SELECT open matches (status='open'), creators can UPDATE own, authenticated can INSERT own
+- Added indexes on status, scheduled_at, creator_id, location_city
+- Added `open_matches` table to `packages/db/src/database.types.ts` with Row/Insert/Update/Relationships types
+- Skipped `npx supabase db push` — SUPABASE_DB_URL env var not set; migration file ready for manual push
+- Files changed: `supabase/migrations/20240102000000_open_matches.sql`, `packages/db/src/database.types.ts`
+- Learnings:
+  - `service_role` bypasses RLS by default in Supabase — no explicit policy needed for service role
+  - Adding new table to `database.types.ts` requires Row/Insert/Update + Relationships array (even if empty) per Supabase v2.97+ requirement
+  - `Update: Partial<Database["public"]["Tables"]["open_matches"]["Insert"]>` is the standard pattern
+---
+
+## 2026-02-23 - OPENMATCH-2 - tRPC API routes for open matches
+- Added `OpenMatchCreateSchema` and `OpenMatchCreate` type to `packages/types/src/match.ts`, importing `SkillLevelSchema` from `./user`
+- Created `packages/api/src/routers/openMatch.ts` with 3 procedures:
+  - `create`: inserts into open_matches, returns created record
+  - `list`: selects open matches (status='open', scheduled_at > now, not creator's own), joins creator profile, filters by city and/or skill_level
+  - `join`: marks open match as filled, creates match_request from creator→joiner
+- Registered `openMatch: openMatchRouter` in `packages/api/src/root.ts`
+- Defined local `OpenMatchWithCreator` type in router to avoid SelectQueryError from join syntax — cast with `as unknown as OpenMatchWithCreator[]`
+- Files changed: `packages/api/src/routers/openMatch.ts`, `packages/api/src/root.ts`, `packages/types/src/match.ts`
+- Learnings:
+  - `SkillLevelSchema` lives in `@tenis/types` user.ts — import it in match.ts with `import { SkillLevelSchema } from "./user"`
+  - Supabase `or()` for skill filter: `.or("skill_min.is.null,skill_min.eq.VALUE")` works for enum fields
+  - Cast `openMatch.format as "best_of_1" | "best_of_3" | "best_of_5"` when inserting into match_requests to satisfy TS types
+---
+
+## 2026-02-23 - OPENMATCH-4 - Mobile Open Matches screen
+- Created `apps/mobile/app/open-matches.tsx` with:
+  - `trpc.openMatch.list({ limit: 20 })` query + cast to `OpenMatchItem[]`
+  - `FlatList` rendering cards: creator avatar initial, name, skill badge, date/time, location, format badge, message preview, Join button
+  - Join button: calls `trpc.openMatch.join`, tracks joined IDs in `Set` for instant UI feedback, shows `ActivityIndicator` while loading
+  - Empty state with "Post a match" CTA
+  - FAB (position: absolute, bottom-right, 56x56 green circle with +) opens modal
+  - Modal (presentationStyle="pageSheet"): date/time TextInput (YYYY-MM-DD HH:MM, validated), city TextInput, venue TextInput, format picker (3 pills), message TextInput (multiline, 300-char count), error display, Cancel/Post buttons
+  - KeyboardAvoidingView wraps modal content for iOS keyboard
+  - Dark mode via useColorScheme() + inline style objects throughout
+- Updated `apps/mobile/app/(tabs)/index.tsx`: added prominent green "Open Matches" card above pending requests
+- Updated `apps/mobile/app/_layout.tsx`: registered `open-matches` screen
+- Files changed: `apps/mobile/app/open-matches.tsx` (new), `apps/mobile/app/(tabs)/index.tsx`, `apps/mobile/app/_layout.tsx`
+- Learnings:
+  - @react-native-community/datetimepicker not in deps — use plain TextInput + new Date(str) + isNaN validation
+  - Modal presentationStyle="pageSheet" gives native bottom-sheet feel on iOS
+  - as any cast needed for router.push with dynamic paths in Expo Router
+---
+
+## 2026-02-23 - OPENMATCH-3 - Web Open Matches page and home section
+- Created `apps/web/app/(dashboard)/open-matches/page.tsx` — full "use client" page with:
+  - City text filter input (updates `trpc.openMatch.list` query in real time)
+  - List of `OpenMatchItem` cards (cast via `as unknown as OpenMatchItem[]`): creator avatar/name/skill badge, date, location, format badge, skill range, message
+  - Join button per card: calls `trpc.openMatch.join`, tracks joined IDs in local `Set` for instant feedback, disables while loading
+  - Empty state with "Post a match" CTA
+  - "Post a match" modal: datetime-local input, city, venue, format dropdown, skill min/max, message textarea with 300-char counter; submits `trpc.openMatch.create` and resets form on success
+  - Modal closes on backdrop click or × button
+- Updated `apps/web/app/(dashboard)/layout.tsx`: added "Open Matches" → `/open-matches` link in desktop nav after "Find Players"
+- Updated `apps/web/app/(dashboard)/page.tsx`:
+  - Added `OpenGameItem` local type and `FORMAT_LABELS` record
+  - Added `trpc.openMatch.list({ city: profile?.city ?? undefined, limit: 3 })` query (enabled when profile loaded)
+  - Added "Open Games" section above "Players near your level": shows 2-3 upcoming open matches with creator name, skill, date/location/format, and "Join" link to /open-matches
+- Files changed: `apps/web/app/(dashboard)/open-matches/page.tsx` (new), `apps/web/app/(dashboard)/layout.tsx`, `apps/web/app/(dashboard)/page.tsx`
+- Learnings:
+  - Client side still needs `as unknown as LocalType[]` cast even though router already casts — tRPC infers the local type from the router, but Supabase join syntax can still produce SelectQueryError on client if not cast
+  - `profile?.city ?? undefined` converts null→undefined for optional string params
+  - `FORMAT_LABELS` record on home page must be defined at module level (before component) to avoid TS issues
+---
+
 ## Codebase Patterns
 - Quality check command: `pnpm --filter @tenis/web build` — must pass zero errors
 - Supabase joins like `player1:player1_id(...)` return SelectQueryError types — always cast with `as unknown as LocalType[]`

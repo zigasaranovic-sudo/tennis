@@ -78,6 +78,9 @@ fi
 
 echo "Starting Ralph - Tool: $TOOL - Max iterations: $MAX_ITERATIONS"
 
+# Unset CLAUDECODE so nested claude instances are allowed
+unset CLAUDECODE
+
 for i in $(seq 1 $MAX_ITERATIONS); do
   echo ""
   echo "==============================================================="
