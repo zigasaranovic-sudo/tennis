@@ -6,6 +6,49 @@ import { trpc } from "@/lib/trpc/client";
 import type { SkillLevel, PreferredSurface } from "@tenis/types";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+const PLAYING_STYLES = [
+  "Aggressive baseliner",
+  "All-court player",
+  "Serve-and-volley",
+  "Defensive baseliner",
+  "Counter-puncher",
+  "Big server",
+  "Net rusher",
+  "Moonballer",
+];
+
+const SLOVENIAN_CITIES = [
+  "Ljubljana",
+  "Maribor",
+  "Celje",
+  "Kranj",
+  "Koper",
+  "Novo Mesto",
+  "Velenje",
+  "Nova Gorica",
+  "Murska Sobota",
+  "Ptuj",
+  "Trbovlje",
+  "Kamnik",
+  "Domžale",
+  "Škofja Loka",
+  "Postojna",
+];
+
+const COUNTRIES = [
+  { code: "SI", name: "Slovenia" },
+  { code: "AT", name: "Austria" },
+  { code: "HR", name: "Croatia" },
+  { code: "IT", name: "Italy" },
+  { code: "HU", name: "Hungary" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "US", name: "United States" },
+  { code: "OTHER", name: "Other" },
+];
+
 const SKILL_LEVELS: { value: SkillLevel; label: string }[] = [
   { value: "beginner", label: "Beginner" },
   { value: "intermediate", label: "Intermediate" },
@@ -185,14 +228,18 @@ export default function EditProfilePage() {
           <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
             Playing Style
           </label>
-          <input
-            type="text"
-            value={playingStyle}
-            onChange={(e) => setPlayingStyle(e.target.value)}
-            maxLength={80}
+          <select
+            value={PLAYING_STYLES.includes(playingStyle) ? playingStyle : (playingStyle ? "__custom" : "")}
+            onChange={(e) => {
+              if (e.target.value !== "__custom") setPlayingStyle(e.target.value);
+            }}
             className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="e.g. Aggressive baseliner, all-court player..."
-          />
+          >
+            <option value="">Select playing style…</option>
+            {PLAYING_STYLES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Skill Level</label>
@@ -209,41 +256,43 @@ export default function EditProfilePage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">City</label>
-            <input
-              type="text"
+            <select
               value={city}
               onChange={(e) => setCity(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Ljubljana"
-            />
+            >
+              <option value="">Select city…</option>
+              {SLOVENIAN_CITIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Country</label>
-            <input
-              type="text"
+            <select
               value={country}
-              onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 2))}
-              maxLength={2}
+              onChange={(e) => setCountry(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="SI"
-            />
+            >
+              <option value="">Select country…</option>
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.name}</option>
+              ))}
+            </select>
           </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Home Tennis Club</label>
-          <input
-            type="text"
-            list="clubs-datalist"
+          <select
             value={homeClub}
             onChange={(e) => setHomeClub(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="e.g. TC Tivoli, TC Ljubljana"
-          />
-          <datalist id="clubs-datalist">
+          >
+            <option value="">Select club…</option>
             {(clubs ?? []).map((c) => (
-              <option key={c} value={c} />
+              <option key={c} value={c}>{c}</option>
             ))}
-          </datalist>
+          </select>
         </div>
       </div>
 
