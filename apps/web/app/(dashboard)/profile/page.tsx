@@ -74,36 +74,28 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Profile completeness banner */}
+      {/* Profile completeness notice */}
       {!bannerDismissed && missingFields.length > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-xl p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                Complete your profile to be found by more players
-              </p>
-              <ul className="mt-2 space-y-1">
-                {missingFields.map((field) => (
-                  <li key={field.key} className="text-sm text-amber-600 dark:text-amber-500">
-                    · Missing: <span className="font-medium">{field.label}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/profile/edit"
-                className="inline-block mt-3 text-sm font-medium text-amber-700 dark:text-amber-400 underline underline-offset-2 hover:text-amber-800 dark:hover:text-amber-300"
-              >
-                Complete profile →
-              </Link>
-            </div>
-            <button
-              onClick={handleDismissBanner}
-              aria-label="Dismiss"
-              className="text-amber-400 dark:text-amber-600 hover:text-amber-700 dark:hover:text-amber-300 shrink-0 text-lg leading-none"
-            >
-              ✕
-            </button>
+        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-sm">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
+            <span className="text-base">📋</span>
+            <span>
+              Profile incomplete —{" "}
+              <span className="text-gray-700 dark:text-slate-300">
+                {missingFields.map((f) => f.label).join(", ")} missing.
+              </span>
+            </span>
+            <Link href="/profile/edit" className="text-green-600 dark:text-green-400 font-medium hover:underline ml-1">
+              Fix it →
+            </Link>
           </div>
+          <button
+            onClick={handleDismissBanner}
+            aria-label="Dismiss"
+            className="text-gray-400 dark:text-slate-600 hover:text-gray-600 dark:hover:text-slate-400 shrink-0"
+          >
+            ✕
+          </button>
         </div>
       )}
 
