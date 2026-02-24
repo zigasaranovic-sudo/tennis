@@ -46,8 +46,8 @@ coverage
 # Misc
 *.pem
 
-# Seed scripts (contain credentials)
-scripts/seed*
+# Scripts with credentials — only allow ralph/
+scripts/*.mjs
 scripts/*.ts
 scripts/*.js
 !scripts/ralph/
