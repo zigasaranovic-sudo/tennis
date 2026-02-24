@@ -38,7 +38,7 @@
       "id": "SEARCH-1",
       "title": "Global search bar in web nav",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "description": "Add a search bar to the web nav in apps/web/app/(dashboard)/layout.tsx. On desktop, show a small search input between the nav links and the right-side icons. On mobile, show a search icon that expands. The search calls trpc.player.searchPlayers({name: query, limit: 5}) as the user types (debounce 300ms). Show results in a dropdown below the search bar: player name, skill level badge, city. Clicking a result navigates to /players/[id]. If no results, show 'No players found'. Use a client component wrapper ('use client'). Close dropdown on click outside or Escape key. Style: search input with rounded-full border, placeholder 'Search players...'. Full dark mode.",
       "files": [
         "apps/web/app/(dashboard)/layout.tsx",

@@ -240,6 +240,24 @@ Started: initial setup
   - Page is fully static (no tRPC queries needed) — "use client" only for embed modal state
 ---
 
+## 2026-02-24 - SEARCH-1 - Global search bar in web nav
+- Created `apps/web/components/nav-search.tsx` — "use client" component:
+  - Search input with 300ms debounce using `useEffect` + `setTimeout`
+  - Calls `trpc.player.searchPlayers({ name: debouncedQuery, limit: 5 })` enabled when query >= 2 chars
+  - Desktop: always-visible `w-52 rounded-full` input
+  - Mobile: search icon that expands to input on click
+  - Dropdown: avatar circle, player name, city, skill level badge
+  - Close on click outside (mousedown listener on document) or Escape key
+  - Navigate to `/players/[id]` on player selection, clears query
+  - Full dark mode with `dark:bg-slate-700`, `dark:border-slate-600`, etc.
+- Updated `apps/web/app/(dashboard)/layout.tsx`: imported `NavSearch` and placed it in the right-side icons flex row before `ThemeToggle`
+- Files changed: `apps/web/components/nav-search.tsx` (new), `apps/web/app/(dashboard)/layout.tsx`
+- Learnings:
+  - `searchPlayers` server-side only applies name filter when `name.length >= 3` — query enables at 2 chars to show "all" results while user types the 3rd char
+  - `data?.players ?? []` cast to `as unknown as PlayerResult[]` pattern avoids TS errors from Supabase inferred types
+  - Layout is a server component — NavSearch extracted as separate client component (same pattern as NotificationBell)
+---
+
 ## Codebase Patterns
 - Quality check command: `pnpm --filter @tenis/web build` — must pass zero errors
 - Supabase joins like `player1:player1_id(...)` return SelectQueryError types — always cast with `as unknown as LocalType[]`
