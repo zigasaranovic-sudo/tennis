@@ -4,6 +4,19 @@ import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import type { SkillLevel, MatchFormat } from "@tenis/types";
 
+type TournamentPreview = {
+  id: string;
+  name: string;
+  scheduled_at: string;
+  location_city: string | null;
+  location_name: string | null;
+  format: string;
+  max_spots: number;
+  status: string;
+  participant_count: number;
+  creator: { full_name: string | null; username: string | null } | null;
+};
+
 type OpenGameItem = {
   id: string;
   scheduled_at: string;
@@ -42,12 +55,14 @@ export default function HomePage() {
     { city: profile?.city ?? undefined, limit: 3 },
     { enabled: !!profile }
   );
+  const { data: rawTournaments } = trpc.tournament.list.useQuery({ limit: 2 });
 
   const matchesPlayed = profile?.matches_played ?? 0;
   const matchesWon = profile?.matches_won ?? 0;
   const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0;
   const hasProfileComplete = !!(profile?.city && profile?.home_club);
   const openGames = (rawOpenGames ?? []) as unknown as OpenGameItem[];
+  const upcomingTournaments = (rawTournaments ?? []) as unknown as TournamentPreview[];
 
   return (
     <div className="space-y-8">
@@ -337,6 +352,42 @@ export default function HomePage() {
                       {player.skill_level}
                     </span>
                   </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Upcoming Tournaments */}
+      {upcomingTournaments.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Tournaments</h2>
+            <Link href="/tournaments" className="text-sm text-green-600 font-medium hover:underline">
+              See all
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {upcomingTournaments.map((t) => (
+              <Link
+                key={t.id}
+                href={`/tournaments/${t.id}`}
+                className="block bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 hover:border-green-300 dark:hover:border-green-700 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-slate-100 truncate">{t.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+                      {new Date(t.scheduled_at).toLocaleDateString("en-US", {
+                        weekday: "short", month: "short", day: "numeric",
+                      })}
+                      {t.location_city && ` · ${t.location_city}`}
+                    </p>
+                  </div>
+                  <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+                    {t.participant_count}/{t.max_spots} spots
+                  </span>
                 </div>
               </Link>
             ))}

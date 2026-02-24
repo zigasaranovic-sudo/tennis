@@ -64,6 +64,12 @@ export default async function DashboardLayout({
                 >
                   Courts
                 </Link>
+                <Link
+                  href="/tournaments"
+                  className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
+                >
+                  Tournaments
+                </Link>
               </div>
             </div>
 
