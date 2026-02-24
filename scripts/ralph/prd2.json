@@ -49,7 +49,7 @@
       "id": "MATCH-1",
       "title": "Challenge a player button on player profile",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "description": "On the web player profile page apps/web/app/(dashboard)/players/[id]/page.tsx, add a 'Challenge to a match' button below the player stats. This button opens a modal where the user can: (1) pick a date/time (input type datetime-local), (2) pick a location (text input, prefilled with player's home_club), (3) pick a format (dropdown: 'Best of 3' or 'Best of 5'), (4) add an optional message. On submit, call trpc.match.requestMatch({opponent_id: playerId, scheduled_at, location, format, message}). Check if trpc.match.requestMatch exists in packages/api/src/routers/match.ts — if it does, use it. If not, create it: insert into match_requests table (check if it exists in database.types.ts). On success show 'Challenge sent!' toast. On mobile apps/mobile/app/players/[id].tsx (if it exists), also add the button. Full dark mode.",
       "files": [
         "apps/web/app/(dashboard)/players/[id]/page.tsx"
@@ -59,7 +59,7 @@
       "id": "PROFILE-2",
       "title": "Edit profile page improvements — add availability and preferred surface",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "description": "Improve apps/web/app/(dashboard)/profile/edit/page.tsx: (1) Add 'Preferred surface' field: dropdown with options ['clay', 'hard', 'grass', 'indoor']. Store in profiles.preferred_surface if that column exists, otherwise use the bio field to append it. Check packages/db/src/database.types.ts for the profiles table columns. (2) Add 'Availability' multi-select: checkboxes for days of week (Mon-Sun) and time preferences (Morning/Afternoon/Evening). Store as JSON in a profiles.availability column if it exists, or skip storage and just show the UI as coming soon. (3) Add 'Playing style' text input (e.g. 'Aggressive baseliner'). Check if profiles has a playing_style column. If none of these columns exist in database.types.ts, add them as optional UI elements that store to bio as structured text. Keep the form clean and add helpful placeholder text. Full dark mode.",
       "files": [
         "apps/web/app/(dashboard)/profile/edit/page.tsx"

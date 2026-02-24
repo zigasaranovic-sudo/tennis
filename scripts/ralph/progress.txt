@@ -258,6 +258,38 @@ Started: initial setup
   - Layout is a server component — NavSearch extracted as separate client component (same pattern as NotificationBell)
 ---
 
+## 2026-02-24 - MATCH-1 - Challenge a player button on player profile
+- Enhanced `apps/web/app/(dashboard)/players/[id]/page.tsx`:
+  - Added `FORMAT_OPTIONS` const array (`best_of_3`, `best_of_5`) for the modal dropdown
+  - Added `format` state (default `"best_of_3"`) and `challengeSent` state for toast
+  - Changed "Request Match" button to "Challenge to a Match" — prefills `locationCity` with `player.home_club` when modal opens
+  - Added format `<select>` dropdown to modal (Best of 3 / Best of 5)
+  - Replaced `alert("Match request sent!")` with fixed-position toast notification (4s auto-dismiss)
+  - Added inline error display (`sendRequest.error.message`) below form fields
+  - `sendRequest.mutate` now passes the `format` state variable instead of hardcoded `"best_of_3"`
+- Mobile `apps/mobile/app/players/[id].tsx` already had "Send Match Request" button with format selection via Alert.alert — no changes needed
+- Files changed: `apps/web/app/(dashboard)/players/[id]/page.tsx`
+- Learnings:
+  - Web player profile page was already a "use client" component — no wrapper extraction needed
+  - Prefilling location on modal open: read `player.home_club` at click time via `(player as { home_club?: string | null }).home_club`
+  - Toast pattern: `setChallengeSent(true)` + `setTimeout(() => setChallengeSent(false), 4000)` — `fixed top-6 right-6 z-50` positioning
+---
+
+## 2026-02-24 - PROFILE-2 - Edit profile page improvements — add availability and preferred surface
+- Rewrote `apps/web/app/(dashboard)/profile/edit/page.tsx` with new fields:
+  - **Preferred surface** multi-select: 4 colored toggle buttons (Clay/Hard/Grass/Indoor) that save to `profiles.preferred_surface` (string[] column confirmed in database.types.ts)
+  - **Playing style** text input (max 80 chars): stored in bio using `Style: TEXT\n...` prefix pattern; `parseBio()` extracts it on load, `combineBio()` reassembles on save
+  - **Weekly availability** editor unchanged (day toggles + time ranges) — already met PRD's requirement for day/time availability
+  - Added section headers and helper text for each card
+  - Full dark mode throughout
+- Files changed: `apps/web/app/(dashboard)/profile/edit/page.tsx`
+- Learnings:
+  - `profiles.preferred_surface` is `string[] | null` in database.types.ts — cast from DB as `PreferredSurface[]` via `as PreferredSurface[]`
+  - `UpdateProfileSchema` already supports `preferred_surface: z.array(PreferredSurfaceSchema).optional()` — no schema changes needed
+  - Playing style stored in bio with `Style: TEXT\n` prefix — `parseBio()` regex `^Style:\s*(.+?)(?:\n|$)([\s\S]*)` cleanly separates it
+  - `ring-2 ring-offset-1 ring-green-500` provides clear selected state on surface buttons
+---
+
 ## Codebase Patterns
 - Quality check command: `pnpm --filter @tenis/web build` — must pass zero errors
 - Supabase joins like `player1:player1_id(...)` return SelectQueryError types — always cast with `as unknown as LocalType[]`
