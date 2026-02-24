@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
-import type { SkillLevel } from "@tenis/types";
+import type { SkillLevel, PreferredSurface } from "@tenis/types";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const SKILL_LEVELS: { value: SkillLevel; label: string }[] = [
@@ -12,6 +12,30 @@ const SKILL_LEVELS: { value: SkillLevel; label: string }[] = [
   { value: "advanced", label: "Advanced" },
   { value: "professional", label: "Professional" },
 ];
+const SURFACES: { value: PreferredSurface; label: string; color: string }[] = [
+  { value: "clay", label: "Clay", color: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700" },
+  { value: "hard", label: "Hard", color: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700" },
+  { value: "grass", label: "Grass", color: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700" },
+  { value: "indoor", label: "Indoor", color: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border-gray-300 dark:border-slate-600" },
+];
+
+/** Extract playing style from bio (first line if it starts with "Style:") */
+function parseBio(rawBio: string): { playingStyle: string; bio: string } {
+  const match = rawBio.match(/^Style:\s*(.+?)(?:\n|$)([\s\S]*)/);
+  if (match) {
+    return { playingStyle: match[1].trim(), bio: match[2].trim() };
+  }
+  return { playingStyle: "", bio: rawBio };
+}
+
+/** Combine playing style and bio into a single bio string */
+function combineBio(playingStyle: string, bio: string): string {
+  const trimmedStyle = playingStyle.trim();
+  const trimmedBio = bio.trim();
+  if (!trimmedStyle) return trimmedBio;
+  if (!trimmedBio) return `Style: ${trimmedStyle}`;
+  return `Style: ${trimmedStyle}\n${trimmedBio}`;
+}
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -24,10 +48,12 @@ export default function EditProfilePage() {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [playingStyle, setPlayingStyle] = useState("");
   const [skillLevel, setSkillLevel] = useState<SkillLevel>("intermediate");
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [homeClub, setHomeClub] = useState("");
+  const [preferredSurface, setPreferredSurface] = useState<PreferredSurface[]>([]);
   const [availability, setAvailability] = useState<
     { day: number; start: string; end: string }[]
   >([]);
@@ -37,11 +63,16 @@ export default function EditProfilePage() {
     if (profile) {
       setFullName(profile.full_name);
       setUsername(profile.username);
-      setBio(profile.bio ?? "");
+      const { playingStyle: ps, bio: cleanBio } = parseBio(profile.bio ?? "");
+      setBio(cleanBio);
+      setPlayingStyle(ps);
       setSkillLevel(profile.skill_level as SkillLevel);
       setCity(profile.city ?? "");
       setCountry(profile.country);
       setHomeClub((profile as { home_club?: string | null }).home_club ?? "");
+      setPreferredSurface(
+        ((profile as { preferred_surface?: string[] | null }).preferred_surface ?? []) as PreferredSurface[]
+      );
     }
   }, [profile]);
 
@@ -77,16 +108,24 @@ export default function EditProfilePage() {
     );
   };
 
+  const toggleSurface = (surface: PreferredSurface) => {
+    setPreferredSurface((prev) =>
+      prev.includes(surface) ? prev.filter((s) => s !== surface) : [...prev, surface]
+    );
+  };
+
   const handleSave = async () => {
     setSaved(false);
+    const combinedBio = combineBio(playingStyle, bio);
     await updateProfile.mutateAsync({
       full_name: fullName,
       username,
-      bio: bio || undefined,
+      bio: combinedBio || undefined,
       skill_level: skillLevel,
       city: city || undefined,
       country,
       home_club: homeClub || undefined,
+      preferred_surface: preferredSurface.length > 0 ? preferredSurface : undefined,
     } as Parameters<typeof updateProfile.mutateAsync>[0]);
     await setAvailabilityMutation.mutateAsync({
       slots: availability.map((a) => ({
@@ -104,12 +143,14 @@ export default function EditProfilePage() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Edit Profile</h1>
 
       {saved && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg text-green-700 dark:text-green-400 text-sm">
           Profile updated successfully!
         </div>
       )}
 
+      {/* Basic info */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 space-y-5">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Basic Info</h2>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Full Name</label>
           <input
@@ -134,9 +175,22 @@ export default function EditProfilePage() {
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={3}
-            maxLength={500}
+            maxLength={480}
             className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
             placeholder="Tell other players about yourself..."
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+            Playing Style
+          </label>
+          <input
+            type="text"
+            value={playingStyle}
+            onChange={(e) => setPlayingStyle(e.target.value)}
+            maxLength={80}
+            className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            placeholder="e.g. Aggressive baseliner, all-court player..."
           />
         </div>
         <div>
@@ -159,7 +213,7 @@ export default function EditProfilePage() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="New York"
+              placeholder="Ljubljana"
             />
           </div>
           <div>
@@ -170,7 +224,7 @@ export default function EditProfilePage() {
               onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 2))}
               maxLength={2}
               className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="US"
+              placeholder="SI"
             />
           </div>
         </div>
@@ -186,9 +240,36 @@ export default function EditProfilePage() {
         </div>
       </div>
 
+      {/* Preferred surface */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">Preferred Surface</h2>
+        <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">Select all surfaces you enjoy playing on.</p>
+        <div className="flex flex-wrap gap-3">
+          {SURFACES.map((s) => {
+            const selected = preferredSurface.includes(s.value);
+            return (
+              <button
+                key={s.value}
+                type="button"
+                onClick={() => toggleSurface(s.value)}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                  selected
+                    ? s.color + " ring-2 ring-offset-1 ring-green-500"
+                    : "bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-600"
+                }`}
+              >
+                {selected && <span className="mr-1">✓</span>}
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Availability editor */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Weekly Availability</h2>
+        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">Weekly Availability</h2>
+        <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">Toggle days and set your available hours.</p>
         <div className="space-y-3">
           {DAYS.map((day, index) => {
             const slot = availability.find((a) => a.day === index);
@@ -199,7 +280,7 @@ export default function EditProfilePage() {
                   className={`w-24 h-9 rounded-lg flex items-center justify-center text-sm font-medium transition-colors ${
                     slot
                       ? "bg-green-600 text-white"
-                      : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700"
+                      : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"
                   }`}
                 >
                   {day.slice(0, 3)}
