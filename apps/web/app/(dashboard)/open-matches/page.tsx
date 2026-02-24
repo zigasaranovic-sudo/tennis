@@ -57,6 +57,7 @@ export default function OpenMatchesPage() {
   const [formMessage, setFormMessage] = useState("");
 
   const { data: profile } = trpc.player.getProfile.useQuery();
+  const { data: clubs } = trpc.player.getClubs.useQuery();
   const { data: rawMatches, refetch } = trpc.openMatch.list.useQuery({
     city: cityFilter || undefined,
     limit: 20,
@@ -323,11 +324,17 @@ export default function OpenMatchesPage() {
                 </label>
                 <input
                   type="text"
+                  list="open-match-clubs-datalist"
                   value={formLocation}
                   onChange={(e) => setFormLocation(e.target.value)}
                   placeholder="e.g. TC Tivoli, Court 3"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:placeholder-slate-500"
                 />
+                <datalist id="open-match-clubs-datalist">
+                  {(clubs ?? []).map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </div>
 
               {/* Format */}

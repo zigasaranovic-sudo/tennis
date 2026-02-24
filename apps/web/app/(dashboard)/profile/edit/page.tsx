@@ -44,6 +44,7 @@ export default function EditProfilePage() {
     { player_id: profile?.id ?? "" },
     { enabled: !!profile?.id }
   );
+  const { data: clubs } = trpc.player.getClubs.useQuery();
 
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
@@ -232,11 +233,17 @@ export default function EditProfilePage() {
           <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Home Tennis Club</label>
           <input
             type="text"
+            list="clubs-datalist"
             value={homeClub}
             onChange={(e) => setHomeClub(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="e.g. TC Tivoli, Central Park Tennis Club"
+            placeholder="e.g. TC Tivoli, TC Ljubljana"
           />
+          <datalist id="clubs-datalist">
+            {(clubs ?? []).map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </div>
       </div>
 

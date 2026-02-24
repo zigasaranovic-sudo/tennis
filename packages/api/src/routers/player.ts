@@ -264,6 +264,20 @@ export const playerRouter = router({
       return data;
     }),
 
+  /** Return distinct clubs from active public profiles */
+  getClubs: protectedProcedure.query(async ({ ctx }) => {
+    const { data } = await ctx.supabase
+      .from("profiles")
+      .select("home_club")
+      .eq("is_active", true)
+      .not("home_club", "is", null);
+
+    const clubs = [...new Set((data ?? []).map((p) => p.home_club).filter(Boolean))]
+      .sort() as string[];
+
+    return clubs;
+  }),
+
   /** ELO history for charting */
   getEloHistory: protectedProcedure
     .input(
