@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 
 export default async function DashboardLayout({
   children,
@@ -61,6 +62,7 @@ export default async function DashboardLayout({
 
             <div className="flex items-center gap-2">
               <ThemeToggle />
+              <NotificationBell />
               <Link
                 href="/profile"
                 className="w-9 h-9 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium hover:bg-green-700 transition-colors"

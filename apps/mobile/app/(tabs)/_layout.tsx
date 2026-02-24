@@ -2,6 +2,7 @@ import { Tabs, Redirect } from "expo-router";
 import { useColorScheme, View, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/auth.store";
+import { trpc } from "@/lib/trpc";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -43,6 +44,12 @@ export default function TabsLayout() {
   const { session, isLoading } = useAuthStore();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  const { data: pendingRequests } = trpc.match.getRequests.useQuery(
+    { type: "incoming", status: "pending", limit: 50 },
+    { enabled: !!session }
+  );
+  const pendingCount = pendingRequests?.length ?? 0;
 
   if (isLoading) {
     return (
@@ -130,6 +137,8 @@ export default function TabsLayout() {
         name="matches"
         options={{
           title: "Matches",
+          tabBarBadge: pendingCount > 0 ? pendingCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: "#ef4444", fontSize: 10 },
           tabBarIcon: ({ focused }) => (
             <TabIcon icon="trophy-outline" iconFocused="trophy" label="Matches" focused={focused} />
           ),
