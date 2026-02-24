@@ -345,6 +345,25 @@ Started: initial setup
   - Visual progress bar: simple `w-full bg-gray-100 rounded-full h-2` container + inner `bg-green-500 h-2` with inline style width %
 ---
 
+## 2026-02-24 - CLUBS-1 - Clubs dropdown from DB in all club selection fields
+- Added `getClubs` procedure to `packages/api/src/routers/player.ts`:
+  - Selects distinct `home_club` from `profiles` where `is_active = true` and `home_club IS NOT NULL`
+  - Returns sorted deduplicated array of strings
+- Updated `apps/web/app/(dashboard)/profile/edit/page.tsx`:
+  - Added `trpc.player.getClubs.useQuery()` to fetch club list
+  - Home Tennis Club input now uses `list="clubs-datalist"` with `<datalist>` populated from `clubs` array
+  - Free text entry still allowed (datalist is suggestion-only, not required selection)
+- Updated `apps/web/app/(dashboard)/open-matches/page.tsx`:
+  - Added `trpc.player.getClubs.useQuery()` to fetch club list
+  - Venue / Court input now uses `list="open-match-clubs-datalist"` with `<datalist>` for autocomplete suggestions
+- Players page (`apps/web/app/(dashboard)/players/page.tsx`): already uses `trpc.player.getFilterOptions` which returns real DB clubs — no changes needed
+- Files changed: `packages/api/src/routers/player.ts`, `apps/web/app/(dashboard)/profile/edit/page.tsx`, `apps/web/app/(dashboard)/open-matches/page.tsx`
+- Learnings:
+  - HTML `<datalist>` with `<input list="id">` is the cleanest cross-browser combobox without extra dependencies
+  - `getFilterOptions` already returns real clubs per city — club dropdown in players/page.tsx was already working correctly
+  - datalist suggestions are case-insensitive in most browsers; free text fallback works transparently
+---
+
 ## Codebase Patterns
 - Quality check command: `pnpm --filter @tenis/web build` — must pass zero errors
 - Supabase joins like `player1:player1_id(...)` return SelectQueryError types — always cast with `as unknown as LocalType[]`

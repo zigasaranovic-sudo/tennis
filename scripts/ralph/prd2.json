@@ -104,7 +104,7 @@
       "id": "CLUBS-1",
       "title": "Clubs dropdown from DB in all club selection fields",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "description": "Replace all free-text 'home_club' inputs throughout the app with a dropdown that shows existing clubs from the database. (1) Add a new tRPC procedure trpc.player.getClubs in packages/api/src/routers/player.ts: select distinct home_club from profiles where home_club IS NOT NULL AND is_active = true, return sorted array of strings. (2) Update apps/web/app/(dashboard)/profile/edit/page.tsx: replace the home_club text input with a combobox — a text input that shows a dropdown of matching clubs as you type (client component). Fetch clubs from trpc.player.getClubs. Allow typing a new club name not in the list (free text fallback). (3) Update apps/web/app/(dashboard)/players/page.tsx: the Club filter dropdown should use trpc.player.getFilterOptions which already returns clubs — this may already work, just verify it shows real clubs from DB. (4) Update apps/web/app/(dashboard)/open-matches/page.tsx: any club/location inputs should use the clubs list as datalist suggestions (use HTML datalist element for simplicity). (5) Similarly update the tournament create form if it has a venue input. The combobox pattern: <input list='clubs-list'> with <datalist id='clubs-list'> populated from the clubs array — this works in all browsers without extra dependencies. Must pass build.",
       "files": [
         "packages/api/src/routers/player.ts",
