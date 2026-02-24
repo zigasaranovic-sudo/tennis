@@ -455,6 +455,74 @@ export type Database = {
           }
         ];
       };
+      tournaments: {
+        Row: {
+          id: string;
+          creator_id: string;
+          name: string;
+          description: string | null;
+          location_city: string | null;
+          location_name: string | null;
+          scheduled_at: string;
+          max_spots: number;
+          format: "singles" | "doubles" | "both";
+          status: "open" | "full" | "cancelled" | "completed";
+          created_at: string;
+        };
+        Insert: {
+          creator_id: string;
+          name: string;
+          description?: string | null;
+          location_city?: string | null;
+          location_name?: string | null;
+          scheduled_at: string;
+          max_spots?: number;
+          format?: "singles" | "doubles" | "both";
+          status?: "open" | "full" | "cancelled" | "completed";
+        };
+        Update: Partial<Database["public"]["Tables"]["tournaments"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_creator_id_fkey";
+            columns: ["creator_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      tournament_participants: {
+        Row: {
+          id: string;
+          tournament_id: string;
+          player_id: string;
+          play_format: "singles" | "doubles";
+          joined_at: string;
+        };
+        Insert: {
+          tournament_id: string;
+          player_id: string;
+          play_format: "singles" | "doubles";
+          joined_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tournament_participants"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "tournament_participants_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournament_participants_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       leaderboard: {
