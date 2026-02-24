@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const FORMAT_OPTIONS = [
+  { value: "best_of_3", label: "Best of 3" },
+  { value: "best_of_5", label: "Best of 5" },
+] as const;
 
 type MatchHistoryItem = {
   id: string;
@@ -26,6 +30,8 @@ export default function PlayerProfilePage({
   const [proposedAt, setProposedAt] = useState("");
   const [message, setMessage] = useState("");
   const [locationCity, setLocationCity] = useState("");
+  const [format, setFormat] = useState<"best_of_3" | "best_of_5">("best_of_3");
+  const [challengeSent, setChallengeSent] = useState(false);
   const [startingConv, setStartingConv] = useState(false);
 
   const { data: player, isLoading } = trpc.player.getPublicProfile.useQuery({ id });
@@ -38,7 +44,8 @@ export default function PlayerProfilePage({
   const sendRequest = trpc.match.sendRequest.useMutation({
     onSuccess: () => {
       setShowRequestModal(false);
-      alert("Match request sent!");
+      setChallengeSent(true);
+      setTimeout(() => setChallengeSent(false), 4000);
     },
   });
 
@@ -80,6 +87,14 @@ export default function PlayerProfilePage({
 
   return (
     <div className="space-y-6">
+      {/* Challenge sent toast */}
+      {challengeSent && (
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg animate-fade-in">
+          <span className="text-lg">🎾</span>
+          <span className="font-semibold">Challenge sent!</span>
+        </div>
+      )}
+
       {/* Profile header */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
@@ -120,10 +135,15 @@ export default function PlayerProfilePage({
               {startingConv ? "..." : "💬 Message"}
             </button>
             <button
-              onClick={() => setShowRequestModal(true)}
+              onClick={() => {
+                const homeClub = (player as { home_club?: string | null }).home_club;
+                setLocationCity(homeClub ?? "");
+                setFormat("best_of_3");
+                setShowRequestModal(true);
+              }}
               className="flex-1 md:flex-none px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm"
             >
-              🎾 Request Match
+              🎾 Challenge to a Match
             </button>
           </div>
         </div>
@@ -214,12 +234,12 @@ export default function PlayerProfilePage({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md">
             <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-4">
-              Request match with {player.full_name}
+              Challenge {player.full_name}
             </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  Proposed date & time
+                  Date &amp; time
                 </label>
                 <input
                   type="datetime-local"
@@ -229,14 +249,26 @@ export default function PlayerProfilePage({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">City</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Location</label>
                 <input
                   type="text"
                   value={locationCity}
                   onChange={(e) => setLocationCity(e.target.value)}
-                  placeholder="Where will you play?"
+                  placeholder="Club or venue name"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Format</label>
+                <select
+                  value={format}
+                  onChange={(e) => setFormat(e.target.value as "best_of_3" | "best_of_5")}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-slate-700 dark:text-slate-100"
+                >
+                  {FORMAT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
@@ -250,6 +282,9 @@ export default function PlayerProfilePage({
                   className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500"
                 />
               </div>
+              {sendRequest.error && (
+                <p className="text-sm text-red-600 dark:text-red-400">{sendRequest.error.message}</p>
+              )}
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowRequestModal(false)}
@@ -263,7 +298,7 @@ export default function PlayerProfilePage({
                     sendRequest.mutate({
                       recipient_id: id,
                       proposed_at: new Date(proposedAt).toISOString(),
-                      format: "best_of_3",
+                      format,
                       location_city: locationCity || undefined,
                       message: message || undefined,
                     });
@@ -271,7 +306,7 @@ export default function PlayerProfilePage({
                   disabled={!proposedAt || sendRequest.isPending}
                   className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
-                  {sendRequest.isPending ? "Sending..." : "Send Request"}
+                  {sendRequest.isPending ? "Sending..." : "Send Challenge"}
                 </button>
               </div>
             </div>
