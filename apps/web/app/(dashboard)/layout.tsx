@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
+import { NavSearch } from "@/components/nav-search";
 
 export default async function DashboardLayout({
   children,
@@ -66,7 +67,8 @@ export default async function DashboardLayout({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <NavSearch />
               <ThemeToggle />
               <NotificationBell />
               <Link
