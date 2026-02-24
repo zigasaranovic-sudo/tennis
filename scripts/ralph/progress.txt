@@ -290,6 +290,26 @@ Started: initial setup
   - `ring-2 ring-offset-1 ring-green-500` provides clear selected state on surface buttons
 ---
 
+## 2026-02-24 - TOURNEY-1 - Tournaments & Meetups feature — DB migration and tRPC API
+- Created `supabase/migrations/20240103000000_tournaments.sql`:
+  - `tournaments` table: id, creator_id (FK profiles), name, description, location_city, location_name, scheduled_at, max_spots, format (singles/doubles/both), status (open/full/cancelled/completed), created_at
+  - `tournament_participants` table: id, tournament_id (FK), player_id (FK), play_format (singles/doubles), joined_at; UNIQUE(tournament_id, player_id)
+  - RLS: authenticated SELECT, INSERT with auth.uid() checks, creator UPDATE on tournaments
+- Updated `packages/db/src/database.types.ts`: added `tournaments` and `tournament_participants` with Row/Insert/Update/Relationships
+- Created `packages/api/src/routers/tournament.ts` with 5 procedures:
+  - `list`: fetches tournaments with creator join + participant count (two-query pattern to avoid SelectQueryError)
+  - `get`: single tournament with full participants list (each with player profile)
+  - `create`: inserts new tournament with creator_id = current user
+  - `join`: validates status/not-full/not-already-joined, inserts participant, auto-marks full when max_spots reached
+  - `cancel`: sets status=cancelled, requires creator_id match and open/full status
+- Registered `tournament: tournamentRouter` in `packages/api/src/root.ts`
+- Files changed: 4 files (new migration, updated types, new router, updated root)
+- Learnings:
+  - Two-query pattern for counts: fetch all rows then build a `countMap` object — avoids N+1 and SelectQueryError from nested aggregates
+  - Creator count via participant count check before insert: `select("id", { count: "exact", head: true })` returns count efficiently
+  - Status auto-promotion to "full": check `newCount >= tournament.max_spots` after insert
+---
+
 ## Codebase Patterns
 - Quality check command: `pnpm --filter @tenis/web build` — must pass zero errors
 - Supabase joins like `player1:player1_id(...)` return SelectQueryError types — always cast with `as unknown as LocalType[]`
