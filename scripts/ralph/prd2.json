@@ -94,7 +94,7 @@
       "id": "TOURNEY-3",
       "title": "Tournament detail page",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "description": "Create apps/web/app/(dashboard)/tournaments/[id]/page.tsx: (1) Tournament header: name, creator, date/time, location, format, status badge. (2) Spots bar: visual progress bar showing spots filled (e.g. '5 of 8 joined'). (3) Participants list: avatar + name + play_format badge for each joined player. (4) Join button (same modal as in list page) — hidden if already joined or tournament full. (5) If current user is the creator, show a 'Cancel Tournament' button (calls trpc.tournament.cancel). (6) If status is 'full', show 'Tournament Full' badge instead of Join. Full dark mode.",
       "files": [
         "apps/web/app/(dashboard)/tournaments/[id]/page.tsx"

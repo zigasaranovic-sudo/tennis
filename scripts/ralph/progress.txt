@@ -329,6 +329,22 @@ Started: initial setup
   - Tournament format determines which play_format radio options are shown in join modal
 ---
 
+## 2026-02-24 - TOURNEY-3 - Tournament detail page
+- Created `apps/web/app/(dashboard)/tournaments/[id]/page.tsx` — "use client" detail page:
+  - Header card: name, status badge, description, date/time/location/format, creator avatar+name
+  - Spots progress bar: `<div style={{ width: X% }} />` filled bar showing percentage
+  - Action buttons: "Join" (if not joined + open), "✓ Joined" badge (if already joined), "Tournament Full" badge (if full + not joined), "Cancel Tournament" (red, creator only)
+  - Cancel: uses `confirm()` dialog for confirmation before calling `trpc.tournament.cancel`
+  - Participants list: avatar circle + player name (linked to `/players/[id]`) + play_format badge
+  - Join modal: same radio button pattern as list page
+  - `rawTournament as unknown as TournamentDetail | undefined` cast for type safety
+- Files changed: `apps/web/app/(dashboard)/tournaments/[id]/page.tsx` (new)
+- Learnings:
+  - `use(params)` pattern for dynamic segments — params is a Promise in Next.js 16 app router
+  - `alreadyJoined` check: `tournament.participants.some(p => p.player_id === profile?.id)`
+  - Visual progress bar: simple `w-full bg-gray-100 rounded-full h-2` container + inner `bg-green-500 h-2` with inline style width %
+---
+
 ## Codebase Patterns
 - Quality check command: `pnpm --filter @tenis/web build` — must pass zero errors
 - Supabase joins like `player1:player1_id(...)` return SelectQueryError types — always cast with `as unknown as LocalType[]`
