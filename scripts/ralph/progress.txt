@@ -310,6 +310,25 @@ Started: initial setup
   - Status auto-promotion to "full": check `newCount >= tournament.max_spots` after insert
 ---
 
+## 2026-02-24 - TOURNEY-2 - Tournaments web page — list, create, join
+- Created `apps/web/app/(dashboard)/tournaments/page.tsx` — "use client" page with:
+  - Tournament list: cards showing name, format badge, status badge, creator avatar+name, date/location, spots filled/total, "Join" button
+  - Join modal: radio buttons for Singles/Doubles (respects tournament format — only shows relevant options); calls `trpc.tournament.join`
+  - Create modal: name, description, datetime, city, venue, max spots (2-64), format dropdown; calls `trpc.tournament.create`
+  - Clicking cards navigates to `/tournaments/[id]`; empty state with CTA
+  - `e.preventDefault() + e.stopPropagation()` on Join button prevents Link navigation
+  - Full dark mode throughout
+- Updated `apps/web/app/(dashboard)/layout.tsx`: added "Tournaments" link after "Courts" in desktop nav
+- Updated `apps/web/app/(dashboard)/page.tsx`:
+  - Added `TournamentPreview` type and `rawTournaments` query (`trpc.tournament.list({ limit: 2 })`)
+  - Added "Tournaments" section below "Players near your level": 2 cards with name, date, spots count, "See all" link
+- Files changed: 3 files (new page, updated layout, updated home)
+- Learnings:
+  - `e.stopPropagation()` required on Join button inside Link component to prevent navigation to detail page
+  - `refetch()` called after successful create/join to refresh the list without page reload
+  - Tournament format determines which play_format radio options are shown in join modal
+---
+
 ## Codebase Patterns
 - Quality check command: `pnpm --filter @tenis/web build` — must pass zero errors
 - Supabase joins like `player1:player1_id(...)` return SelectQueryError types — always cast with `as unknown as LocalType[]`

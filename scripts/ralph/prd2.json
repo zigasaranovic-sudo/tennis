@@ -82,7 +82,7 @@
       "id": "TOURNEY-2",
       "title": "Tournaments web page — list, create, join",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "description": "Create apps/web/app/(dashboard)/tournaments/page.tsx: (1) Header 'Tournaments & Meetups' + 'Create' button. (2) List of tournament cards: name, creator avatar+name, date, location (city + venue), format badge (Singles/Doubles/Both), spots remaining (e.g. '5/8 spots'), status badge. Each card has a 'Join' button that opens a modal asking 'How will you play?' with radio buttons for Singles / Doubles (only show Doubles if tournament format is 'doubles' or 'both'). On confirm, call trpc.tournament.join({tournament_id, play_format}). (3) 'Create' button opens a modal/form: name input, description textarea, date/time picker (datetime-local), city text input, venue/location name input, max spots number input (min 2 max 64), format dropdown (Singles / Doubles / Both). Submit calls trpc.tournament.create. (4) Clicking a tournament card navigates to /tournaments/[id]. (5) Add 'Tournaments' link to desktop nav in layout.tsx after 'Courts'. (6) Also add a small 'Tournaments' section to apps/web/app/(dashboard)/page.tsx (home) showing next 2 open tournaments with a 'See all' link. Full dark mode.",
       "files": [
         "apps/web/app/(dashboard)/tournaments/page.tsx",
