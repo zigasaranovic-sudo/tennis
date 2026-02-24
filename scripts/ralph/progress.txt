@@ -189,6 +189,57 @@ Started: initial setup
   - `FORMAT_LABELS` record on home page must be defined at module level (before component) to avoid TS issues
 ---
 
+## 2026-02-24 - NOTIFY-1 - In-app notification bell with unread count
+- Created `apps/web/components/notification-bell.tsx` — "use client" component
+  - Calls `trpc.match.getRequests({ type: "incoming", status: "pending", limit: 50 })` to count pending requests
+  - Renders a bell SVG icon; shows red badge (`-top-0.5 -right-0.5`) with count if > 0 (caps at "9+")
+  - Wrapped in `<Link href="/matches?tab=requests">` for navigation
+  - Full dark mode via `dark:` Tailwind classes
+- Updated `apps/web/app/(dashboard)/layout.tsx`: imported `NotificationBell` and placed it between `<ThemeToggle />` and profile avatar `<Link>`
+- Updated `apps/mobile/app/(tabs)/_layout.tsx`:
+  - Added `trpc` import and `trpc.match.getRequests({ type: "incoming", status: "pending" })` query (enabled only when `session` exists)
+  - Added `tabBarBadge: pendingCount > 0 ? pendingCount : undefined` and `tabBarBadgeStyle: { backgroundColor: "#ef4444" }` to the Matches tab screen
+- Files changed: `apps/web/components/notification-bell.tsx` (new), `apps/web/app/(dashboard)/layout.tsx`, `apps/mobile/app/(tabs)/_layout.tsx`
+- Learnings:
+  - `tabBarBadge` prop on `Tabs.Screen` in Expo Router is the cleanest way to add a numeric badge to a tab
+  - Web layout is a server component — client-side tRPC queries must be extracted to a separate `"use client"` component
+  - `trpc.match.getRequests` uses `type: "incoming"` filter — returns only requests where user is recipient
+---
+
+## 2026-02-24 - VENUES-1 - Venues / Courts page with map embed
+- Replaced the existing DB-backed courts page with a fully hardcoded implementation
+- Hardcoded array of 10 well-known Slovenian tennis venues: TC Ljubljana, TC Tivoli, ŠRC Stožice, TC Šmarna Gora, TC Portorož, TC Maribor, TC Kranj, TC Celje, TC Koper, TC Bled
+- Each venue has: name, city, address, surface (clay/hard/indoor), courts_count, google_maps_url
+- Filter buttons at top: city (All + one per city) and surface (All / Clay / Hard / Indoor) — active filter shown with green background
+- Grid: 1 column on mobile, 2 columns on desktop (sm:grid-cols-2)
+- Each card: name, city badge (gray), surface badge (green=clay, blue=hard, gray=indoor), address, court count, "View on Map" button (opens Google Maps in new tab), "Show map" toggle
+- Collapsible Google Maps iframe: clicking "Show map" expands an iframe below the card, "Hide map" collapses it; only one map open at a time
+- Empty state with "Clear filters" button when no venues match
+- Full dark mode throughout
+- Files changed: `apps/web/app/(dashboard)/courts/page.tsx`
+- Learnings:
+  - The courts page existed but used trpc.courts.getVenues (DB query) which returned empty results — replaced with hardcoded data per PRD spec
+  - Google Maps embed URL pattern: `https://maps.google.com/maps?q=VENUE_NAME&output=embed`; "View on Map" button strips `&output=embed` to open in Google Maps directly
+  - `expandedMap` state holds the ID of the currently-open map iframe (null = all collapsed) — single-map-at-a-time UX
+---
+
+## 2026-02-24 - TV-1 - Live Tennis TV page with IPTV/stream embeds
+- Created `apps/web/app/(dashboard)/tv/page.tsx` — "use client" page with:
+  - Two sections of stream source cards: "Free Official Channels" (6 cards) and "Official Broadcasters" (2 cards)
+  - Each card: emoji logo, channel name, tournament label (red LIVE badge or blue badge), FREE/SUB badge, description, Watch/Embed buttons
+  - Embed button opens an iframe modal for YouTube channels — uses `https://www.youtube.com/embed?listType=search&list=live+tennis+CHANNEL_NAME` pattern
+  - Modal: dark overlay, channel header with name + LIVE badge + "Open on YouTube" link, aspect-video iframe, close button
+  - "Latest Highlights" section: 6 clickable cards linking to official YouTube channel video pages
+  - Disclaimer at bottom about only linking official sources
+  - Full dark mode throughout with `dark:bg-slate-800`, `dark:border-slate-700`, etc.
+- Updated `apps/web/app/(dashboard)/layout.tsx`: added "TV" → `/tv` link in desktop nav after "Open Matches"
+- Files changed: `apps/web/app/(dashboard)/tv/page.tsx` (new), `apps/web/app/(dashboard)/layout.tsx`
+- Learnings:
+  - YouTube embed search URL: `https://www.youtube.com/embed?listType=search&list=QUERY` works for embedding search results in iframe
+  - Only official channels/links used — no unauthorized IPTV streams embedded
+  - Page is fully static (no tRPC queries needed) — "use client" only for embed modal state
+---
+
 ## Codebase Patterns
 - Quality check command: `pnpm --filter @tenis/web build` — must pass zero errors
 - Supabase joins like `player1:player1_id(...)` return SelectQueryError types — always cast with `as unknown as LocalType[]`

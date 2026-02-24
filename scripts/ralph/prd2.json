@@ -1,0 +1,116 @@
+{
+  "branchName": "ralph/improvements-2",
+  "description": "Tenis App — Round 2 improvements: notifications, venues, TV/IPTV page, UX polish",
+  "userStories": [
+    {
+      "id": "NOTIFY-1",
+      "title": "In-app notification bell with unread count",
+      "priority": 1,
+      "passes": true,
+      "description": "Add a notification bell icon to the web nav bar (apps/web/app/(dashboard)/layout.tsx) between the ThemeToggle and profile avatar. Use a red badge showing the count of unread match requests (pending incoming requests from trpc.match.getMyMatches({status:'pending'}) where the user is the recipient). The bell icon can be a simple SVG or emoji 🔔. Clicking it navigates to /matches?tab=requests. The badge only shows if count > 0. Use client component wrapper since it needs data. Also add the same badge count to the mobile bottom nav 'Matches' tab icon in apps/mobile/app/(tabs)/_layout.tsx — show a red dot on the Matches tab if there are pending requests. Keep it simple — no real-time push, just fetched on load. Full dark mode.",
+      "files": [
+        "apps/web/app/(dashboard)/layout.tsx",
+        "apps/mobile/app/(tabs)/_layout.tsx"
+      ]
+    },
+    {
+      "id": "VENUES-1",
+      "title": "Venues / Courts page with map embed",
+      "priority": 2,
+      "passes": true,
+      "description": "Create apps/web/app/(dashboard)/courts/page.tsx (if it doesn't already exist or is a placeholder). The page should show a list of tennis courts/venues in Ljubljana and Slovenia. Since we don't have a venues table yet, hardcode an array of 8-10 well-known venues in Slovenia with: name, city, address, surface (clay/hard/indoor), courts_count, google_maps_url. Display as cards in a grid (2 columns on desktop, 1 on mobile). Each card shows: name, city badge, surface badge (green for clay, blue for hard, gray for indoor), address, court count, and a 'View on Map' button that opens google_maps_url in a new tab. Also embed a Google Maps iframe for each venue location using src='https://maps.google.com/maps?q=ENCODED_ADDRESS&output=embed' in a collapsible section. Add filter buttons at top to filter by city and surface. Full dark mode.",
+      "files": [
+        "apps/web/app/(dashboard)/courts/page.tsx"
+      ]
+    },
+    {
+      "id": "TV-1",
+      "title": "Live Tennis TV page with IPTV/stream embeds",
+      "priority": 3,
+      "passes": true,
+      "description": "Create a new web page at apps/web/app/(dashboard)/tv/page.tsx for watching live tennis. This is an IPTV/stream aggregator page. Implement as follows: (1) Add 'TV' link to the desktop nav in apps/web/app/(dashboard)/layout.tsx after 'Open Matches'. (2) The TV page shows a grid of available tennis stream sources. Use publicly known free tennis stream sources: embed YouTube live search results via iframe (src='https://www.youtube.com/embed?listType=search&list=live+tennis'), embed Tennis Channel stream info card, embed Eurosport embed if available. Since direct IPTV streams require backend proxying, instead create a curated list of official free tennis stream links: ATP/WTA YouTube official channels, Tennis TV free matches, Eurosport free, Roland Garros official YouTube, Wimbledon YouTube. Display as cards with: channel name, logo emoji, description, current tournament (hardcoded as 'Australian Open 2026' or 'Live Now'), and a 'Watch' button that opens the link in a new tab OR embeds it in an iframe modal on the page. (3) Also add a 'Highlights' section with links to latest YouTube highlights from official ATP/WTA channels. (4) The page header: 'Live Tennis' with a red LIVE badge. Add a disclaimer: 'Links open official broadcaster websites'. Full dark mode. NOTE: Do NOT embed any unauthorized streams — only official YouTube embeds and official broadcaster links.",
+      "files": [
+        "apps/web/app/(dashboard)/tv/page.tsx",
+        "apps/web/app/(dashboard)/layout.tsx"
+      ]
+    },
+    {
+      "id": "SEARCH-1",
+      "title": "Global search bar in web nav",
+      "priority": 4,
+      "passes": false,
+      "description": "Add a search bar to the web nav in apps/web/app/(dashboard)/layout.tsx. On desktop, show a small search input between the nav links and the right-side icons. On mobile, show a search icon that expands. The search calls trpc.player.searchPlayers({name: query, limit: 5}) as the user types (debounce 300ms). Show results in a dropdown below the search bar: player name, skill level badge, city. Clicking a result navigates to /players/[id]. If no results, show 'No players found'. Use a client component wrapper ('use client'). Close dropdown on click outside or Escape key. Style: search input with rounded-full border, placeholder 'Search players...'. Full dark mode.",
+      "files": [
+        "apps/web/app/(dashboard)/layout.tsx",
+        "apps/web/components/nav-search.tsx"
+      ]
+    },
+    {
+      "id": "MATCH-1",
+      "title": "Challenge a player button on player profile",
+      "priority": 5,
+      "passes": false,
+      "description": "On the web player profile page apps/web/app/(dashboard)/players/[id]/page.tsx, add a 'Challenge to a match' button below the player stats. This button opens a modal where the user can: (1) pick a date/time (input type datetime-local), (2) pick a location (text input, prefilled with player's home_club), (3) pick a format (dropdown: 'Best of 3' or 'Best of 5'), (4) add an optional message. On submit, call trpc.match.requestMatch({opponent_id: playerId, scheduled_at, location, format, message}). Check if trpc.match.requestMatch exists in packages/api/src/routers/match.ts — if it does, use it. If not, create it: insert into match_requests table (check if it exists in database.types.ts). On success show 'Challenge sent!' toast. On mobile apps/mobile/app/players/[id].tsx (if it exists), also add the button. Full dark mode.",
+      "files": [
+        "apps/web/app/(dashboard)/players/[id]/page.tsx"
+      ]
+    },
+    {
+      "id": "PROFILE-2",
+      "title": "Edit profile page improvements — add availability and preferred surface",
+      "priority": 6,
+      "passes": false,
+      "description": "Improve apps/web/app/(dashboard)/profile/edit/page.tsx: (1) Add 'Preferred surface' field: dropdown with options ['clay', 'hard', 'grass', 'indoor']. Store in profiles.preferred_surface if that column exists, otherwise use the bio field to append it. Check packages/db/src/database.types.ts for the profiles table columns. (2) Add 'Availability' multi-select: checkboxes for days of week (Mon-Sun) and time preferences (Morning/Afternoon/Evening). Store as JSON in a profiles.availability column if it exists, or skip storage and just show the UI as coming soon. (3) Add 'Playing style' text input (e.g. 'Aggressive baseliner'). Check if profiles has a playing_style column. If none of these columns exist in database.types.ts, add them as optional UI elements that store to bio as structured text. Keep the form clean and add helpful placeholder text. Full dark mode.",
+      "files": [
+        "apps/web/app/(dashboard)/profile/edit/page.tsx"
+      ]
+    },
+    {
+      "id": "TOURNEY-1",
+      "title": "Tournaments & Meetups feature — DB migration and tRPC API",
+      "priority": 7,
+      "passes": false,
+      "description": "Create the backend for a Tournaments/Meetups feature. (1) Create supabase/migrations/20240103000000_tournaments.sql with: CREATE TABLE public.tournaments (id UUID PK DEFAULT uuid_generate_v4(), creator_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE, name TEXT NOT NULL, description TEXT, location_city TEXT, location_name TEXT, scheduled_at TIMESTAMPTZ NOT NULL, max_spots INT NOT NULL DEFAULT 8, format TEXT NOT NULL DEFAULT 'singles' CHECK (format IN ('singles','doubles','both')), status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','full','cancelled','completed')), created_at TIMESTAMPTZ DEFAULT NOW()); CREATE TABLE public.tournament_participants (id UUID PK DEFAULT uuid_generate_v4(), tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE, player_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE, play_format TEXT NOT NULL CHECK (play_format IN ('singles','doubles')), joined_at TIMESTAMPTZ DEFAULT NOW(), UNIQUE(tournament_id, player_id)); Add RLS: authenticated users can SELECT both tables, creators can UPDATE their own tournament, authenticated users can INSERT participants (with check player_id = auth.uid() and tournament not full). Enable RLS on both tables. (2) Add both tables to packages/db/src/database.types.ts with proper Row/Insert/Update/Relationships types. (3) Create packages/api/src/routers/tournament.ts with: list procedure (fetch open tournaments, join with creator profile + participant count), get procedure (single tournament with participants list), create procedure (insert tournament), join procedure (insert participant with play_format, error if full or already joined), cancel procedure (set status=cancelled, only creator). Register in packages/api/src/root.ts as tournament: tournamentRouter. Must pass pnpm --filter @tenis/web build.",
+      "files": [
+        "supabase/migrations/20240103000000_tournaments.sql",
+        "packages/db/src/database.types.ts",
+        "packages/api/src/routers/tournament.ts",
+        "packages/api/src/root.ts"
+      ]
+    },
+    {
+      "id": "TOURNEY-2",
+      "title": "Tournaments web page — list, create, join",
+      "priority": 8,
+      "passes": false,
+      "description": "Create apps/web/app/(dashboard)/tournaments/page.tsx: (1) Header 'Tournaments & Meetups' + 'Create' button. (2) List of tournament cards: name, creator avatar+name, date, location (city + venue), format badge (Singles/Doubles/Both), spots remaining (e.g. '5/8 spots'), status badge. Each card has a 'Join' button that opens a modal asking 'How will you play?' with radio buttons for Singles / Doubles (only show Doubles if tournament format is 'doubles' or 'both'). On confirm, call trpc.tournament.join({tournament_id, play_format}). (3) 'Create' button opens a modal/form: name input, description textarea, date/time picker (datetime-local), city text input, venue/location name input, max spots number input (min 2 max 64), format dropdown (Singles / Doubles / Both). Submit calls trpc.tournament.create. (4) Clicking a tournament card navigates to /tournaments/[id]. (5) Add 'Tournaments' link to desktop nav in layout.tsx after 'Courts'. (6) Also add a small 'Tournaments' section to apps/web/app/(dashboard)/page.tsx (home) showing next 2 open tournaments with a 'See all' link. Full dark mode.",
+      "files": [
+        "apps/web/app/(dashboard)/tournaments/page.tsx",
+        "apps/web/app/(dashboard)/layout.tsx",
+        "apps/web/app/(dashboard)/page.tsx"
+      ]
+    },
+    {
+      "id": "TOURNEY-3",
+      "title": "Tournament detail page",
+      "priority": 9,
+      "passes": false,
+      "description": "Create apps/web/app/(dashboard)/tournaments/[id]/page.tsx: (1) Tournament header: name, creator, date/time, location, format, status badge. (2) Spots bar: visual progress bar showing spots filled (e.g. '5 of 8 joined'). (3) Participants list: avatar + name + play_format badge for each joined player. (4) Join button (same modal as in list page) — hidden if already joined or tournament full. (5) If current user is the creator, show a 'Cancel Tournament' button (calls trpc.tournament.cancel). (6) If status is 'full', show 'Tournament Full' badge instead of Join. Full dark mode.",
+      "files": [
+        "apps/web/app/(dashboard)/tournaments/[id]/page.tsx"
+      ]
+    },
+    {
+      "id": "CLUBS-1",
+      "title": "Clubs dropdown from DB in all club selection fields",
+      "priority": 10,
+      "passes": false,
+      "description": "Replace all free-text 'home_club' inputs throughout the app with a dropdown that shows existing clubs from the database. (1) Add a new tRPC procedure trpc.player.getClubs in packages/api/src/routers/player.ts: select distinct home_club from profiles where home_club IS NOT NULL AND is_active = true, return sorted array of strings. (2) Update apps/web/app/(dashboard)/profile/edit/page.tsx: replace the home_club text input with a combobox — a text input that shows a dropdown of matching clubs as you type (client component). Fetch clubs from trpc.player.getClubs. Allow typing a new club name not in the list (free text fallback). (3) Update apps/web/app/(dashboard)/players/page.tsx: the Club filter dropdown should use trpc.player.getFilterOptions which already returns clubs — this may already work, just verify it shows real clubs from DB. (4) Update apps/web/app/(dashboard)/open-matches/page.tsx: any club/location inputs should use the clubs list as datalist suggestions (use HTML datalist element for simplicity). (5) Similarly update the tournament create form if it has a venue input. The combobox pattern: <input list='clubs-list'> with <datalist id='clubs-list'> populated from the clubs array — this works in all browsers without extra dependencies. Must pass build.",
+      "files": [
+        "packages/api/src/routers/player.ts",
+        "apps/web/app/(dashboard)/profile/edit/page.tsx",
+        "apps/web/app/(dashboard)/players/page.tsx"
+      ]
+    }
+  ]
+}
