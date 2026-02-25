@@ -6,8 +6,6 @@ import { trpc } from "@/lib/trpc/client";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
-const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
 type RecentMatch = {
   id: string;
   winner_id: string | null;
@@ -32,10 +30,6 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading } = trpc.player.getProfile.useQuery();
   const { data: myRank } = trpc.ranking.getPlayerRank.useQuery();
-  const { data: availability } = trpc.player.getAvailability.useQuery(
-    { player_id: profile?.id ?? "" },
-    { enabled: !!profile?.id }
-  );
   const { data: recentMatches } = trpc.match.getMyMatches.useQuery(
     { status: "completed", limit: 10 },
     { enabled: !!profile?.id }
@@ -183,30 +177,6 @@ export default function ProfilePage() {
           <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
             Last {recentForm.length} completed {recentForm.length === 1 ? "match" : "matches"}
           </p>
-        </div>
-      )}
-
-      {/* Availability */}
-      {availability && availability.length > 0 && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Availability</h2>
-            <Link href="/profile/edit" className="text-sm text-green-600 hover:underline">
-              Edit
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {availability.map((slot) => (
-              <div key={slot.id} className="flex items-center gap-3">
-                <span className="w-24 text-sm font-medium text-gray-600 dark:text-slate-300">
-                  {DAY_NAMES[slot.day_of_week]}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-slate-400">
-                  {slot.start_time} – {slot.end_time}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

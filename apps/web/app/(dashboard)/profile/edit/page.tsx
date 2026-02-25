@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import type { SkillLevel, PreferredSurface } from "@tenis/types";
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const PLAYING_STYLES = [
   "Aggressive baseliner",
@@ -83,10 +82,6 @@ function combineBio(playingStyle: string, bio: string): string {
 export default function EditProfilePage() {
   const router = useRouter();
   const { data: profile } = trpc.player.getProfile.useQuery();
-  const { data: currentAvailability } = trpc.player.getAvailability.useQuery(
-    { player_id: profile?.id ?? "" },
-    { enabled: !!profile?.id }
-  );
   const { data: clubs } = trpc.player.getClubs.useQuery();
 
   const [fullName, setFullName] = useState("");
@@ -98,9 +93,6 @@ export default function EditProfilePage() {
   const [country, setCountry] = useState("");
   const [homeClub, setHomeClub] = useState("");
   const [preferredSurface, setPreferredSurface] = useState<PreferredSurface[]>([]);
-  const [availability, setAvailability] = useState<
-    { day: number; start: string; end: string }[]
-  >([]);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -120,37 +112,9 @@ export default function EditProfilePage() {
     }
   }, [profile]);
 
-  useEffect(() => {
-    if (currentAvailability) {
-      setAvailability(
-        currentAvailability.map((s) => ({
-          day: s.day_of_week,
-          start: s.start_time,
-          end: s.end_time,
-        }))
-      );
-    }
-  }, [currentAvailability]);
-
   const updateProfile = trpc.player.updateProfile.useMutation({
     onSuccess: () => setSaved(true),
   });
-
-  const setAvailabilityMutation = trpc.player.setAvailability.useMutation();
-
-  const toggleDay = (day: number) => {
-    setAvailability((prev) => {
-      const exists = prev.find((a) => a.day === day);
-      if (exists) return prev.filter((a) => a.day !== day);
-      return [...prev, { day, start: "09:00", end: "12:00" }];
-    });
-  };
-
-  const updateSlot = (day: number, field: "start" | "end", value: string) => {
-    setAvailability((prev) =>
-      prev.map((a) => (a.day === day ? { ...a, [field]: value } : a))
-    );
-  };
 
   const toggleSurface = (surface: PreferredSurface) => {
     setPreferredSurface((prev) =>
@@ -171,14 +135,6 @@ export default function EditProfilePage() {
       home_club: homeClub || undefined,
       preferred_surface: preferredSurface.length > 0 ? preferredSurface : undefined,
     } as Parameters<typeof updateProfile.mutateAsync>[0]);
-    await setAvailabilityMutation.mutateAsync({
-      slots: availability.map((a) => ({
-        day_of_week: a.day,
-        start_time: a.start,
-        end_time: a.end,
-        is_recurring: true,
-      })),
-    });
     router.push("/profile");
   };
 
@@ -322,48 +278,6 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      {/* Availability editor */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">Weekly Availability</h2>
-        <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">Toggle days and set your available hours.</p>
-        <div className="space-y-3">
-          {DAYS.map((day, index) => {
-            const slot = availability.find((a) => a.day === index);
-            return (
-              <div key={day} className="flex items-center gap-3">
-                <button
-                  onClick={() => toggleDay(index)}
-                  className={`w-24 h-9 rounded-lg flex items-center justify-center text-sm font-medium transition-colors ${
-                    slot
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"
-                  }`}
-                >
-                  {day.slice(0, 3)}
-                </button>
-                {slot && (
-                  <div className="flex items-center gap-2 flex-1">
-                    <input
-                      type="time"
-                      value={slot.start}
-                      onChange={(e) => updateSlot(index, "start", e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                    <span className="text-gray-400 dark:text-slate-600 text-sm">to</span>
-                    <input
-                      type="time"
-                      value={slot.end}
-                      onChange={(e) => updateSlot(index, "end", e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       <div className="flex gap-3">
         <button
           onClick={() => router.back()}
@@ -373,7 +287,7 @@ export default function EditProfilePage() {
         </button>
         <button
           onClick={handleSave}
-          disabled={updateProfile.isPending || setAvailabilityMutation.isPending}
+          disabled={updateProfile.isPending}
           className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
         >
           {updateProfile.isPending ? "Saving..." : "Save Changes"}
