@@ -5,6 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 
+const SLOVENIAN_CITIES = [
+  "Ljubljana","Maribor","Celje","Kranj","Koper","Novo Mesto",
+  "Velenje","Nova Gorica","Murska Sobota","Ptuj","Kamnik","Domžale",
+  "Škofja Loka","Postojna","Bled",
+];
+
 type TournamentItem = {
   id: string;
   creator_id: string;
@@ -37,6 +43,14 @@ export default function TournamentsPage() {
   const router = useRouter();
   const { data: rawTournaments, refetch } = trpc.tournament.list.useQuery({ limit: 30 });
   const tournaments = (rawTournaments ?? []) as unknown as TournamentItem[];
+  const { data: profile } = trpc.player.getProfile.useQuery();
+  const { data: clubs } = trpc.player.getClubs.useQuery();
+
+  const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+  const withdrawMutation = trpc.tournament.withdraw.useMutation({
+    onSuccess: () => { void refetch(); setWithdrawingId(null); },
+    onError: () => setWithdrawingId(null),
+  });
 
   // Create modal state
   const [showCreate, setShowCreate] = useState(false);
@@ -178,8 +192,8 @@ export default function TournamentsPage() {
                     </p>
                   </div>
 
-                  {/* Join button */}
-                  {t.status === "open" && (
+                  {/* Action button */}
+                  {t.creator_id === profile?.id ? null : t.status === "open" && (
                     <button
                       onClick={(e) => openJoinModal(t, e)}
                       className="flex-shrink-0 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
@@ -233,23 +247,25 @@ export default function TournamentsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">City</label>
-                  <input
-                    type="text"
+                  <select
                     value={createCity}
                     onChange={(e) => setCreateCity(e.target.value)}
-                    placeholder="Ljubljana"
                     className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                  >
+                    <option value="">Select city…</option>
+                    {SLOVENIAN_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Venue</label>
-                  <input
-                    type="text"
+                  <select
                     value={createVenue}
                     onChange={(e) => setCreateVenue(e.target.value)}
-                    placeholder="TC Tivoli"
                     className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                  >
+                    <option value="">Select venue…</option>
+                    {(clubs ?? []).map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">

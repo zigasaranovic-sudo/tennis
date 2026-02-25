@@ -228,6 +228,42 @@ export const tournamentRouter = router({
       return data;
     }),
 
+  /** Withdraw from a tournament (participant only) */
+  withdraw: protectedProcedure
+    .input(z.object({ tournament_id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      // Get tournament to check status
+      const { data: tournament } = await ctx.supabase
+        .from("tournaments")
+        .select("id, status, max_spots")
+        .eq("id", input.tournament_id)
+        .single();
+
+      if (!tournament) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tournament not found" });
+      }
+
+      const { error } = await ctx.supabase
+        .from("tournament_participants")
+        .delete()
+        .eq("tournament_id", input.tournament_id)
+        .eq("player_id", ctx.user.id);
+
+      if (error) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+      }
+
+      // If tournament was full, reopen it
+      if (tournament.status === "full") {
+        await ctx.supabase
+          .from("tournaments")
+          .update({ status: "open" })
+          .eq("id", input.tournament_id);
+      }
+
+      return { ok: true };
+    }),
+
   /** Cancel a tournament (creator only) */
   cancel: protectedProcedure
     .input(z.object({ tournament_id: z.string().uuid() }))

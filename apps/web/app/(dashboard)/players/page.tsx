@@ -135,11 +135,19 @@ export default function PlayersPage() {
                 </p>
               </div>
 
-              {player.skill_level && (
-                <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize">
-                  {SKILL_LABELS[player.skill_level as SkillLevel]}
-                </span>
-              )}
+              <div className="shrink-0 flex items-center gap-2">
+                {(player as { matches_played?: number }).matches_played != null &&
+                  (player as { matches_played?: number }).matches_played! > 0 && (
+                  <span className="text-xs text-gray-500 dark:text-slate-400">
+                    {Math.round(((player as { matches_won?: number }).matches_won ?? 0) / ((player as { matches_played?: number }).matches_played ?? 1) * 100)}%
+                  </span>
+                )}
+                {player.skill_level && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize">
+                    {SKILL_LABELS[player.skill_level as SkillLevel]}
+                  </span>
+                )}
+              </div>
             </Link>
           ))}
         </div>

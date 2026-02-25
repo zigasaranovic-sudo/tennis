@@ -95,6 +95,24 @@ export const openMatchRouter = router({
       return (data ?? []) as unknown as OpenMatchWithCreator[];
     }),
 
+  /** Delete own open match */
+  delete: protectedProcedure
+    .input(z.object({ open_match_id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const { error } = await ctx.supabase
+        .from("open_matches")
+        .delete()
+        .eq("id", input.open_match_id)
+        .eq("creator_id", ctx.user.id)
+        .eq("status", "open");
+
+      if (error) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+      }
+
+      return { ok: true };
+    }),
+
   /** Join an open match — sets it as filled and creates a match request */
   join: protectedProcedure
     .input(z.object({ open_match_id: z.string().uuid() }))

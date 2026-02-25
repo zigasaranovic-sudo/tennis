@@ -4,6 +4,12 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import type { SkillLevel, MatchFormat } from "@tenis/types";
 
+const SLOVENIAN_CITIES = [
+  "Ljubljana","Maribor","Celje","Kranj","Koper","Novo Mesto",
+  "Velenje","Nova Gorica","Murska Sobota","Ptuj","Kamnik","Domžale",
+  "Škofja Loka","Postojna","Bled",
+];
+
 type CreatorProfile = {
   id: string;
   full_name: string | null;
@@ -46,6 +52,7 @@ export default function OpenMatchesPage() {
   const [showModal, setShowModal] = useState(false);
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Form state
   const [formScheduledAt, setFormScheduledAt] = useState("");
@@ -65,25 +72,22 @@ export default function OpenMatchesPage() {
 
   const joinMutation = trpc.openMatch.join.useMutation({
     onSuccess: (_, vars) => {
-      setJoinedIds((prev) => {
-        const next = new Set(prev);
-        next.add(vars.open_match_id);
-        return next;
-      });
+      setJoinedIds((prev) => { const n = new Set(prev); n.add(vars.open_match_id); return n; });
       void refetch();
     },
+  });
+
+  const deleteMutation = trpc.openMatch.delete.useMutation({
+    onSuccess: () => void refetch(),
+    onSettled: () => setDeletingId(null),
   });
 
   const createMutation = trpc.openMatch.create.useMutation({
     onSuccess: () => {
       setShowModal(false);
-      setFormScheduledAt("");
-      setFormCity("");
-      setFormLocation("");
-      setFormSkillMin("");
-      setFormSkillMax("");
-      setFormFormat("best_of_3");
-      setFormMessage("");
+      setFormScheduledAt(""); setFormCity(""); setFormLocation("");
+      setFormSkillMin(""); setFormSkillMax("");
+      setFormFormat("best_of_3"); setFormMessage("");
       void refetch();
     },
   });
@@ -92,10 +96,12 @@ export default function OpenMatchesPage() {
 
   const handleJoin = (id: string) => {
     setJoiningId(id);
-    joinMutation.mutate(
-      { open_match_id: id },
-      { onSettled: () => setJoiningId(null) }
-    );
+    joinMutation.mutate({ open_match_id: id }, { onSettled: () => setJoiningId(null) });
+  };
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    deleteMutation.mutate({ open_match_id: id });
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -130,15 +136,18 @@ export default function OpenMatchesPage() {
         </button>
       </div>
 
-      {/* City filter */}
+      {/* City filter dropdown */}
       <div className="flex gap-2">
-        <input
-          type="text"
+        <select
           value={cityFilter}
           onChange={(e) => setCityFilter(e.target.value)}
-          placeholder="Filter by city…"
-          className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:placeholder-slate-500"
-        />
+          className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          <option value="">All cities</option>
+          {SLOVENIAN_CITIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
         {cityFilter && (
           <button
             onClick={() => setCityFilter("")}
@@ -154,9 +163,7 @@ export default function OpenMatchesPage() {
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
           <p className="text-4xl mb-4">🎾</p>
           <p className="font-medium text-gray-900 dark:text-slate-100">No open matches yet</p>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-            Be the first to post a match!
-          </p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Be the first to post a match!</p>
           <button
             onClick={() => setShowModal(true)}
             className="mt-4 inline-block px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-sm"
@@ -169,11 +176,11 @@ export default function OpenMatchesPage() {
           {openMatchList.map((match) => {
             const isJoined = joinedIds.has(match.id);
             const isJoining = joiningId === match.id;
+            const isOwn = match.creator_id === profile?.id;
+            const isDeleting = deletingId === match.id;
             const date = new Date(match.scheduled_at);
             const creator = match.creator;
-            const creatorInitial = (
-              creator?.full_name?.[0] ?? creator?.username?.[0] ?? "?"
-            ).toUpperCase();
+            const creatorInitial = (creator?.full_name?.[0] ?? creator?.username?.[0] ?? "?").toUpperCase();
 
             return (
               <div
@@ -185,14 +192,8 @@ export default function OpenMatchesPage() {
                   <div className="w-11 h-11 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-400 font-semibold text-lg flex-shrink-0 overflow-hidden">
                     {creator?.avatar_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={creator.avatar_url}
-                        alt={creator.full_name ?? "Player"}
-                        className="w-11 h-11 rounded-full object-cover"
-                      />
-                    ) : (
-                      creatorInitial
-                    )}
+                      <img src={creator.avatar_url} alt={creator.full_name ?? "Player"} className="w-11 h-11 rounded-full object-cover" />
+                    ) : creatorInitial}
                   </div>
 
                   {/* Match info */}
@@ -201,6 +202,7 @@ export default function OpenMatchesPage() {
                       <span className="font-medium text-gray-900 dark:text-slate-100">
                         {creator?.full_name ?? creator?.username ?? "A player"}
                       </span>
+                      {isOwn && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">Your post</span>}
                       {creator?.skill_level && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 capitalize">
                           {SKILL_LABELS[creator.skill_level as SkillLevel] ?? creator.skill_level}
@@ -208,23 +210,9 @@ export default function OpenMatchesPage() {
                       )}
                     </div>
                     <div className="mt-1 flex items-center gap-3 flex-wrap text-sm text-gray-500 dark:text-slate-400">
-                      <span>
-                        📅{" "}
-                        {date.toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                      <span>📅 {date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                       {(match.location_city || match.location_name) && (
-                        <span>
-                          📍{" "}
-                          {[match.location_city, match.location_name]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </span>
+                        <span>📍 {[match.location_city, match.location_name].filter(Boolean).join(" · ")}</span>
                       )}
                       <span className="capitalize text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
                         {FORMAT_LABELS[match.format as MatchFormat] ?? match.format}
@@ -232,35 +220,38 @@ export default function OpenMatchesPage() {
                     </div>
                     {(match.skill_min || match.skill_max) && (
                       <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
-                        Level:{" "}
-                        {match.skill_min
-                          ? (SKILL_LABELS[match.skill_min as SkillLevel] ?? match.skill_min)
-                          : "Any"}
+                        Level: {match.skill_min ? (SKILL_LABELS[match.skill_min as SkillLevel] ?? match.skill_min) : "Any"}
                         {" – "}
-                        {match.skill_max
-                          ? (SKILL_LABELS[match.skill_max as SkillLevel] ?? match.skill_max)
-                          : "Any"}
+                        {match.skill_max ? (SKILL_LABELS[match.skill_max as SkillLevel] ?? match.skill_max) : "Any"}
                       </p>
                     )}
                     {match.message && (
-                      <p className="mt-2 text-sm text-gray-600 dark:text-slate-300 italic">
-                        &ldquo;{match.message}&rdquo;
-                      </p>
+                      <p className="mt-2 text-sm text-gray-600 dark:text-slate-300 italic">&ldquo;{match.message}&rdquo;</p>
                     )}
                   </div>
 
-                  {/* Join button */}
-                  <button
-                    onClick={() => handleJoin(match.id)}
-                    disabled={isJoined || isJoining || joinMutation.isPending}
-                    className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isJoined
-                        ? "bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 cursor-default"
-                        : "bg-green-600 text-white hover:bg-green-700 disabled:opacity-70"
-                    }`}
-                  >
-                    {isJoined ? "Joined ✓" : isJoining ? "Joining…" : "Join"}
-                  </button>
+                  {/* Action button */}
+                  {isOwn ? (
+                    <button
+                      onClick={() => handleDelete(match.id)}
+                      disabled={isDeleting}
+                      className="flex-shrink-0 px-3 py-2 text-sm font-medium text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+                    >
+                      {isDeleting ? "…" : "Delete"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleJoin(match.id)}
+                      disabled={isJoined || isJoining || joinMutation.isPending}
+                      className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        isJoined
+                          ? "bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 cursor-default"
+                          : "bg-green-600 text-white hover:bg-green-700 disabled:opacity-70"
+                      }`}
+                    >
+                      {isJoined ? "Joined ✓" : isJoining ? "Joining…" : "Join"}
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -272,27 +263,17 @@ export default function OpenMatchesPage() {
       {showModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowModal(false);
-          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
         >
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Post a match</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-2xl leading-none"
-              >
-                &times;
-              </button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-2xl leading-none">&times;</button>
             </div>
 
             <form onSubmit={handleCreate} className="space-y-4">
-              {/* Date/time */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                  Date &amp; Time *
-                </label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Date &amp; Time *</label>
                 <input
                   type="datetime-local"
                   value={formScheduledAt}
@@ -303,45 +284,32 @@ export default function OpenMatchesPage() {
                 />
               </div>
 
-              {/* City */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                  City
-                </label>
-                <input
-                  type="text"
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">City</label>
+                <select
                   value={formCity}
                   onChange={(e) => setFormCity(e.target.value)}
-                  placeholder={profile?.city ?? "e.g. Ljubljana"}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:placeholder-slate-500"
-                />
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">{profile?.city ?? "Select city…"}</option>
+                  {SLOVENIAN_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
 
-              {/* Location name */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                  Venue / Court (optional)
-                </label>
-                <input
-                  type="text"
-                  list="open-match-clubs-datalist"
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Venue / Court (optional)</label>
+                <select
                   value={formLocation}
                   onChange={(e) => setFormLocation(e.target.value)}
-                  placeholder="e.g. TC Tivoli, Court 3"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:placeholder-slate-500"
-                />
-                <datalist id="open-match-clubs-datalist">
-                  {(clubs ?? []).map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Select venue…</option>
+                  {(clubs ?? []).map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
 
-              {/* Format */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                  Format
-                </label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Format</label>
                 <select
                   value={formFormat}
                   onChange={(e) => setFormFormat(e.target.value as MatchFormat)}
@@ -353,45 +321,33 @@ export default function OpenMatchesPage() {
                 </select>
               </div>
 
-              {/* Skill level range */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                    Min level
-                  </label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Min level</label>
                   <select
                     value={formSkillMin}
                     onChange={(e) => setFormSkillMin(e.target.value as SkillLevel | "")}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Any</option>
-                    {Object.entries(SKILL_LABELS).map(([val, label]) => (
-                      <option key={val} value={val}>{label}</option>
-                    ))}
+                    {Object.entries(SKILL_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                    Max level
-                  </label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Max level</label>
                   <select
                     value={formSkillMax}
                     onChange={(e) => setFormSkillMax(e.target.value as SkillLevel | "")}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="">Any</option>
-                    {Object.entries(SKILL_LABELS).map(([val, label]) => (
-                      <option key={val} value={val}>{label}</option>
-                    ))}
+                    {Object.entries(SKILL_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                   </select>
                 </div>
               </div>
 
-              {/* Message */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                  Message (optional, max 300 chars)
-                </label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Message (optional)</label>
                 <textarea
                   value={formMessage}
                   onChange={(e) => setFormMessage(e.target.value)}
@@ -400,15 +356,11 @@ export default function OpenMatchesPage() {
                   placeholder="Looking for a friendly match…"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:placeholder-slate-500 resize-none"
                 />
-                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1 text-right">
-                  {formMessage.length}/300
-                </p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1 text-right">{formMessage.length}/300</p>
               </div>
 
               {createMutation.error && (
-                <p className="text-sm text-red-500 dark:text-red-400">
-                  {createMutation.error.message}
-                </p>
+                <p className="text-sm text-red-500 dark:text-red-400">{createMutation.error.message}</p>
               )}
 
               <div className="flex gap-3 pt-1">

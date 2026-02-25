@@ -128,10 +128,12 @@ export default function HomePage() {
               <Link href="/players" className="text-xs text-green-600 hover:underline">Browse →</Link>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 border border-gray-300 dark:border-slate-600">
-                3
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${matchesPlayed > 0 ? "bg-green-500 text-white" : "bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 border border-gray-300 dark:border-slate-600"}`}>
+                {matchesPlayed > 0 ? "✓" : "3"}
               </div>
-              <span className="text-sm font-medium flex-1 text-gray-900 dark:text-slate-100">Play your first match</span>
+              <span className={`text-sm font-medium flex-1 ${matchesPlayed > 0 ? "line-through text-gray-400 dark:text-slate-600" : "text-gray-900 dark:text-slate-100"}`}>
+                Play your first match
+              </span>
             </div>
           </div>
         </div>
