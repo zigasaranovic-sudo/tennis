@@ -3,13 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
+import { useT } from "@/lib/i18n/context";
 
-const SKILL_LABELS: Record<string, string> = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
-  expert: "Expert",
-};
 
 const SKILL_COLORS: Record<string, string> = {
   beginner: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400",
@@ -28,6 +23,7 @@ interface PlayerResult {
 
 export function NavSearch() {
   const router = useRouter();
+  const { t } = useT();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -107,7 +103,7 @@ export function NavSearch() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search players..."
+          placeholder={t.navSearch.placeholder}
           className="w-52 rounded-full border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 text-sm px-4 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 transition-all"
         />
       </div>
@@ -120,7 +116,7 @@ export function NavSearch() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search players..."
+            placeholder={t.navSearch.placeholder}
             autoFocus
             className="w-40 rounded-full border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-400 text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600"
           />
@@ -153,12 +149,12 @@ export function NavSearch() {
         <div className="absolute top-full mt-2 left-0 w-72 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden">
           {isLoading && (
             <div className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
-              Searching...
+              {t.navSearch.searching}
             </div>
           )}
           {!isLoading && players.length === 0 && (
             <div className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
-              No players found
+              {t.navSearch.noResults}
             </div>
           )}
           {!isLoading && players.length > 0 && (
@@ -187,7 +183,7 @@ export function NavSearch() {
                       <span
                         className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${SKILL_COLORS[player.skill_level] ?? "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300"}`}
                       >
-                        {SKILL_LABELS[player.skill_level] ?? player.skill_level}
+                        {t.skills[player.skill_level as keyof typeof t.skills] ?? player.skill_level}
                       </span>
                     )}
                   </button>

@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useT } from "@/lib/i18n/context";
 
 export default function RankingPage() {
+  const { t } = useT();
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [offset, setOffset] = useState(0);
@@ -22,15 +24,14 @@ export default function RankingPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Rankings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.ranking.title}</h1>
         {myRank?.rank && (
           <div className="text-right">
-            <p className="text-sm text-gray-500 dark:text-slate-400">Your rank</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">{t.ranking.yourRank}</p>
             <p className="text-xl font-bold text-green-600">#{myRank.rank}</p>
           </div>
         )}
       </div>
-
 
       {/* Filters */}
       <div className="flex gap-4">
@@ -38,7 +39,7 @@ export default function RankingPage() {
           type="text"
           value={country}
           onChange={(e) => { setCountry(e.target.value.toUpperCase().slice(0, 2)); setOffset(0); }}
-          placeholder="Country (e.g. US)"
+          placeholder={t.ranking.countryPlaceholder}
           maxLength={2}
           className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
@@ -46,7 +47,7 @@ export default function RankingPage() {
           type="text"
           value={city}
           onChange={(e) => { setCity(e.target.value); setOffset(0); }}
-          placeholder="City filter"
+          placeholder={t.ranking.cityPlaceholder}
           className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
@@ -58,16 +59,16 @@ export default function RankingPage() {
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                  Rank
+                  {t.ranking.rank}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                  Player
+                  {t.ranking.player}
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden sm:table-cell">
                   W/L
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">
-                  Matches
+                  {t.ranking.matches}
                 </th>
               </tr>
             </thead>
@@ -86,13 +87,7 @@ export default function RankingPage() {
                           : "text-gray-600 dark:text-slate-400"
                       }`}
                     >
-                      {player.rank === 1
-                        ? "🥇"
-                        : player.rank === 2
-                        ? "🥈"
-                        : player.rank === 3
-                        ? "🥉"
-                        : `#${player.rank}`}
+                      {player.rank === 1 ? "🥇" : player.rank === 2 ? "🥈" : player.rank === 3 ? "🥉" : `#${player.rank}`}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -130,8 +125,8 @@ export default function RankingPage() {
 
         {(!leaderboard || leaderboard.length === 0) && !isFetching && (
           <div className="py-12 text-center">
-            <p className="text-gray-500 dark:text-slate-400">No players on the leaderboard yet.</p>
-            <p className="text-sm text-gray-400 dark:text-slate-600 mt-1">Play at least 5 ranked matches to appear.</p>
+            <p className="text-gray-500 dark:text-slate-400">{t.ranking.noPlayers}</p>
+            <p className="text-sm text-gray-400 dark:text-slate-600 mt-1">{t.ranking.noPlayersHint}</p>
           </div>
         )}
       </div>
@@ -143,7 +138,7 @@ export default function RankingPage() {
             onClick={() => setOffset(Math.max(0, offset - LIMIT))}
             className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50"
           >
-            Previous
+            {t.ranking.previous}
           </button>
         )}
         {leaderboard && leaderboard.length === LIMIT && (
@@ -151,7 +146,7 @@ export default function RankingPage() {
             onClick={() => setOffset(offset + LIMIT)}
             className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50"
           >
-            Next
+            {t.ranking.next}
           </button>
         )}
       </div>

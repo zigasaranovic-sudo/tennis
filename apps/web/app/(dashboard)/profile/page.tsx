@@ -5,6 +5,7 @@ import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/context";
 
 type RecentMatch = {
   id: string;
@@ -15,6 +16,7 @@ type RecentMatch = {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { t } = useT();
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
@@ -57,9 +59,9 @@ export default function ProfilePage() {
       : 0;
 
   const missingFields = [
-    !profile.city && { key: "city", label: "City" },
-    !profile.home_club && { key: "home_club", label: "Home club" },
-    !profile.bio && { key: "bio", label: "Bio" },
+    !profile.city && { key: "city", label: t.profile.city },
+    !profile.home_club && { key: "home_club", label: t.profile.homeClub },
+    !profile.bio && { key: "bio", label: t.profile.bio },
   ].filter(Boolean) as { key: string; label: string }[];
 
   const recentForm = recentMatches
@@ -74,13 +76,13 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
             <span className="text-base">📋</span>
             <span>
-              Profile incomplete —{" "}
+              {t.profilePage.incomplete} —{" "}
               <span className="text-gray-700 dark:text-slate-300">
-                {missingFields.map((f) => f.label).join(", ")} missing.
+                {missingFields.map((f) => f.label).join(", ")} {t.profilePage.missingFields}
               </span>
             </span>
             <Link href="/profile/edit" className="text-green-600 dark:text-green-400 font-medium hover:underline ml-1">
-              Fix it →
+              {t.profilePage.fixIt}
             </Link>
           </div>
           <button
@@ -116,7 +118,7 @@ export default function ProfilePage() {
             href="/profile/edit"
             className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium"
           >
-            Edit Profile
+            {t.profilePage.editProfile}
           </Link>
         </div>
 
@@ -130,15 +132,15 @@ export default function ProfilePage() {
             <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
               {myRank?.rank ? `#${myRank.rank}` : "–"}
             </p>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Global Rank</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{t.profilePage.globalRank}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{profile.matches_played}</p>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Matches</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{t.profile.matches}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{winRate}%</p>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Win Rate</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{t.profile.winRate}</p>
           </div>
         </div>
       </div>
@@ -147,10 +149,10 @@ export default function ProfilePage() {
       {recentMatches && recentMatches.length > 0 && (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Recent Form</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{t.profilePage.recentForm}</h2>
             {winRate > 0 && (
               <span className="text-sm font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-3 py-1 rounded-full">
-                {winRate}% win rate
+                {winRate}% {t.ranking.winRate}
               </span>
             )}
           </div>
@@ -158,7 +160,7 @@ export default function ProfilePage() {
             {recentForm.map((won, i) => (
               <div
                 key={i}
-                title={won ? "Win" : "Loss"}
+                title={won ? t.profilePage.win : t.profilePage.loss}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${
                   won ? "bg-green-500 dark:bg-green-600" : "bg-red-400 dark:bg-red-600"
                 }`}
@@ -175,7 +177,9 @@ export default function ProfilePage() {
               ))}
           </div>
           <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
-            Last {recentForm.length} completed {recentForm.length === 1 ? "match" : "matches"}
+            {t.profilePage.lastMatches
+            .replace("{n}", String(recentForm.length))
+            .replace("{match}", recentForm.length === 1 ? t.nav.matches.toLowerCase() : t.nav.matches.toLowerCase())}
           </p>
         </div>
       )}
@@ -186,7 +190,7 @@ export default function ProfilePage() {
           onClick={handleSignOut}
           className="text-sm text-red-500 hover:text-red-700 hover:underline"
         >
-          Sign out
+          {t.profilePage.signOut}
         </button>
       </div>
     </div>

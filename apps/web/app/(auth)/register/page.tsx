@@ -6,52 +6,55 @@ import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { createClient } from "@/lib/supabase/client";
 import type { SkillLevel } from "@tenis/types";
+import { useT } from "@/lib/i18n/context";
 
-const SKILL_LEVELS: { value: SkillLevel; label: string; desc: string }[] = [
-  { value: "beginner", label: "Beginner", desc: "Just starting out (NTRP 1.0–2.5)" },
-  { value: "intermediate", label: "Intermediate", desc: "Consistent rallies (NTRP 3.0–3.5)" },
-  { value: "advanced", label: "Advanced", desc: "Competitive player (NTRP 4.0–4.5)" },
-  { value: "professional", label: "Professional", desc: "Tournament level (NTRP 5.0+)" },
-];
+const SKILL_LEVEL_VALUES: SkillLevel[] = ["beginner", "intermediate", "advanced", "professional"];
 
-const COUNTRIES: { code: string; name: string }[] = [
-  { code: "SI", name: "Slovenia" },
-  { code: "HR", name: "Croatia" },
-  { code: "AT", name: "Austria" },
-  { code: "DE", name: "Germany" },
-  { code: "IT", name: "Italy" },
-  { code: "FR", name: "France" },
-  { code: "ES", name: "Spain" },
-  { code: "PT", name: "Portugal" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "CH", name: "Switzerland" },
-  { code: "NL", name: "Netherlands" },
-  { code: "BE", name: "Belgium" },
-  { code: "PL", name: "Poland" },
-  { code: "CZ", name: "Czech Republic" },
-  { code: "SK", name: "Slovakia" },
-  { code: "HU", name: "Hungary" },
-  { code: "RS", name: "Serbia" },
-  { code: "BA", name: "Bosnia and Herzegovina" },
-  { code: "ME", name: "Montenegro" },
-  { code: "MK", name: "North Macedonia" },
-  { code: "AL", name: "Albania" },
-  { code: "BG", name: "Bulgaria" },
-  { code: "RO", name: "Romania" },
-  { code: "GR", name: "Greece" },
-  { code: "SE", name: "Sweden" },
-  { code: "NO", name: "Norway" },
-  { code: "DK", name: "Denmark" },
-  { code: "FI", name: "Finland" },
-  { code: "US", name: "United States" },
-  { code: "CA", name: "Canada" },
-  { code: "AU", name: "Australia" },
-  { code: "BR", name: "Brazil" },
-  { code: "AR", name: "Argentina" },
-  { code: "JP", name: "Japan" },
-  { code: "CN", name: "China" },
-  { code: "IN", name: "India" },
-  { code: "ZA", name: "South Africa" },
+const SKILL_DESCS: Record<SkillLevel, string> = {
+  beginner: "NTRP 1.0–2.5",
+  intermediate: "NTRP 3.0–3.5",
+  advanced: "NTRP 4.0–4.5",
+  professional: "NTRP 5.0+",
+};
+
+const COUNTRIES: { code: string; nameEn: string }[] = [
+  { code: "SI", nameEn: "Slovenia" },
+  { code: "HR", nameEn: "Croatia" },
+  { code: "AT", nameEn: "Austria" },
+  { code: "DE", nameEn: "Germany" },
+  { code: "IT", nameEn: "Italy" },
+  { code: "FR", nameEn: "France" },
+  { code: "ES", nameEn: "Spain" },
+  { code: "PT", nameEn: "Portugal" },
+  { code: "GB", nameEn: "United Kingdom" },
+  { code: "CH", nameEn: "Switzerland" },
+  { code: "NL", nameEn: "Netherlands" },
+  { code: "BE", nameEn: "Belgium" },
+  { code: "PL", nameEn: "Poland" },
+  { code: "CZ", nameEn: "Czech Republic" },
+  { code: "SK", nameEn: "Slovakia" },
+  { code: "HU", nameEn: "Hungary" },
+  { code: "RS", nameEn: "Serbia" },
+  { code: "BA", nameEn: "Bosnia and Herzegovina" },
+  { code: "ME", nameEn: "Montenegro" },
+  { code: "MK", nameEn: "North Macedonia" },
+  { code: "AL", nameEn: "Albania" },
+  { code: "BG", nameEn: "Bulgaria" },
+  { code: "RO", nameEn: "Romania" },
+  { code: "GR", nameEn: "Greece" },
+  { code: "SE", nameEn: "Sweden" },
+  { code: "NO", nameEn: "Norway" },
+  { code: "DK", nameEn: "Denmark" },
+  { code: "FI", nameEn: "Finland" },
+  { code: "US", nameEn: "United States" },
+  { code: "CA", nameEn: "Canada" },
+  { code: "AU", nameEn: "Australia" },
+  { code: "BR", nameEn: "Brazil" },
+  { code: "AR", nameEn: "Argentina" },
+  { code: "JP", nameEn: "Japan" },
+  { code: "CN", nameEn: "China" },
+  { code: "IN", nameEn: "India" },
+  { code: "ZA", nameEn: "South Africa" },
 ];
 
 const CITIES_BY_COUNTRY: Record<string, string[]> = {
@@ -86,6 +89,7 @@ const SELECT_CLASS =
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useT();
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -128,7 +132,7 @@ export default function RegisterPage() {
       }
 
       if (!data.session) {
-        setError("Check your email to confirm your account, then sign in.");
+        setError(t.auth.checkEmail);
         setLoading(false);
         return;
       }
@@ -142,7 +146,7 @@ export default function RegisterPage() {
       router.push("/profile?welcome=true");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t.common.error);
       setLoading(false);
     }
   };
@@ -152,7 +156,7 @@ export default function RegisterPage() {
       <div className="max-w-lg w-full space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">Tenis</h1>
-          <p className="mt-2 text-gray-600 dark:text-slate-400">Create your player account</p>
+          <p className="mt-2 text-gray-600 dark:text-slate-400">{t.auth.createAccountTitle}</p>
 
           {/* Step indicator */}
           <div className="flex items-center justify-center gap-2 mt-6">
@@ -172,8 +176,8 @@ export default function RegisterPage() {
             ))}
           </div>
           <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400 mt-2 px-12">
-            <span>Account</span>
-            <span>Profile</span>
+            <span>{t.auth.accountStep}</span>
+            <span>{t.auth.profileStep}</span>
           </div>
         </div>
 
@@ -187,9 +191,9 @@ export default function RegisterPage() {
           {/* Step 1: Account */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">Create your account</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">{t.auth.createAccount}</h2>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Full name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.auth.fullName}</label>
                 <input
                   type="text"
                   value={fullName}
@@ -199,7 +203,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Username</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.auth.username}</label>
                 <input
                   type="text"
                   value={username}
@@ -209,7 +213,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.auth.email}</label>
                 <input
                   type="email"
                   value={email}
@@ -219,19 +223,19 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Password</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.auth.password}</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={INPUT_CLASS}
-                  placeholder="At least 8 characters"
+                  placeholder={t.auth.passwordPlaceholder}
                 />
               </div>
               <button
                 onClick={() => {
                   if (!fullName || !username || !email || password.length < 8) {
-                    setError("Please fill in all fields (password min 8 chars)");
+                    setError(t.auth.fillFields);
                     return;
                   }
                   setError(null);
@@ -239,12 +243,12 @@ export default function RegisterPage() {
                 }}
                 className="w-full py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
               >
-                Continue
+                {t.auth.continueButton}
               </button>
               <p className="text-center text-sm text-gray-600 dark:text-slate-400">
-                Already have an account?{" "}
+                {t.auth.alreadyHaveAccount}{" "}
                 <Link href="/login" className="text-green-600 font-medium hover:underline">
-                  Sign in
+                  {t.auth.signInLink}
                 </Link>
               </p>
             </div>
@@ -253,30 +257,30 @@ export default function RegisterPage() {
           {/* Step 2: Profile */}
           {step === 2 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">Your tennis profile</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">{t.auth.yourTennisProfile}</h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-3">Skill level</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-3">{t.auth.skillLevel}</label>
                 <div className="grid grid-cols-2 gap-3">
-                  {SKILL_LEVELS.map((level) => (
+                  {SKILL_LEVEL_VALUES.map((value) => (
                     <button
-                      key={level.value}
-                      onClick={() => setSkillLevel(level.value)}
+                      key={value}
+                      onClick={() => setSkillLevel(value)}
                       className={`p-3 border-2 rounded-lg text-left transition-colors ${
-                        skillLevel === level.value
+                        skillLevel === value
                           ? "border-green-600 bg-green-50 dark:bg-green-900/20"
                           : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                       }`}
                     >
-                      <div className="font-medium text-sm text-gray-900 dark:text-slate-100">{level.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{level.desc}</div>
+                      <div className="font-medium text-sm text-gray-900 dark:text-slate-100">{t.skills[value]}</div>
+                      <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{SKILL_DESCS[value]}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Country</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.auth.country}</label>
                 <select
                   value={country}
                   onChange={(e) => {
@@ -287,13 +291,15 @@ export default function RegisterPage() {
                   className={SELECT_CLASS}
                 >
                   {COUNTRIES.map((c) => (
-                    <option key={c.code} value={c.code}>{c.name}</option>
+                    <option key={c.code} value={c.code}>
+                      {t.countries[c.code as keyof typeof t.countries] ?? c.nameEn}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">City</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.auth.city}</label>
                 {citiesForCountry.length > 0 ? (
                   <>
                     <select
@@ -301,11 +307,11 @@ export default function RegisterPage() {
                       onChange={(e) => setCity(e.target.value)}
                       className={SELECT_CLASS}
                     >
-                      <option value="">Select a city</option>
+                      <option value="">{t.auth.selectCity}</option>
                       {citiesForCountry.map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
-                      <option value="__custom__">Other (type manually)</option>
+                      <option value="__custom__">{t.auth.otherCity}</option>
                     </select>
                     {city === "__custom__" && (
                       <input
@@ -313,7 +319,7 @@ export default function RegisterPage() {
                         value={customCity}
                         onChange={(e) => setCustomCity(e.target.value)}
                         className={`${INPUT_CLASS} mt-2`}
-                        placeholder="Enter your city"
+                        placeholder={t.auth.enterCity}
                       />
                     )}
                   </>
@@ -323,7 +329,7 @@ export default function RegisterPage() {
                     value={customCity}
                     onChange={(e) => setCustomCity(e.target.value)}
                     className={INPUT_CLASS}
-                    placeholder="Enter your city"
+                    placeholder={t.auth.enterCity}
                   />
                 )}
               </div>
@@ -333,14 +339,14 @@ export default function RegisterPage() {
                   onClick={() => setStep(1)}
                   className="flex-1 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                 >
-                  Back
+                  {t.auth.back}
                 </button>
                 <button
                   onClick={handleFinalSubmit}
                   disabled={loading}
                   className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
-                  {loading ? "Creating account..." : "Create account"}
+                  {loading ? t.auth.creatingAccount : t.auth.createAccountButton}
                 </button>
               </div>
             </div>

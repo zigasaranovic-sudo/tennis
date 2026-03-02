@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import type { SkillLevel, PreferredSurface } from "@tenis/types";
+import { useT } from "@/lib/i18n/context";
 
 
 const PLAYING_STYLES = [
@@ -48,17 +49,12 @@ const COUNTRIES = [
   { code: "OTHER", name: "Other" },
 ];
 
-const SKILL_LEVELS: { value: SkillLevel; label: string }[] = [
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
-  { value: "professional", label: "Professional" },
-];
-const SURFACES: { value: PreferredSurface; label: string; color: string }[] = [
-  { value: "clay", label: "Clay", color: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700" },
-  { value: "hard", label: "Hard", color: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700" },
-  { value: "grass", label: "Grass", color: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700" },
-  { value: "indoor", label: "Indoor", color: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border-gray-300 dark:border-slate-600" },
+const SKILL_LEVEL_VALUES: SkillLevel[] = ["beginner", "intermediate", "advanced", "professional"];
+const SURFACE_VALUES: { value: PreferredSurface; color: string }[] = [
+  { value: "clay", color: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700" },
+  { value: "hard", color: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700" },
+  { value: "grass", color: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700" },
+  { value: "indoor", color: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border-gray-300 dark:border-slate-600" },
 ];
 
 /** Extract playing style from bio (first line if it starts with "Style:") */
@@ -81,6 +77,7 @@ function combineBio(playingStyle: string, bio: string): string {
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const { t } = useT();
   const { data: profile } = trpc.player.getProfile.useQuery();
   const { data: clubs } = trpc.player.getClubs.useQuery();
 
@@ -140,19 +137,19 @@ export default function EditProfilePage() {
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Edit Profile</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.profile.editTitle}</h1>
 
       {saved && (
         <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg text-green-700 dark:text-green-400 text-sm">
-          Profile updated successfully!
+          {t.profile.saved}
         </div>
       )}
 
       {/* Basic info */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 space-y-5">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Basic Info</h2>
+        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">{t.profile.basicInfo}</h2>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Full Name</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.profile.fullName}</label>
           <input
             type="text"
             value={fullName}
@@ -161,7 +158,7 @@ export default function EditProfilePage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Username</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.profile.username}</label>
           <input
             type="text"
             value={username}
@@ -170,19 +167,19 @@ export default function EditProfilePage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Bio</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.profile.bio}</label>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={3}
             maxLength={480}
             className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-            placeholder="Tell other players about yourself..."
+            placeholder={t.profile.bioPlaceholder}
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-            Playing Style
+            {t.profile.playingStyle}
           </label>
           <select
             value={PLAYING_STYLES.includes(playingStyle) ? playingStyle : (playingStyle ? "__custom" : "")}
@@ -191,60 +188,60 @@ export default function EditProfilePage() {
             }}
             className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            <option value="">Select playing style…</option>
+            <option value="">{t.profile.selectStyle}</option>
             {PLAYING_STYLES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{t.playingStyles[s as keyof typeof t.playingStyles] ?? s}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Skill Level</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.profile.skillLevel}</label>
           <select
             value={skillLevel}
             onChange={(e) => setSkillLevel(e.target.value as SkillLevel)}
             className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            {SKILL_LEVELS.map((l) => (
-              <option key={l.value} value={l.value}>{l.label}</option>
+            {SKILL_LEVEL_VALUES.map((v) => (
+              <option key={v} value={v}>{t.skills[v]}</option>
             ))}
           </select>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">City</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.profile.city}</label>
             <select
               value={city}
               onChange={(e) => setCity(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="">Select city…</option>
+              <option value="">{t.profile.selectCity}</option>
               {SLOVENIAN_CITIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Country</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.profile.country}</label>
             <select
               value={country}
               onChange={(e) => setCountry(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="">Select country…</option>
+              <option value="">{t.profile.selectCountry}</option>
               {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>{c.name}</option>
+                <option key={c.code} value={c.code}>{t.countries[c.code as keyof typeof t.countries] ?? c.name}</option>
               ))}
             </select>
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Home Tennis Club</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.profile.homeClub}</label>
           <select
             value={homeClub}
             onChange={(e) => setHomeClub(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            <option value="">Select club…</option>
+            <option value="">{t.profile.selectClub}</option>
             {(clubs ?? []).map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
@@ -254,10 +251,10 @@ export default function EditProfilePage() {
 
       {/* Preferred surface */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">Preferred Surface</h2>
-        <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">Select all surfaces you enjoy playing on.</p>
+        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">{t.profile.preferredSurface}</h2>
+        <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">{t.profile.surfaceHint}</p>
         <div className="flex flex-wrap gap-3">
-          {SURFACES.map((s) => {
+          {SURFACE_VALUES.map((s) => {
             const selected = preferredSurface.includes(s.value);
             return (
               <button
@@ -271,7 +268,7 @@ export default function EditProfilePage() {
                 }`}
               >
                 {selected && <span className="mr-1">✓</span>}
-                {s.label}
+                {t.surfaces[s.value]}
               </button>
             );
           })}
@@ -283,14 +280,14 @@ export default function EditProfilePage() {
           onClick={() => router.back()}
           className="flex-1 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
         <button
           onClick={handleSave}
           disabled={updateProfile.isPending}
           className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
         >
-          {updateProfile.isPending ? "Saving..." : "Save Changes"}
+          {updateProfile.isPending ? t.common.saving : t.common.save}
         </button>
       </div>
     </div>
