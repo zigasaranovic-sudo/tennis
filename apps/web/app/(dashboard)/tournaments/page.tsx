@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
+import { useT } from "@/lib/i18n/context";
 
 const SLOVENIAN_CITIES = [
   "Ljubljana","Maribor","Celje","Kranj","Koper","Novo Mesto",
@@ -27,20 +28,21 @@ type TournamentItem = {
   participant_count: number;
 };
 
-const FORMAT_BADGE: Record<string, { label: string; cls: string }> = {
-  singles: { label: "Singles", cls: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400" },
-  doubles: { label: "Doubles", cls: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" },
-  both: { label: "Singles & Doubles", cls: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400" },
-};
-const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  open: { label: "Open", cls: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" },
-  full: { label: "Full", cls: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" },
-  cancelled: { label: "Cancelled", cls: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" },
-  completed: { label: "Completed", cls: "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400" },
-};
-
 export default function TournamentsPage() {
+  const { t: tr } = useT();
   const router = useRouter();
+
+  const FORMAT_BADGE: Record<string, { label: string; cls: string }> = {
+    singles: { label: tr.tournaments.singles, cls: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400" },
+    doubles: { label: tr.tournaments.doubles, cls: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" },
+    both: { label: tr.tournaments.both, cls: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400" },
+  };
+  const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+    open: { label: tr.tournaments.open, cls: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" },
+    full: { label: tr.tournaments.full, cls: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" },
+    cancelled: { label: tr.tournaments.cancelled, cls: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" },
+    completed: { label: tr.tournaments.completed, cls: "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400" },
+  };
   const { data: rawTournaments, refetch } = trpc.tournament.list.useQuery({ limit: 30 });
   const tournaments = (rawTournaments ?? []) as unknown as TournamentItem[];
   const { data: profile } = trpc.player.getProfile.useQuery();
@@ -118,14 +120,14 @@ export default function TournamentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Tournaments &amp; Meetups</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Join organised events or create your own</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{tr.tournaments.title}</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{tr.tournaments.subtitle}</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
           className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-sm"
         >
-          + Create
+          {tr.tournaments.create}
         </button>
       </div>
 
@@ -133,13 +135,13 @@ export default function TournamentsPage() {
       {tournaments.length === 0 ? (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
           <p className="text-4xl mb-3">🏆</p>
-          <p className="font-medium text-gray-900 dark:text-slate-100">No tournaments yet</p>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Be the first to create one!</p>
+          <p className="font-medium text-gray-900 dark:text-slate-100">{tr.tournaments.noTournaments}</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{tr.tournaments.beFirstCreate}</p>
           <button
             onClick={() => setShowCreate(true)}
             className="mt-4 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-sm"
           >
-            Create Tournament
+            {tr.tournaments.createTournament}
           </button>
         </div>
       ) : (
@@ -170,7 +172,7 @@ export default function TournamentsPage() {
                         {t.creator?.full_name?.[0]?.toUpperCase() ?? "?"}
                       </div>
                       <span className="text-xs text-gray-500 dark:text-slate-400">
-                        by {t.creator?.full_name ?? t.creator?.username ?? "Unknown"}
+                        {tr.tournaments.by} {t.creator?.full_name ?? t.creator?.username ?? "Unknown"}
                       </span>
                     </div>
 
@@ -185,9 +187,9 @@ export default function TournamentsPage() {
 
                     {/* Spots */}
                     <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-                      {t.participant_count}/{t.max_spots} spots filled
+                      {tr.tournaments.spotsFilled.replace("{filled}", String(t.participant_count)).replace("{max}", String(t.max_spots))}
                       {spotsLeft > 0 && t.status === "open" && (
-                        <span className="ml-1 text-green-600 dark:text-green-400">· {spotsLeft} left</span>
+                        <span className="ml-1 text-green-600 dark:text-green-400">· {tr.tournaments.spotsLeft.replace("{n}", String(spotsLeft))}</span>
                       )}
                     </p>
                   </div>
@@ -198,7 +200,7 @@ export default function TournamentsPage() {
                       onClick={(e) => openJoinModal(t, e)}
                       className="flex-shrink-0 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                     >
-                      Join
+                      {tr.common.join}
                     </button>
                   )}
                 </div>
@@ -212,31 +214,31 @@ export default function TournamentsPage() {
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">Create Tournament</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">{tr.tournaments.createTournament}</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Name *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{tr.tournaments.name} *</label>
                 <input
                   type="text"
                   value={createName}
                   onChange={(e) => setCreateName(e.target.value)}
-                  placeholder="Summer Singles Open"
+                  placeholder={tr.tournaments.namePlaceholder}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{tr.tournaments.description}</label>
                 <textarea
                   value={createDesc}
                   onChange={(e) => setCreateDesc(e.target.value)}
                   rows={2}
                   maxLength={500}
-                  placeholder="Friendly round-robin tournament..."
+                  placeholder={tr.tournaments.descPlaceholder}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Date &amp; Time *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{tr.tournaments.dateTime} *</label>
                 <input
                   type="datetime-local"
                   value={createDate}
@@ -246,31 +248,31 @@ export default function TournamentsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">City</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{tr.tournaments.city}</label>
                   <select
                     value={createCity}
                     onChange={(e) => setCreateCity(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="">Select city…</option>
+                    <option value="">{tr.tournaments.selectCity}</option>
                     {SLOVENIAN_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Venue</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{tr.tournaments.venue}</label>
                   <select
                     value={createVenue}
                     onChange={(e) => setCreateVenue(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="">Select venue…</option>
+                    <option value="">{tr.tournaments.selectVenue}</option>
                     {(clubs ?? []).map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Max spots</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{tr.tournaments.maxSpots}</label>
                   <input
                     type="number"
                     value={createMaxSpots}
@@ -281,15 +283,15 @@ export default function TournamentsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Format</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{tr.tournaments.format}</label>
                   <select
                     value={createFormat}
                     onChange={(e) => setCreateFormat(e.target.value as "singles" | "doubles" | "both")}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="singles">Singles</option>
-                    <option value="doubles">Doubles</option>
-                    <option value="both">Both</option>
+                    <option value="singles">{tr.tournaments.singles}</option>
+                    <option value="doubles">{tr.tournaments.doubles}</option>
+                    <option value="both">{tr.tournaments.both}</option>
                   </select>
                 </div>
               </div>
@@ -301,14 +303,14 @@ export default function TournamentsPage() {
                   onClick={() => setShowCreate(false)}
                   className="flex-1 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
-                  Cancel
+                  {tr.common.cancel}
                 </button>
                 <button
                   onClick={handleCreate}
                   disabled={!createName.trim() || !createDate || createMutation.isPending}
                   className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
-                  {createMutation.isPending ? "Creating..." : "Create"}
+                  {createMutation.isPending ? tr.common.creating : tr.common.create}
                 </button>
               </div>
             </div>
@@ -320,10 +322,10 @@ export default function TournamentsPage() {
       {joinTournamentId && joinTournament && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-sm">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">Join Tournament</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">{tr.tournaments.joinTournament}</h2>
             <p className="text-sm text-gray-500 dark:text-slate-400 mb-5">{joinTournament.name}</p>
 
-            <p className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-3">How will you play?</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-3">{tr.tournaments.howWillYouPlay}</p>
             <div className="space-y-2">
               {(joinTournament.format === "singles" || joinTournament.format === "both") && (
                 <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
@@ -335,7 +337,7 @@ export default function TournamentsPage() {
                     onChange={() => setJoinPlayFormat("singles")}
                     className="accent-green-600"
                   />
-                  <span className="text-sm font-medium text-gray-900 dark:text-slate-100">Singles</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-slate-100">{tr.tournaments.singles}</span>
                 </label>
               )}
               {(joinTournament.format === "doubles" || joinTournament.format === "both") && (
@@ -348,7 +350,7 @@ export default function TournamentsPage() {
                     onChange={() => setJoinPlayFormat("doubles")}
                     className="accent-green-600"
                   />
-                  <span className="text-sm font-medium text-gray-900 dark:text-slate-100">Doubles</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-slate-100">{tr.tournaments.doubles}</span>
                 </label>
               )}
             </div>
@@ -362,14 +364,14 @@ export default function TournamentsPage() {
                 onClick={() => setJoinTournamentId(null)}
                 className="flex-1 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
               >
-                Cancel
+                {tr.common.cancel}
               </button>
               <button
                 onClick={handleJoin}
                 disabled={joinMutation.isPending}
                 className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
-                {joinMutation.isPending ? "Joining..." : "Confirm"}
+                {joinMutation.isPending ? tr.common.joining : tr.common.confirm}
               </button>
             </div>
           </div>

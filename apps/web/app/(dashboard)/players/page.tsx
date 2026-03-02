@@ -3,16 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useT } from "@/lib/i18n/context";
 import type { SkillLevel } from "@tenis/types";
 
-const SKILL_LABELS: Record<SkillLevel, string> = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
-  professional: "Professional",
-};
-
 export default function PlayersPage() {
+  const { t } = useT();
+
+  const SKILL_LABELS: Record<SkillLevel, string> = {
+    beginner: t.skills.beginner,
+    intermediate: t.skills.intermediate,
+    advanced: t.skills.advanced,
+    professional: t.skills.professional,
+  };
+
   const [name, setName] = useState("");
   const [skillLevel, setSkillLevel] = useState<SkillLevel | "">("");
   const [city, setCity] = useState("");
@@ -40,7 +43,7 @@ export default function PlayersPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Find Players</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.players.title}</h1>
 
       {/* Filters */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 space-y-3">
@@ -51,7 +54,7 @@ export default function PlayersPage() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Search by name (min. 3 letters)…"
+            placeholder={t.players.searchPlaceholder}
             className="w-full pl-9 pr-4 py-2.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:placeholder-slate-500"
           />
         </div>
@@ -59,13 +62,13 @@ export default function PlayersPage() {
         <div className="grid grid-cols-3 gap-3">
           {/* City dropdown */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">City</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">{t.players.cityLabel}</label>
             <select
               value={city}
               onChange={(e) => handleCityChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="">Any city</option>
+              <option value="">{t.players.anyCity}</option>
               {(filterOptions?.cities ?? []).map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -74,14 +77,14 @@ export default function PlayersPage() {
 
           {/* Club dropdown (filtered by city) */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Club</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">{t.players.clubLabel}</label>
             <select
               value={club}
               onChange={(e) => setClub(e.target.value)}
               disabled={!filterOptions?.clubs?.length}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
             >
-              <option value="">Any club</option>
+              <option value="">{t.players.anyClub}</option>
               {(filterOptions?.clubs ?? []).map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -90,13 +93,13 @@ export default function PlayersPage() {
 
           {/* Skill level */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Skill Level</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">{t.players.skillLabel}</label>
             <select
               value={skillLevel}
               onChange={(e) => setSkillLevel(e.target.value as SkillLevel | "")}
               className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="">All levels</option>
+              <option value="">{t.players.allLevels}</option>
               {Object.entries(SKILL_LABELS).map(([val, label]) => (
                 <option key={val} value={val}>{label}</option>
               ))}
@@ -107,7 +110,7 @@ export default function PlayersPage() {
 
       {/* Players list */}
       {isFetching ? (
-        <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">Searching…</div>
+        <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">{t.players.searching}</div>
       ) : players.length > 0 ? (
         <div className="space-y-2">
           {players.map((player) => (
@@ -154,11 +157,11 @@ export default function PlayersPage() {
       ) : (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
           <p className="text-3xl mb-3">🔍</p>
-          <p className="font-medium text-gray-900 dark:text-slate-100">No players found</p>
+          <p className="font-medium text-gray-900 dark:text-slate-100">{t.players.noPlayers}</p>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             {name.length > 0 && name.length < 3
-              ? "Keep typing — search starts at 3 characters"
-              : "Try adjusting your filters"}
+              ? t.players.keepTyping
+              : t.players.adjustFilters}
           </p>
         </div>
       )}

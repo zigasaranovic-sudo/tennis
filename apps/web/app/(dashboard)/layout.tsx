@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { NavSearch } from "@/components/nav-search";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default async function DashboardLayout({
   children,
@@ -30,37 +31,37 @@ export default async function DashboardLayout({
               <div className="hidden md:flex items-center gap-6">
                 <Link
                   href="/players"
-                  className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
+                  className="text-base font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
                 >
                   Find Players
                 </Link>
                 <Link
                   href="/open-matches"
-                  className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
+                  className="text-base font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
                 >
                   Open Matches
                 </Link>
                 <Link
                   href="/matches"
-                  className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
+                  className="text-base font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
                 >
                   Matches
                 </Link>
                 <Link
                   href="/messages"
-                  className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
+                  className="text-base font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
                 >
                   Messages
                 </Link>
                 <Link
                   href="/courts"
-                  className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
+                  className="text-base font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
                 >
                   Courts
                 </Link>
                 <Link
                   href="/tournaments"
-                  className="text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
+                  className="text-base font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
                 >
                   Tournaments
                 </Link>
@@ -69,6 +70,7 @@ export default async function DashboardLayout({
 
             <div className="flex items-center gap-3">
               <NavSearch />
+              <LanguageSwitcher />
               <ThemeToggle />
               <NotificationBell />
               <Link
@@ -83,13 +85,13 @@ export default async function DashboardLayout({
       </nav>
 
       {/* Page content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 md:pb-8">
         {children}
       </main>
 
       {/* Bottom nav for mobile */}
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 md:hidden">
-        <div className="grid grid-cols-5 h-16">
+        <div className="grid grid-cols-5 h-20">
           {[
             { href: "/", icon: "🏠", label: "Home" },
             { href: "/players", icon: "🔍", label: "Find" },
@@ -102,8 +104,8 @@ export default async function DashboardLayout({
               href={item.href}
               className="flex flex-col items-center justify-center gap-1 text-gray-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
             >
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-2xl">{item.icon}</span>
+              <span className="text-xs font-medium">{item.label}</span>
             </Link>
           ))}
         </div>

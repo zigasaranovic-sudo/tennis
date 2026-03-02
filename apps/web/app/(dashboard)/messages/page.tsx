@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useT } from "@/lib/i18n/context";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -12,16 +13,17 @@ function timeAgo(dateStr: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return new Date(dateStr).toLocaleDateString("sl-SI", { month: "short", day: "numeric" });
 }
 
 export default function MessagesPage() {
+  const { t } = useT();
   const { data: conversations, isLoading } = trpc.messaging.getConversations.useQuery();
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Messages</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.messages.title}</h1>
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-center gap-4 p-4 animate-pulse">
@@ -39,7 +41,7 @@ export default function MessagesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Messages</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.messages.title}</h1>
 
       {conversations && conversations.length > 0 ? (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
@@ -92,15 +94,15 @@ export default function MessagesPage() {
       ) : (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
           <p className="text-4xl mb-4">💬</p>
-          <p className="font-medium text-gray-900 dark:text-slate-100">No conversations yet</p>
+          <p className="font-medium text-gray-900 dark:text-slate-100">{t.messages.noConversations}</p>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-            Find a player and start a conversation
+            {t.messages.noConversationsHint}
           </p>
           <Link
             href="/players"
             className="mt-4 inline-block px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
           >
-            Find Players
+            {t.messages.findPlayers}
           </Link>
         </div>
       )}

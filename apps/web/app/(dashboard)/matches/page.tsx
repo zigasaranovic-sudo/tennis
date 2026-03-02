@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useT } from "@/lib/i18n/context";
 
 type Tab = "upcoming" | "requests" | "history";
 
@@ -30,6 +31,7 @@ function formatLabel(fmt: string | null): string {
 }
 
 export default function MatchesPage() {
+  const { t } = useT();
   const [activeTab, setActiveTab] = useState<Tab>("upcoming");
 
   const { data: upcoming } = trpc.match.getMyMatches.useQuery({
@@ -59,26 +61,26 @@ export default function MatchesPage() {
   const tabs: { key: Tab; label: string; count?: number }[] = [
     {
       key: "upcoming",
-      label: "Upcoming",
+      label: t.matches.upcoming,
       count: (upcoming?.length ?? 0) + (pendingConfirmation?.length ?? 0),
     },
     {
       key: "requests",
-      label: "Requests",
+      label: t.matches.requests,
       count: requests?.filter((r) => r.recipient_id === profile?.id).length,
     },
-    { key: "history", label: "History" },
+    { key: "history", label: t.matches.history },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">My Matches</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.matches.title}</h1>
         <Link
           href="/players"
           className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-sm"
         >
-          Find a match
+          {t.matches.findMatch}
         </Link>
       </div>
 
@@ -110,7 +112,7 @@ export default function MatchesPage() {
           {/* Pending confirmation */}
           {pendingConfirmation && pendingConfirmation.length > 0 && (
             <div>
-              <h2 className="text-sm font-medium text-orange-600 mb-2">Awaiting confirmation</h2>
+              <h2 className="text-sm font-medium text-orange-600 mb-2">{t.matches.awaitingConfirmation}</h2>
               {(pendingConfirmation as unknown as MatchItem[]).map((match) => (
                 <Link
                   key={match.id}
@@ -125,7 +127,7 @@ export default function MatchesPage() {
                           ? match.player2?.full_name
                           : match.player1?.full_name}
                       </p>
-                      <p className="text-sm text-orange-600 mt-0.5">Result submitted — confirm or dispute</p>
+                      <p className="text-sm text-orange-600 mt-0.5">{t.matches.resultSubmitted}</p>
                     </div>
                     <span className="text-orange-500">›</span>
                   </div>
@@ -161,7 +163,7 @@ export default function MatchesPage() {
                               hour: "2-digit",
                               minute: "2-digit",
                             })
-                          : "Time TBD"}
+                          : t.matches.timeTBD}
                         {match.location_city && ` · ${match.location_city}`}
                       </p>
                     </div>
@@ -176,12 +178,12 @@ export default function MatchesPage() {
             !pendingConfirmation?.length && (
               <div className="text-center py-12 bg-white dark:bg-slate-800 border border-dashed border-gray-300 dark:border-slate-600 rounded-xl">
                 <p className="text-4xl mb-4">🎾</p>
-                <p className="font-medium text-gray-900 dark:text-slate-100">No upcoming matches</p>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{t.matches.noUpcoming}</p>
                 <Link
                   href="/players"
                   className="mt-3 inline-block text-sm text-green-600 font-medium hover:underline"
                 >
-                  Find a player to challenge
+                  {t.matches.findPlayer}
                 </Link>
               </div>
             )
@@ -205,7 +207,7 @@ export default function MatchesPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
-                          {isIncoming ? "Incoming" : "Sent"}
+                          {isIncoming ? t.matches.incoming : t.matches.sent}
                         </span>
                         <span className="text-xs text-gray-400 dark:text-slate-600">
                           {new Date(req.created_at).toLocaleDateString()}
@@ -239,7 +241,7 @@ export default function MatchesPage() {
                           }
                           className="px-3 py-1.5 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                         >
-                          Decline
+                          {t.matches.decline}
                         </button>
                         <button
                           onClick={() =>
@@ -250,7 +252,7 @@ export default function MatchesPage() {
                           }
                           className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
                         >
-                          Accept
+                          {t.matches.accept}
                         </button>
                       </div>
                     )}
@@ -261,7 +263,7 @@ export default function MatchesPage() {
           ) : (
             <div className="text-center py-12 bg-white dark:bg-slate-800 border border-dashed border-gray-300 dark:border-slate-600 rounded-xl">
               <p className="text-4xl mb-4">📬</p>
-              <p className="font-medium text-gray-900 dark:text-slate-100">No pending requests</p>
+              <p className="font-medium text-gray-900 dark:text-slate-100">{t.matches.noPending}</p>
             </div>
           )}
         </div>
@@ -325,7 +327,7 @@ export default function MatchesPage() {
           ) : (
             <div className="text-center py-12 bg-white dark:bg-slate-800 border border-dashed border-gray-300 dark:border-slate-600 rounded-xl">
               <p className="text-4xl mb-4">📊</p>
-              <p className="font-medium text-gray-900 dark:text-slate-100">No match history yet</p>
+              <p className="font-medium text-gray-900 dark:text-slate-100">{t.matches.noHistory}</p>
             </div>
           )}
         </div>

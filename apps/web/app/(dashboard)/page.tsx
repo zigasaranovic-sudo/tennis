@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useT } from "@/lib/i18n/context";
 import type { SkillLevel, MatchFormat } from "@tenis/types";
 
 type TournamentPreview = {
@@ -31,13 +32,15 @@ type OpenGameItem = {
   } | null;
 };
 
-const FORMAT_LABELS: Record<MatchFormat, string> = {
-  best_of_1: "Best of 1",
-  best_of_3: "Best of 3",
-  best_of_5: "Best of 5",
-};
-
 export default function HomePage() {
+  const { t } = useT();
+
+  const FORMAT_LABELS: Record<MatchFormat, string> = {
+    best_of_1: t.formats.best_of_1,
+    best_of_3: t.formats.best_of_3,
+    best_of_5: t.formats.best_of_5,
+  };
+
   const { data: profile } = trpc.player.getProfile.useQuery();
   const { data: requests } = trpc.match.getRequests.useQuery({
     type: "incoming",
@@ -70,69 +73,69 @@ export default function HomePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-            Welcome back, {profile?.full_name?.split(" ")[0] ?? "Player"}
+            {t.home.welcomeBack}, {profile?.full_name?.split(" ")[0] ?? t.home.player}
           </h1>
           <p className="text-gray-500 dark:text-slate-400 mt-1">
             {profile?.skill_level ? (
               <span className="capitalize font-medium text-green-600">{profile.skill_level}</span>
-            ) : "Find players and schedule matches"}
+            ) : t.home.findMatch}
           </p>
         </div>
         <Link
           href="/players"
           className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-sm"
         >
-          Find a match
+          {t.home.findMatch}
         </Link>
       </div>
 
       {/* Stats card / Onboarding checklist */}
       {profile && matchesPlayed > 0 ? (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
-          <h2 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">Your Stats</h2>
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">{t.home.yourStats}</h2>
           <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-slate-700">
             <div className="text-center px-4 first:pl-0">
               <div className="text-2xl font-bold text-green-600">{winRate}%</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">Win Rate</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">{t.profile.winRate}</div>
             </div>
             <div className="text-center px-4">
               <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">{matchesPlayed}</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">Matches</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">{t.profile.matches}</div>
             </div>
             <div className="text-center px-4">
               <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">{matchesWon}</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">Wins</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">{t.matches.history}</div>
             </div>
           </div>
         </div>
       ) : profile ? (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
-          <h2 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">Getting Started</h2>
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">{t.home.gettingStarted}</h2>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${hasProfileComplete ? "bg-green-500 text-white" : "bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 border border-gray-300 dark:border-slate-600"}`}>
                 {hasProfileComplete ? "✓" : "1"}
               </div>
               <span className={`text-sm font-medium flex-1 ${hasProfileComplete ? "line-through text-gray-400 dark:text-slate-600" : "text-gray-900 dark:text-slate-100"}`}>
-                Complete your profile
+                {t.home.completeProfile}
               </span>
               {!hasProfileComplete && (
-                <Link href="/profile/edit" className="text-xs text-green-600 hover:underline">Set city &amp; club →</Link>
+                <Link href="/profile/edit" className="text-xs text-green-600 hover:underline">{t.home.setCityClub}</Link>
               )}
             </div>
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 border border-gray-300 dark:border-slate-600">
                 2
               </div>
-              <span className="text-sm font-medium flex-1 text-gray-900 dark:text-slate-100">Find a player</span>
-              <Link href="/players" className="text-xs text-green-600 hover:underline">Browse →</Link>
+              <span className="text-sm font-medium flex-1 text-gray-900 dark:text-slate-100">{t.home.findAPlayer}</span>
+              <Link href="/players" className="text-xs text-green-600 hover:underline">{t.home.browse}</Link>
             </div>
             <div className="flex items-center gap-3">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${matchesPlayed > 0 ? "bg-green-500 text-white" : "bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 border border-gray-300 dark:border-slate-600"}`}>
                 {matchesPlayed > 0 ? "✓" : "3"}
               </div>
               <span className={`text-sm font-medium flex-1 ${matchesPlayed > 0 ? "line-through text-gray-400 dark:text-slate-600" : "text-gray-900 dark:text-slate-100"}`}>
-                Play your first match
+                {t.home.playFirstMatch}
               </span>
             </div>
           </div>
@@ -143,7 +146,7 @@ export default function HomePage() {
       {requests && requests.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">
-            Match Requests ({requests.length})
+            {t.home.matchRequests} ({requests.length})
           </h2>
           <div className="space-y-3">
             {requests.map((req) => (
@@ -178,7 +181,7 @@ export default function HomePage() {
                   href={`/matches/requests/${req.id}`}
                   className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  Review
+                  {t.common.confirm}
                 </Link>
               </div>
             ))}
@@ -189,9 +192,9 @@ export default function HomePage() {
       {/* Upcoming matches */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Upcoming Matches</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{t.home.upcomingMatches}</h2>
           <Link href="/matches" className="text-sm text-green-600 font-medium hover:underline">
-            View all
+            {t.common.viewAll}
           </Link>
         </div>
 
@@ -214,7 +217,7 @@ export default function HomePage() {
                     <span className="text-2xl">🎾</span>
                     <div>
                       <p className="font-medium text-gray-900 dark:text-slate-100">
-                        vs{" "}
+                        {t.matches.vs}{" "}
                         {match.player1?.full_name === profile?.full_name
                           ? match.player2?.full_name
                           : match.player1?.full_name}
@@ -228,7 +231,7 @@ export default function HomePage() {
                               hour: "2-digit",
                               minute: "2-digit",
                             })
-                          : "Time TBD"}
+                          : t.matches.timeTBD}
                       </p>
                     </div>
                   </div>
@@ -242,15 +245,15 @@ export default function HomePage() {
         ) : (
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
             <p className="text-4xl mb-4">🎾</p>
-            <p className="font-medium text-gray-900 dark:text-slate-100">No upcoming matches</p>
+            <p className="font-medium text-gray-900 dark:text-slate-100">{t.home.noUpcoming}</p>
             <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-              Find a player and send a match request to get started
+              {t.home.noUpcomingHint}
             </p>
             <Link
               href="/players"
               className="mt-4 inline-block px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-sm"
             >
-              Find players
+              {t.players.title}
             </Link>
           </div>
         )}
@@ -260,9 +263,9 @@ export default function HomePage() {
       {openGames.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Open Games</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{t.home.openGames}</h2>
             <Link href="/open-matches" className="text-sm text-green-600 font-medium hover:underline">
-              See all
+              {t.common.seeAll}
             </Link>
           </div>
           <div className="space-y-3">
@@ -306,7 +309,7 @@ export default function HomePage() {
                   href="/open-matches"
                   className="flex-shrink-0 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  Join
+                  {t.common.join}
                 </Link>
               </div>
             ))}
@@ -318,9 +321,9 @@ export default function HomePage() {
       {profile?.skill_level && suggestedPlayersData && suggestedPlayersData.players.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Players near your level</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{t.home.playersNearLevel}</h2>
             <Link href="/players" className="text-sm text-green-600 font-medium hover:underline">
-              See all
+              {t.common.seeAll}
             </Link>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-1">
@@ -365,9 +368,9 @@ export default function HomePage() {
       {upcomingTournaments.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Tournaments</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{t.home.tournamentsTitle}</h2>
             <Link href="/tournaments" className="text-sm text-green-600 font-medium hover:underline">
-              See all
+              {t.common.seeAll}
             </Link>
           </div>
           <div className="space-y-3">

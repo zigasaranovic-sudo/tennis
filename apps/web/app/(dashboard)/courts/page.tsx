@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-
-const SURFACE_LABELS: Record<string, string> = {
-  clay: "Clay",
-  hard: "Hard",
-  grass: "Grass",
-  indoor: "Indoor",
-};
+import { useT } from "@/lib/i18n/context";
 
 const SURFACE_COLORS: Record<string, string> = {
   clay: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
@@ -28,6 +22,7 @@ function mapsDirectionsUrl(name: string, address: string): string {
 }
 
 export default function CourtsPage() {
+  const { t } = useT();
   const [cityFilter, setCityFilter] = useState("");
   const [surfaceFilter, setSurfaceFilter] = useState("");
   const [expandedMap, setExpandedMap] = useState<string | null>(null);
@@ -48,20 +43,20 @@ export default function CourtsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Tennis Venues</h1>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Tennis courts and venues across Slovenia</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.courts.title}</h1>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{t.courts.subtitle}</p>
       </div>
 
       {/* Filters */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 space-y-4">
         <div>
-          <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-2 uppercase tracking-wide">City</p>
+          <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{t.courts.city}</p>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setCityFilter("")}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${cityFilter === "" ? "bg-green-600 text-white" : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
             >
-              All
+              {t.common.all}
             </button>
             {allCities.map((city) => (
               <button
@@ -77,13 +72,13 @@ export default function CourtsPage() {
 
         {allSurfaces.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-2 uppercase tracking-wide">Surface</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{t.courts.surface}</p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSurfaceFilter("")}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${surfaceFilter === "" ? "bg-green-600 text-white" : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
               >
-                All
+                {t.common.all}
               </button>
               {allSurfaces.map((surface) => (
                 <button
@@ -91,7 +86,7 @@ export default function CourtsPage() {
                   onClick={() => setSurfaceFilter(surface === surfaceFilter ? "" : surface)}
                   className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${surfaceFilter === surface ? "bg-green-600 text-white" : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
                 >
-                  {SURFACE_LABELS[surface] ?? surface}
+                  {t.surfaces[surface as keyof typeof t.surfaces] ?? surface}
                 </button>
               ))}
             </div>
@@ -112,24 +107,24 @@ export default function CourtsPage() {
       ) : filtered.length === 0 ? (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 p-12 text-center">
           <p className="text-4xl mb-4">🏟️</p>
-          <p className="font-medium text-gray-900 dark:text-slate-100">No venues found</p>
+          <p className="font-medium text-gray-900 dark:text-slate-100">{t.courts.noVenues}</p>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-            {(cityFilter || surfaceFilter) ? "Try clearing the filters" : "No venues in the database yet"}
+            {(cityFilter || surfaceFilter) ? t.courts.tryClearing : t.courts.noVenuesDB}
           </p>
           {(cityFilter || surfaceFilter) && (
             <button
               onClick={() => { setCityFilter(""); setSurfaceFilter(""); }}
               className="mt-4 px-4 py-2 text-sm font-medium text-green-600 hover:text-green-700 dark:text-green-400 transition-colors"
             >
-              Clear filters
+              {t.common.clearFilters}
             </button>
           )}
         </div>
       ) : (
         <>
           <p className="text-sm text-gray-500 dark:text-slate-400">
-            {filtered.length} venue{filtered.length !== 1 ? "s" : ""}
-            {(cityFilter || surfaceFilter) ? " matching filters" : ""}
+            {filtered.length !== 1 ? t.courts.venuesPlural.replace("{n}", String(filtered.length)) : t.courts.venues.replace("{n}", String(filtered.length))}
+            {(cityFilter || surfaceFilter) ? ` ${t.courts.matchingFilters}` : ""}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filtered.map((venue) => {
@@ -149,7 +144,7 @@ export default function CourtsPage() {
                           </span>
                           {surfaces.map((s: string) => (
                             <span key={s} className={`text-xs px-2 py-0.5 rounded-full font-medium ${SURFACE_COLORS[s] ?? "bg-gray-100 text-gray-600"}`}>
-                              {SURFACE_LABELS[s] ?? s}
+                              {t.surfaces[s as keyof typeof t.surfaces] ?? s}
                             </span>
                           ))}
                         </div>
@@ -166,7 +161,7 @@ export default function CourtsPage() {
                         onClick={() => setExpandedMap(isExpanded ? null : venue.id)}
                         className="flex-1 text-center px-3 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
                       >
-                        {isExpanded ? "Hide map" : "Show map"}
+                        {isExpanded ? t.common.hideMap : t.common.showMap}
                       </button>
                       <a
                         href={mapsDirectionsUrl(venue.name, address)}
@@ -174,7 +169,7 @@ export default function CourtsPage() {
                         rel="noopener noreferrer"
                         className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors whitespace-nowrap"
                       >
-                        Directions ↗
+                        {t.common.directions} ↗
                       </a>
                     </div>
                   </div>
