@@ -238,6 +238,7 @@ function CourtRow({
   court: { id: string; name: string; surface: string; is_indoor: boolean; price_per_hour: number | null };
   date: string;
 }) {
+  const { t } = useT();
   const [startSlot, setStartSlot] = useState<string | null>(null);
   const [endSlot, setEndSlot] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
