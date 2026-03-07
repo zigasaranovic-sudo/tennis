@@ -13,9 +13,6 @@ const SURFACE_COLORS: Record<string, string> = {
   indoor: "bg-purple-500/20 text-purple-300 border border-purple-500/30",
 };
 
-const SURFACE_LABELS: Record<string, string> = {
-  clay: "Zemlja", hard: "Trda", grass: "Trava", indoor: "Pokrita",
-};
 
 // Venue photos: Courtiplay CDN for venues on Courtiplay, curated Unsplash for others
 const VENUE_PHOTOS: Record<string, string> = {
@@ -147,7 +144,7 @@ export default function VenueDetailPage() {
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {((venue as { surfaces?: string[] }).surfaces ?? []).map((s) => (
                     <span key={s} className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide backdrop-blur-sm ${SURFACE_COLORS[s] ?? "bg-white/10 text-white border border-white/20"}`}>
-                      {SURFACE_LABELS[s] ?? s}
+                      {t.surfaces[s as keyof typeof t.surfaces] ?? s}
                     </span>
                   ))}
                 </div>
@@ -325,7 +322,7 @@ function CourtRow({
           <div>
             <p className="font-bold text-white">{court.name}</p>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${SURFACE_COLORS[court.surface] ?? "bg-slate-700 text-slate-400"}`}>
-              {SURFACE_LABELS[court.surface] ?? court.surface}
+              {t.surfaces[court.surface as keyof typeof t.surfaces] ?? court.surface}
             </span>
           </div>
         </div>

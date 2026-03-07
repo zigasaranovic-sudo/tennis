@@ -12,9 +12,6 @@ const SURFACE_COLORS: Record<string, string> = {
   indoor: "bg-purple-500/20 text-purple-300 border border-purple-500/30",
 };
 
-const SURFACE_LABELS: Record<string, string> = {
-  clay: "Zemlja", hard: "Trda", grass: "Trava", indoor: "Pokrita",
-};
 
 // Venue photos: Courtiplay CDN for venues on Courtiplay, curated Unsplash for others
 const VENUE_PHOTOS: Record<string, string> = {
@@ -124,11 +121,11 @@ export default function HomePage() {
           {profile && (
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-xl font-black text-white tracking-tight">
+                <h1 className="text-lg font-black text-white tracking-tight">
                   {t.home.welcomeBack}, <span className="text-green-400">{profile.full_name?.split(" ")[0] ?? t.home.player}</span> 👋
                 </h1>
                 {filtered.length > 0 && (
-                  <p className="text-sm text-slate-500 mt-0.5">{filtered.length} {t.home.available}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{filtered.length} {t.home.available}</p>
                 )}
               </div>
             </div>
@@ -180,16 +177,16 @@ export default function HomePage() {
                       <div className="absolute bottom-2 left-2 flex gap-1 flex-wrap">
                         {surfaces.slice(0, 2).map((s) => (
                           <span key={s} className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide backdrop-blur-sm ${SURFACE_COLORS[s] ?? "bg-white/10 text-white border border-white/20"}`}>
-                            {SURFACE_LABELS[s] ?? s}
+                            {t.surfaces[s as keyof typeof t.surfaces] ?? s}
                           </span>
                         ))}
                       </div>
                     </div>
                     <div className="p-3">
-                      <p className="font-bold text-white truncate group-hover:text-green-400 transition-colors">
+                      <p className="text-sm font-bold text-white truncate group-hover:text-green-400 transition-colors">
                         {venue.name}
                       </p>
-                      <p className="text-sm text-slate-500 mt-0.5 flex items-center gap-1">
+                      <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
                         <svg className="w-3.5 h-3.5 flex-shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
