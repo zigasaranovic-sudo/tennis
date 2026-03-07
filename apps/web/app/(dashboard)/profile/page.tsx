@@ -14,6 +14,21 @@ type RecentMatch = {
   player2: { id: string } | null;
 };
 
+type Booking = {
+  id: string;
+  starts_at: string;
+  ends_at: string;
+  status: "confirmed" | "cancelled";
+  notes: string | null;
+  court: {
+    id: string;
+    name: string;
+    surface: string;
+    is_indoor: boolean;
+    venue: { id: string; name: string; city: string } | null;
+  } | null;
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const { t } = useT();
@@ -36,6 +51,7 @@ export default function ProfilePage() {
     { status: "completed", limit: 10 },
     { enabled: !!profile?.id }
   );
+  const { data: upcomingBookings } = trpc.courts.getMyBookings.useQuery({ upcoming: true });
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -128,12 +144,12 @@ export default function ProfilePage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mt-6 pt-5 border-t border-gray-100 dark:border-slate-700">
-          <div className="text-center">
+          <Link href="/ranking" className="text-center hover:opacity-75 transition-opacity">
             <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
               {myRank?.rank ? `#${myRank.rank}` : "–"}
             </p>
             <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{t.profilePage.globalRank}</p>
-          </div>
+          </Link>
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{profile.matches_played}</p>
             <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{t.profile.matches}</p>
@@ -183,6 +199,58 @@ export default function ProfilePage() {
           </p>
         </div>
       )}
+
+      {/* Upcoming Bookings */}
+      <div id="bookings" className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{t.profilePage.upcomingBookings}</h2>
+          <Link
+            href="/matches?tab=bookings"
+            className="text-sm text-green-600 dark:text-green-400 font-medium hover:underline"
+          >
+            {t.profilePage.seeAllBookings}
+          </Link>
+        </div>
+        {upcomingBookings && upcomingBookings.length > 0 ? (
+          <div className="space-y-3">
+            {(upcomingBookings as unknown as Booking[]).slice(0, 3).map((booking) => {
+              const court = booking.court;
+              const venue = court?.venue;
+              const start = new Date(booking.starts_at);
+              const end = new Date(booking.ends_at);
+              const hours = (end.getTime() - start.getTime()) / 3_600_000;
+              return (
+                <div key={booking.id} className="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-slate-700 last:border-0">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center text-lg flex-shrink-0">
+                    🎾
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
+                      {court?.name ?? "Court"} · {venue?.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                      {start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}{" "}
+                      {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}–{end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      <span className="text-gray-400 dark:text-slate-600 ml-1">({hours}h)</span>
+                    </p>
+                  </div>
+                  <span className="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">📍 {venue?.city}</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-sm text-gray-500 dark:text-slate-400">{t.profilePage.noUpcomingBookings}</p>
+            <Link
+              href="/matches?tab=courts"
+              className="mt-2 inline-block text-sm text-green-600 dark:text-green-400 font-medium hover:underline"
+            >
+              {t.matches.bookCourt} →
+            </Link>
+          </div>
+        )}
+      </div>
 
       {/* Sign out */}
       <div className="text-center">

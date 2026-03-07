@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tenis — Find your match",
+  title: "Playmate — Find your match",
   description:
     "Connect with tennis players, join tournaments, and track your ranking.",
 };
@@ -30,7 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <Providers>{children}</Providers>
         </ThemeProvider>
       </body>

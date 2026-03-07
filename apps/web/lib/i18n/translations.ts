@@ -12,6 +12,7 @@ const en = {
     home: "Home",
     find: "Find",
     ranking: "Ranking",
+    players: "Players",
   },
   // Common
   common: {
@@ -92,7 +93,7 @@ const en = {
   },
   // Matches
   matches: {
-    title: "My Matches",
+    title: "Matches",
     findMatch: "Find a match",
     upcoming: "Upcoming",
     requests: "Requests",
@@ -109,6 +110,19 @@ const en = {
     decline: "Decline",
     timeTBD: "Time TBD",
     vs: "vs",
+    tabOpen: "Open Matches",
+    tabMyMatches: "My Matches",
+    tabCourts: "Courts",
+    tabBookings: "Bookings",
+    myBookings: "My Bookings",
+    bookCourt: "Book a court",
+    noUpcomingBookings: "No upcoming bookings",
+    noPastBookings: "No past bookings",
+    cancelBooking: "Cancel this booking?",
+    cancelled: "Cancelled",
+    completed: "Completed",
+    bookingUpcoming: "Upcoming",
+    bookingPast: "Past",
   },
   // Open Matches
   openMatches: {
@@ -142,6 +156,7 @@ const en = {
     venues: "{n} venue",
     venuesPlural: "{n} venues",
     matchingFilters: "matching filters",
+    viewCourts: "View courts & book",
   },
   // Tournaments
   tournaments: {
@@ -204,6 +219,14 @@ const en = {
     openGames: "Open Games",
     playersNearLevel: "Players near your level",
     tournamentsTitle: "Tournaments",
+    searchPlaceholder: "Venue, address, city…",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    available: "venues available",
+    bookings: "Bookings",
+    quickBook: "Quick book",
+    venueInfo: "Information",
+    courtsCount: "Courts",
   },
   // Skill levels
   skills: {
@@ -267,6 +290,11 @@ const en = {
     fixIt: "Fix it →",
     win: "Win",
     loss: "Loss",
+    myBookings: "My Bookings",
+    ranking: "Ranking",
+    upcomingBookings: "Upcoming Bookings",
+    noUpcomingBookings: "No upcoming bookings",
+    seeAllBookings: "See all bookings →",
   },
   // Ranking
   ranking: {
@@ -330,6 +358,7 @@ const sl: typeof en = {
     home: "Domov",
     find: "Poišči",
     ranking: "Lestvica",
+    players: "Igralci",
   },
   common: {
     save: "Shrani spremembe",
@@ -406,7 +435,7 @@ const sl: typeof en = {
     winRate: "zmag",
   },
   matches: {
-    title: "Moje tekme",
+    title: "Tekme",
     findMatch: "Poišči tekmo",
     upcoming: "Prihajajoče",
     requests: "Povabila",
@@ -423,6 +452,19 @@ const sl: typeof en = {
     decline: "Zavrni",
     timeTBD: "Čas ni določen",
     vs: "proti",
+    tabOpen: "Odprte tekme",
+    tabMyMatches: "Moje tekme",
+    tabCourts: "Igrišča",
+    tabBookings: "Rezervacije",
+    myBookings: "Moje rezervacije",
+    bookCourt: "Rezerviraj igrišče",
+    noUpcomingBookings: "Ni prihajajočih rezervacij",
+    noPastBookings: "Ni preteklih rezervacij",
+    cancelBooking: "Prekliči to rezervacijo?",
+    cancelled: "Preklicano",
+    completed: "Zaključeno",
+    bookingUpcoming: "Prihajajoče",
+    bookingPast: "Pretekle",
   },
   openMatches: {
     title: "Odprte tekme",
@@ -454,6 +496,7 @@ const sl: typeof en = {
     venues: "{n} igrišče",
     venuesPlural: "{n} igrišč",
     matchingFilters: "ustreza filtrom",
+    viewCourts: "Oglej igrišča in rezerviraj",
   },
   tournaments: {
     title: "Turnirji in srečanja",
@@ -513,6 +556,14 @@ const sl: typeof en = {
     openGames: "Odprte tekme",
     playersNearLevel: "Igralci vaše ravni",
     tournamentsTitle: "Turnirji",
+    searchPlaceholder: "Športni center, naslov, mesto…",
+    today: "Danes",
+    tomorrow: "Jutri",
+    available: "igrišč na voljo",
+    bookings: "Rezervacije",
+    quickBook: "Hitra rezervacija",
+    venueInfo: "Informacije",
+    courtsCount: "Igrišča",
   },
   skills: {
     beginner: "Začetnik",
@@ -569,6 +620,11 @@ const sl: typeof en = {
     fixIt: "Popravi →",
     win: "Zmaga",
     loss: "Poraz",
+    myBookings: "Moje rezervacije",
+    ranking: "Lestvica",
+    upcomingBookings: "Prihajajoče rezervacije",
+    noUpcomingBookings: "Ni prihajajočih rezervacij",
+    seeAllBookings: "Vse rezervacije →",
   },
   ranking: {
     title: "Lestvica",

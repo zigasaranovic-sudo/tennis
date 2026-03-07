@@ -3,14 +3,26 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  color-scheme: light;
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --accent: #22c55e;
+  --accent-dim: #16a34a;
+  --surface: #1e293b;
+  --surface-raised: #243044;
+  --border: #1e293b;
+  --muted: #64748b;
+  color-scheme: dark;
 }
 
 .dark {
   --background: #0f172a;
   --foreground: #f1f5f9;
+  --accent: #22c55e;
+  --accent-dim: #16a34a;
+  --surface: #1e293b;
+  --surface-raised: #243044;
+  --border: #1e293b;
+  --muted: #64748b;
   color-scheme: dark;
 }
 
@@ -28,6 +40,12 @@ body {
   font-size: 16px;
   line-height: 1.6;
 }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
 
 /* Larger minimum tap targets for accessibility */
 button, a, [role="button"] {
