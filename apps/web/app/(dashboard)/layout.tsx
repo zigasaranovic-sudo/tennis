@@ -51,6 +51,13 @@ export default function DashboardLayout({
 
   const isHome = pathname === "/";
 
+  const navLinks = [
+    { href: "/", label: t.nav.home },
+    { href: "/matches", label: t.nav.matches, base: "/matches" },
+    { href: "/tournaments", label: t.nav.tournaments },
+    { href: "/messages", label: t.nav.messages },
+  ];
+
   const bottomNavItems = [
     { href: "/", icon: HomeIcon, label: t.nav.home },
     { href: "/matches", icon: TennisIcon, label: t.nav.matches },
@@ -59,40 +66,39 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      {/* Top navigation */}
-      <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 shadow-lg shadow-black/20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+
+      {/* ── Top navigation ── */}
+      <nav className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 gap-3">
+
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 shrink-0 group">
-              <div className="w-7 h-7 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/30">
+            <Link href="/" className="flex items-center gap-2 shrink-0">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center shadow-md shadow-green-500/30">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="9" strokeWidth="2"/>
                   <path strokeWidth="1.5" d="M12 3 C8 6.5 8 17.5 12 21 M12 3 C16 6.5 16 17.5 12 21"/>
                 </svg>
               </div>
-              <span className="font-black text-white text-base tracking-tight">Play<span className="text-green-400">mate</span></span>
+              <span className="font-black text-slate-900 dark:text-white text-base tracking-tight">
+                Play<span className="text-green-500">mate</span>
+              </span>
             </Link>
 
             {/* Desktop nav links */}
-            <div className="hidden lg:flex items-center gap-0.5 flex-1 justify-center">
-              {[
-                { href: "/", label: t.nav.home },
-                { href: "/matches", label: t.nav.matches, base: "/matches" },
-                { href: "/tournaments", label: t.nav.tournaments },
-                { href: "/messages", label: t.nav.messages },
-              ].map((link) => {
+            <div className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+              {navLinks.map((link) => {
                 const base = link.base ?? link.href.split("?")[0];
                 const active = base === "/" ? pathname === "/" : pathname.startsWith(base);
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all whitespace-nowrap ${
+                    className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all whitespace-nowrap ${
                       active
-                        ? "text-green-400 bg-green-500/10 border border-green-500/20"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800"
+                        ? "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
                     }`}
                   >
                     {link.label}
@@ -106,38 +112,40 @@ export default function DashboardLayout({
               <LanguageSwitcher />
               <ThemeToggle />
               <NotificationBell />
+
               {initial !== null && (
                 <div className="relative ml-1" ref={dropdownRef}>
                   <button
                     onClick={() => setDropdownOpen((v) => !v)}
-                    className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-black hover:bg-green-400 transition-colors shadow-lg shadow-green-500/30"
+                    className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white text-sm font-black shadow-md shadow-green-500/30 hover:shadow-lg hover:shadow-green-500/40 transition-all"
                   >
                     {initial}
                   </button>
                   {dropdownOpen && (
-                    <div className="absolute right-0 top-10 w-52 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl shadow-black/50 py-1.5 z-50">
+                    <div className="absolute right-0 top-10 w-52 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xl shadow-slate-200/80 dark:shadow-black/60 py-2 z-50">
                       <Link
                         href="/profile"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50 hover:text-white transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white rounded-xl mx-1 transition-colors"
                       >
-                        <span className="w-7 h-7 bg-slate-700 rounded-full flex items-center justify-center text-base">👤</span>
+                        <span className="w-7 h-7 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-sm">👤</span>
                         {t.nav.home === "Home" ? "Profile" : "Profil"}
                       </Link>
                       <Link
                         href="/ranking"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50 hover:text-white transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white rounded-xl mx-1 transition-colors"
                       >
-                        <span className="w-7 h-7 bg-slate-700 rounded-full flex items-center justify-center text-base">🏆</span>
+                        <span className="w-7 h-7 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-sm">🏆</span>
                         {t.profilePage.ranking}
                       </Link>
-                      <div className="border-t border-slate-700 my-1" />
+                      <div className="border-t border-slate-100 dark:border-slate-700 my-1.5 mx-2" />
                       <button
                         onClick={() => { setDropdownOpen(false); void handleSignOut(); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl mx-1 transition-colors"
+                        style={{ width: "calc(100% - 8px)" }}
                       >
-                        <span className="w-7 h-7 bg-red-500/10 rounded-full flex items-center justify-center text-base">🚪</span>
+                        <span className="w-7 h-7 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center text-sm">🚪</span>
                         {t.profilePage.signOut}
                       </button>
                     </div>
@@ -154,9 +162,9 @@ export default function DashboardLayout({
         {children}
       </main>
 
-      {/* Bottom nav for mobile */}
-      <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 lg:hidden z-40">
-        <div className="grid grid-cols-4 h-16 max-w-lg mx-auto">
+      {/* ── Bottom nav for mobile ── */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 lg:hidden z-40">
+        <div className="grid grid-cols-4 h-16 max-w-lg mx-auto px-2">
           {bottomNavItems.map((item) => {
             const base = item.href.split("?")[0];
             const active = base === "/" ? pathname === "/" : pathname.startsWith(base);
@@ -165,14 +173,22 @@ export default function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center gap-1 transition-all ${
-                  active
-                    ? "text-green-400"
-                    : "text-slate-600 hover:text-slate-400"
-                }`}
+                className="flex flex-col items-center justify-center gap-0.5 transition-all"
               >
-                <Icon active={active} />
-                <span className={`text-[10px] font-semibold leading-none ${active ? "text-green-400" : "text-slate-600"}`}>{item.label}</span>
+                <div className={`w-10 h-7 flex items-center justify-center rounded-full transition-all ${
+                  active
+                    ? "text-green-500 dark:text-green-400"
+                    : "text-slate-400 dark:text-slate-500"
+                }`}>
+                  <Icon active={active} />
+                </div>
+                <span className={`text-[10px] font-semibold leading-none transition-colors ${
+                  active
+                    ? "text-green-500 dark:text-green-400"
+                    : "text-slate-400 dark:text-slate-500"
+                }`}>
+                  {item.label}
+                </span>
               </Link>
             );
           })}
@@ -186,8 +202,8 @@ export default function DashboardLayout({
 
 function HomeIcon({ active }: { active: boolean }) {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12L12 4l9 8" />
+    <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={active ? 0 : 1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12L12 4l9 8" stroke="currentColor" strokeWidth="2" fill="none" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9" />
     </svg>
   );
