@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
@@ -123,7 +123,6 @@ export default function VenueDetailPage() {
     ? ((nowMin - toMin(START_HOUR)) / 60) * HOUR_H : null;
 
   const canGoPrev = date > today;
-  const canGoNext = true;
 
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -196,8 +195,7 @@ export default function VenueDetailPage() {
 
               <button
                 onClick={() => changeDate(addDays(date, 1))}
-                disabled={!canGoNext}
-                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-20 transition-colors shrink-0"
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
               >
                 <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
               </button>
@@ -388,8 +386,7 @@ export default function VenueDetailPage() {
 }
 
 // ── CourtGrid ─────────────────────────────────────────────────────────────────
-// Renders the full time grid for all courts.
-// Fetches bookings once per court (not per cell).
+// One column per court. Bookings rendered as absolutely-positioned spanning cards.
 
 function CourtGrid({
   courts, date, today, nowPx, selection, onSelect,
@@ -401,57 +398,65 @@ function CourtGrid({
   selection: Selection;
   onSelect: (sel: Selection) => void;
 }) {
+  const totalH = HOURS.length * HOUR_H;
+
   return (
     <div className="overflow-x-auto">
-      <div style={{ minWidth: `${56 + courts.length * 140}px` }}>
+      <div style={{ minWidth: `${56 + courts.length * 150}px` }}>
 
         {/* Court headers */}
-        <div className="flex sticky top-0 z-10 bg-slate-50 dark:bg-slate-900/90 border-b-2 border-slate-200 dark:border-slate-700 backdrop-blur-sm">
+        <div className="flex sticky top-0 z-10 bg-white dark:bg-slate-900 border-b-2 border-slate-200 dark:border-slate-700">
           <div className="w-14 shrink-0" />
           {courts.map((court) => (
-            <div key={court.id} className="flex-1 min-w-[140px] border-l border-slate-200 dark:border-slate-700 px-2 py-2.5 text-center">
+            <div key={court.id} className="flex-1 min-w-[150px] border-l border-slate-200 dark:border-slate-700 px-2 py-3 text-center">
               <p className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide truncate">{court.name}</p>
-              <div className="flex items-center justify-center gap-1 mt-0.5">
-                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600"}`}>
+              <div className="flex items-center justify-center gap-1.5 mt-1">
+                <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600"}`}>
                   {court.surface}
                 </span>
                 {court.price_per_hour != null && (
-                  <span className="text-[9px] font-bold text-green-600 dark:text-green-400">{(court.price_per_hour / 100).toFixed(0)}€/h</span>
+                  <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">{(court.price_per_hour / 100).toFixed(0)}€/h</span>
                 )}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Time + court columns */}
-        <div className="relative">
-          {/* "Now" red line */}
+        {/* Grid body */}
+        <div className="relative flex" style={{ height: totalH }}>
+
+          {/* Now line */}
           {nowPx !== null && (
             <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: nowPx }}>
-              <div className="w-2 h-2 rounded-full bg-red-500 ml-[46px] shrink-0" />
-              <div className="flex-1 h-px bg-red-500" />
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500 ml-[46px] shrink-0 shadow-sm" />
+              <div className="flex-1 h-px bg-red-400" />
             </div>
           )}
 
-          {HOURS.map((hour) => (
-            <div key={hour} className="flex" style={{ height: HOUR_H }}>
-              {/* Hour label */}
-              <div className="w-14 shrink-0 flex items-start justify-end pr-2.5 pt-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium tabular-nums">{String(hour).padStart(2, "0")}:00</span>
+          {/* Time axis */}
+          <div className="w-14 shrink-0 relative">
+            {HOURS.map((hour) => (
+              <div key={hour} className="absolute right-0 flex justify-end pr-2.5" style={{ top: (hour - START_HOUR) * HOUR_H, height: HOUR_H }}>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium tabular-nums mt-1">{String(hour).padStart(2, "0")}:00</span>
               </div>
-              {/* Per-court hour cell */}
-              {courts.map((court) => (
-                <CourtHourCell
-                  key={court.id}
-                  court={court}
-                  hour={hour}
-                  date={date}
-                  today={today}
-                  selection={selection}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
+            ))}
+            {/* Horizontal hour lines on axis */}
+            {HOURS.map((hour) => (
+              <div key={hour} className="absolute left-0 right-0 border-b border-slate-100 dark:border-slate-800" style={{ top: (hour - START_HOUR) * HOUR_H + HOUR_H }} />
+            ))}
+          </div>
+
+          {/* One column per court */}
+          {courts.map((court) => (
+            <CourtColumn
+              key={court.id}
+              court={court}
+              date={date}
+              today={today}
+              selection={selection}
+              onSelect={onSelect}
+              totalH={totalH}
+            />
           ))}
         </div>
       </div>
@@ -459,128 +464,125 @@ function CourtGrid({
   );
 }
 
-// ── CourtHourCell ─────────────────────────────────────────────────────────────
-// One hour block for one court. Fetches data once per court (query is shared/cached).
+// ── CourtColumn ───────────────────────────────────────────────────────────────
+// One court's full column: background cells + floating booking cards.
 
-function CourtHourCell({
-  court, hour, date, today, selection, onSelect,
+function CourtColumn({
+  court, date, today, selection, onSelect, totalH,
 }: {
   court: VenueCourt;
-  hour: number;
   date: string;
   today: string;
   selection: Selection;
   onSelect: (sel: Selection) => void;
+  totalH: number;
 }) {
   const { data: bookings } = trpc.courts.getCourtAvailability.useQuery(
     { court_id: court.id, date },
     { enabled: !!court.id && !!date }
   );
 
-  const slotStart = toMin(hour);
-  const slotEnd = slotStart + 60;
-
-  // Find bookings that START within this hour (to draw the block)
-  const bookingsInSlot = useMemo(() => {
-    if (!bookings) return [];
-    return (bookings as Booking[]).filter(b => {
-      const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
-      const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
-      // starts within this hour
-      return bs >= slotStart && bs < slotEnd && be > bs;
-    });
-  }, [bookings, slotStart, slotEnd]);
-
-  // Is this hour fully covered by a booking that started before?
-  const coveredByPrev = useMemo(() => {
-    if (!bookings) return false;
-    return (bookings as Booking[]).some(b => {
-      const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
-      const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
-      return bs < slotStart && be > slotStart;
-    });
-  }, [bookings, slotStart]);
-
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
-  const isPast = date === today && slotEnd <= nowMin;
 
-  const isSelected = selection?.courtId === court.id
-    && slotStart >= selection.startMin && slotEnd <= selection.endMin;
+  // Pre-compute which hour-slots are booked (for background coloring)
+  const bookedMins = useMemo(() => {
+    if (!bookings) return new Set<number>();
+    const set = new Set<number>();
+    for (const b of bookings as Booking[]) {
+      const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
+      const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
+      for (let m = bs; m < be; m += 60) set.add(m);
+    }
+    return set;
+  }, [bookings]);
 
-  const isFullyBooked = coveredByPrev || bookingsInSlot.length > 0;
-
-  const handleClick = () => {
-    if (isPast || isFullyBooked) return;
-    if (isSelected) { onSelect(null); return; }
+  const handleCellClick = (hour: number) => {
+    const slotStart = toMin(hour);
+    const slotEnd = slotStart + 60;
+    if (bookedMins.has(slotStart)) return;
+    if (date === today && slotEnd <= nowMin) return;
+    if (selection?.courtId === court.id && slotStart === selection.startMin) {
+      onSelect(null);
+      return;
+    }
     onSelect({ courtId: court.id, startMin: slotStart, endMin: slotEnd });
   };
 
-  const base = "flex-1 min-w-[140px] border-l border-b border-slate-200 dark:border-slate-700 relative overflow-hidden transition-colors";
-
-  // Booked — grey striped, like Courtiplay
-  if (isFullyBooked) {
-    const firstBooking = bookingsInSlot[0];
-    const name = firstBooking?.player?.full_name;
-    return (
-      <div className={`${base} cursor-default`} style={{ height: HOUR_H }}>
-        {/* Stripe background */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundColor: "rgb(226 232 240 / 0.6)",
-            backgroundImage: "repeating-linear-gradient(135deg, transparent, transparent 5px, rgba(203,213,225,0.5) 5px, rgba(203,213,225,0.5) 6px)",
-          }}
-        />
-        {/* Show name only if booking starts here */}
-        {firstBooking && !coveredByPrev && (
-          <div className="absolute inset-0 flex flex-col justify-center px-2 py-1">
-            {name && <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">{name}</span>}
-            <span className="text-[9px] text-slate-400 dark:text-slate-500 tabular-nums">
-              {fmtTime(new Date(firstBooking.starts_at).getHours() * 60 + new Date(firstBooking.starts_at).getMinutes())}
-              –{fmtTime(new Date(firstBooking.ends_at).getHours() * 60 + new Date(firstBooking.ends_at).getMinutes())}
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Past — muted
-  if (isPast) {
-    return (
-      <div className={`${base} bg-slate-50 dark:bg-slate-800/30 cursor-default`} style={{ height: HOUR_H }} />
-    );
-  }
-
-  // Selected — green
-  if (isSelected) {
-    return (
-      <div
-        className={`${base} bg-green-500 hover:bg-green-400 cursor-pointer`}
-        style={{ height: HOUR_H }}
-        onClick={handleClick}
-      >
-        <div className="absolute inset-0 flex items-center justify-center gap-1">
-          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-          <span className="text-xs text-white font-bold tabular-nums">{fmtTime(slotStart)}</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Free — white, green on hover
   return (
-    <div
-      className={`${base} bg-white dark:bg-slate-900 hover:bg-green-50 dark:hover:bg-green-500/10 cursor-pointer group`}
-      style={{ height: HOUR_H }}
-      onClick={handleClick}
-    >
-      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-[11px] text-green-600 dark:text-green-400 font-semibold bg-green-100 dark:bg-green-500/20 px-2 py-0.5 rounded-lg tabular-nums">
-          {fmtTime(slotStart)}
-        </span>
-      </div>
+    <div className="flex-1 min-w-[150px] border-l border-slate-200 dark:border-slate-700 relative" style={{ height: totalH }}>
+
+      {/* Background hour rows */}
+      {HOURS.map((hour) => {
+        const slotStart = toMin(hour);
+        const slotEnd = slotStart + 60;
+        const isBooked = bookedMins.has(slotStart);
+        const isPast = date === today && slotEnd <= nowMin;
+        const isSelected = selection?.courtId === court.id
+          && slotStart >= selection.startMin && slotEnd <= selection.endMin;
+
+        return (
+          <div
+            key={hour}
+            className={[
+              "absolute left-0 right-0 border-b border-slate-100 dark:border-slate-800 transition-colors",
+              isBooked ? "cursor-default" :
+              isPast   ? "bg-slate-50 dark:bg-slate-800/20 cursor-default" :
+              isSelected ? "bg-emerald-500 hover:bg-emerald-400 cursor-pointer" :
+                           "bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 cursor-pointer group",
+            ].join(" ")}
+            style={{ top: (hour - START_HOUR) * HOUR_H, height: HOUR_H }}
+            onClick={() => handleCellClick(hour)}
+          >
+            {/* Hover time label on free cells */}
+            {!isBooked && !isPast && !isSelected && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-md tabular-nums">
+                  {fmtTime(slotStart)}
+                </span>
+              </div>
+            )}
+            {/* Selected checkmark */}
+            {isSelected && selection?.startMin === slotStart && (
+              <div className="absolute inset-0 flex items-center justify-center gap-1 pointer-events-none">
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                <span className="text-xs text-white font-bold tabular-nums">{fmtTime(slotStart)}</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Floating booking cards — span full duration */}
+      {(bookings as Booking[] | undefined)?.map((b, i) => {
+        const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
+        const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
+        const top = ((bs - toMin(START_HOUR)) / 60) * HOUR_H;
+        const height = ((be - bs) / 60) * HOUR_H;
+        if (top < 0 || height <= 0) return null;
+        return (
+          <div
+            key={i}
+            className="absolute left-1 right-1 z-10 rounded-xl overflow-hidden pointer-events-none"
+            style={{ top: top + 2, height: height - 4 }}
+          >
+            <div
+              className="w-full h-full flex flex-col justify-center px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600"
+              style={{
+                background: "rgba(226,232,240,0.85)",
+                backgroundImage: "repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(203,213,225,0.45) 6px,rgba(203,213,225,0.45) 7px)",
+              }}
+            >
+              {b.player?.full_name && (
+                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 truncate leading-tight">
+                  {b.player.full_name}
+                </span>
+              )}
+              <span className="text-[9px] text-slate-400 tabular-nums leading-tight">{fmtTime(bs)}–{fmtTime(be)}</span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
