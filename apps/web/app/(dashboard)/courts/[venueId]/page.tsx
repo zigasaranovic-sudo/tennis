@@ -576,8 +576,9 @@ function BookingModal({
   );
 }
 
+const PAGE_SIZE = 4; // max courts visible at once
+
 // ── CourtGrid ─────────────────────────────────────────────────────────────────
-// One column per court. Bookings rendered as absolutely-positioned spanning cards.
 
 function CourtGrid({
   courts, date, today, nowPx, selection, onSelect,
@@ -590,39 +591,68 @@ function CourtGrid({
   onSelect: (sel: Selection) => void;
 }) {
   const totalH = HOURS.length * HOUR_H;
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(courts.length / PAGE_SIZE);
+  const visible = courts.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   return (
-    <div className="overflow-x-auto">
-      <div style={{ minWidth: `${56 + courts.length * 150}px` }}>
-
-        {/* Court headers */}
-        <div className="flex sticky top-0 z-10 bg-white dark:bg-slate-900 border-b-2 border-slate-200 dark:border-slate-700">
-          <div className="w-14 shrink-0" />
-          {courts.map((court) => (
-            <div key={court.id} className="flex-1 min-w-[150px] border-l border-slate-200 dark:border-slate-700 px-2 py-3 text-center">
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide truncate">{court.name}</p>
-              <div className="flex items-center justify-center gap-1.5 mt-1">
-                <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600"}`}>
-                  {court.surface}
-                </span>
-                {court.price_per_hour != null && (
-                  <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">{(court.price_per_hour / 100).toFixed(0)}€/h</span>
-                )}
-              </div>
-            </div>
-          ))}
+    <div>
+      {/* Page navigation — only when more than PAGE_SIZE courts */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
+          <span className="text-xs text-slate-400 font-medium">
+            Igrišča {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, courts.length)} / {courts.length}
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setPage(p => p - 1)}
+              disabled={page === 0}
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button
+              onClick={() => setPage(p => p + 1)}
+              disabled={page >= totalPages - 1}
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
         </div>
+      )}
 
-        {/* Grid body */}
-        <div className="relative flex" style={{ height: totalH }}>
+      <div className="overflow-x-auto">
+        <div style={{ minWidth: `${56 + visible.length * 160}px` }}>
 
-          {/* Now line */}
-          {nowPx !== null && (
-            <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: nowPx }}>
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500 ml-[46px] shrink-0 shadow-sm" />
-              <div className="flex-1 h-px bg-red-400" />
-            </div>
-          )}
+          {/* Court headers */}
+          <div className="flex sticky top-0 z-10 bg-white dark:bg-slate-900 border-b-2 border-slate-200 dark:border-slate-700">
+            <div className="w-14 shrink-0" />
+            {visible.map((court) => (
+              <div key={court.id} className="flex-1 min-w-[160px] border-l border-slate-200 dark:border-slate-700 px-2 py-3 text-center">
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide truncate">{court.name}</p>
+                <div className="flex items-center justify-center gap-1.5 mt-1">
+                  <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600"}`}>
+                    {court.surface}
+                  </span>
+                  {court.price_per_hour != null && (
+                    <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">{(court.price_per_hour / 100).toFixed(0)}€/h</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Grid body */}
+          <div className="relative flex" style={{ height: totalH }}>
+
+            {/* Now line */}
+            {nowPx !== null && (
+              <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: nowPx }}>
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 ml-[46px] shrink-0 shadow-sm" />
+                <div className="flex-1 h-px bg-red-400" />
+              </div>
+            )}
 
           {/* Time axis */}
           <div className="w-14 shrink-0 relative">
@@ -637,18 +667,19 @@ function CourtGrid({
             ))}
           </div>
 
-          {/* One column per court */}
-          {courts.map((court) => (
-            <CourtColumn
-              key={court.id}
-              court={court}
-              date={date}
-              today={today}
-              selection={selection}
-              onSelect={onSelect}
-              totalH={totalH}
-            />
-          ))}
+            {/* One column per visible court */}
+            {visible.map((court) => (
+              <CourtColumn
+                key={court.id}
+                court={court}
+                date={date}
+                today={today}
+                selection={selection}
+                onSelect={onSelect}
+                totalH={totalH}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -760,18 +791,18 @@ function CourtColumn({
             style={{ top: top + 2, height: height - 4 }}
           >
             <div
-              className="w-full h-full flex flex-col justify-center px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600"
+              className="w-full h-full flex flex-col justify-center px-3 py-2 rounded-xl border border-slate-400/40 dark:border-slate-500/40"
               style={{
-                background: "rgba(226,232,240,0.85)",
-                backgroundImage: "repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(203,213,225,0.45) 6px,rgba(203,213,225,0.45) 7px)",
+                background: "rgba(203,213,225,0.92)",
+                backgroundImage: "repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(148,163,184,0.3) 6px,rgba(148,163,184,0.3) 7px)",
               }}
             >
               {b.player?.full_name && (
-                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 truncate leading-tight">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate leading-snug">
                   {b.player.full_name}
                 </span>
               )}
-              <span className="text-[9px] text-slate-400 tabular-nums leading-tight">{fmtTime(bs)}–{fmtTime(be)}</span>
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums leading-snug">{fmtTime(bs)}–{fmtTime(be)}</span>
             </div>
           </div>
         );
