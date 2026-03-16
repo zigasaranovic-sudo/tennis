@@ -56,12 +56,14 @@ export const courtsRouter = router({
   getCourtAvailability: protectedProcedure
     .input(GetCourtAvailabilitySchema)
     .query(async ({ ctx, input }) => {
-      const dayStart = `${input.date}T00:00:00.000Z`;
-      const dayEnd = `${input.date}T23:59:59.999Z`;
+      // Use local-day boundaries (date is YYYY-MM-DD in Europe/Ljubljana ~= UTC+1/+2)
+      // Use a wide window of the full calendar day in UTC to cover any TZ offset
+      const dayStart = `${input.date}T00:00:00+00:00`;
+      const dayEnd = `${input.date}T23:59:59+00:00`;
 
       const { data, error } = await ctx.supabase
         .from("court_bookings")
-        .select("id, starts_at, ends_at, booked_by, status")
+        .select("id, starts_at, ends_at, booked_by, status, player:booked_by(full_name)")
         .eq("court_id", input.court_id)
         .eq("status", "confirmed")
         .gte("starts_at", dayStart)

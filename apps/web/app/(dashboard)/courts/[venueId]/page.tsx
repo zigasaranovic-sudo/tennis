@@ -68,6 +68,11 @@ function toMin(h: number, m = 0) { return h * 60 + m; }
 function fmtTime(min: number) {
   return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 }
+// Parse a UTC ISO timestamp into local minutes-since-midnight
+function isoToLocalMin(iso: string): number {
+  const d = new Date(iso);
+  return d.getHours() * 60 + d.getMinutes();
+}
 function addDays(dateStr: string, n: number): string {
   const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() + n);
@@ -93,8 +98,16 @@ export default function VenueDetailPage() {
   const { data: venueRaw, isLoading } = trpc.courts.getVenue.useQuery({ id: venueId }, { enabled: !!venueId });
   const venue = venueRaw as Venue | undefined;
 
+  const utils = trpc.useUtils();
   const bookMutation = trpc.courts.bookCourt.useMutation({
-    onSuccess: () => { setBooked(true); setModalOpen(false); },
+    onSuccess: () => {
+      setBooked(true);
+      setModalOpen(false);
+      // Refresh availability for all courts on this date
+      venue?.courts.forEach(c => {
+        utils.courts.getCourtAvailability.invalidate({ court_id: c.id, date });
+      });
+    },
   });
 
   const changeDate = (d: string) => { setDate(d); setSelection(null); setModalOpen(false); setBooked(false); };
@@ -385,8 +398,8 @@ function BookingModal({
   const bookedIntervals = useMemo(() => {
     if (!bookings) return [] as { bs: number; be: number }[];
     return (bookings as Booking[]).map(b => ({
-      bs: new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes(),
-      be: new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes(),
+      bs: isoToLocalMin(b.starts_at),
+      be: isoToLocalMin(b.ends_at),
     }));
   }, [bookings]);
 
@@ -671,9 +684,10 @@ function CourtColumn({
     if (!bookings) return new Set<number>();
     const set = new Set<number>();
     for (const b of bookings as Booking[]) {
-      const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
-      const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
-      for (let m = bs; m < be; m += 60) set.add(m);
+      const bs = isoToLocalMin(b.starts_at);
+      const be = isoToLocalMin(b.ends_at);
+      // mark every 30-min slot inside this booking
+      for (let m = bs; m < be; m += 30) set.add(m);
     }
     return set;
   }, [bookings]);
@@ -681,7 +695,8 @@ function CourtColumn({
   const handleCellClick = (hour: number) => {
     const slotStart = toMin(hour);
     const slotEnd = slotStart + 60;
-    if (bookedMins.has(slotStart)) return;
+    // block if any 30-min chunk of this hour is booked
+    if (bookedMins.has(slotStart) || bookedMins.has(slotStart + 30)) return;
     if (date === today && slotEnd <= nowMin) return;
     if (selection?.courtId === court.id && slotStart === selection.startMin) {
       onSelect(null);
@@ -697,7 +712,7 @@ function CourtColumn({
       {HOURS.map((hour) => {
         const slotStart = toMin(hour);
         const slotEnd = slotStart + 60;
-        const isBooked = bookedMins.has(slotStart);
+        const isBooked = bookedMins.has(slotStart) || bookedMins.has(slotStart + 30);
         const isPast = date === today && slotEnd <= nowMin;
         const isSelected = selection?.courtId === court.id
           && slotStart >= selection.startMin && slotEnd <= selection.endMin;
@@ -736,8 +751,8 @@ function CourtColumn({
 
       {/* Floating booking cards — span full duration */}
       {(bookings as Booking[] | undefined)?.map((b, i) => {
-        const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
-        const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
+        const bs = isoToLocalMin(b.starts_at);
+        const be = isoToLocalMin(b.ends_at);
         const top = ((bs - toMin(START_HOUR)) / 60) * HOUR_H;
         const height = ((be - bs) / 60) * HOUR_H;
         if (top < 0 || height <= 0) return null;
@@ -783,8 +798,8 @@ function QuickSlots({ courtId, date, today }: { courtId: string; date: string; t
       const s = toMin(hour), e = s + 60;
       if (date === today && e <= nowMin) return false;
       return !(bookings as Booking[]).some(b => {
-        const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
-        const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
+        const bs = isoToLocalMin(b.starts_at);
+        const be = isoToLocalMin(b.ends_at);
         return s < be && e > bs;
       });
     }).slice(0, 4);
