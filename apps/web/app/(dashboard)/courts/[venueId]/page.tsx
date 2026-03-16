@@ -337,12 +337,11 @@ export default function VenueDetailPage() {
       </div>
 
       {/* Booking modal */}
-      {modalOpen && selection && (
+      {modalOpen && selection && selectedCourt && (
         <BookingModal
-          court={selectedCourt!}
+          court={selectedCourt}
           date={date}
           initialStart={selection.startMin}
-          initialEnd={selection.endMin}
           onClose={() => { setModalOpen(false); setSelection(null); }}
           onConfirm={(startMin, endMin, notes) => {
             bookMutation.mutate({
@@ -363,40 +362,96 @@ export default function VenueDetailPage() {
 // ── BookingModal ──────────────────────────────────────────────────────────────
 
 function BookingModal({
-  court, date, initialStart, initialEnd, onClose, onConfirm, isPending, error,
+  court, date, initialStart, onClose, onConfirm, isPending, error,
 }: {
   court: VenueCourt;
   date: string;
   initialStart: number;
-  initialEnd: number;
   onClose: () => void;
   onConfirm: (startMin: number, endMin: number, notes: string) => void;
   isPending: boolean;
   error?: string;
 }) {
-  // Build list of available half-hour start times
-  const timeOptions = Array.from({ length: (END_HOUR - START_HOUR) * 2 }, (_, i) => START_HOUR * 60 + i * 30);
-  const durationOptions = [30, 60, 90, 120, 150, 180];
+  const { data: bookings } = trpc.courts.getCourtAvailability.useQuery(
+    { court_id: court.id, date },
+    { enabled: !!court.id && !!date }
+  );
 
   const [startMin, setStartMin] = useState(initialStart);
-  const [durationMins, setDurationMins] = useState(Math.max(60, initialEnd - initialStart));
+  const [endMin, setEndMin] = useState(initialStart + 60);
   const [notes, setNotes] = useState("");
 
-  const endMin = startMin + durationMins;
-  const price = court.price_per_hour != null
+  // All booking intervals for this court/day
+  const bookedIntervals = useMemo(() => {
+    if (!bookings) return [] as { bs: number; be: number }[];
+    return (bookings as Booking[]).map(b => ({
+      bs: new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes(),
+      be: new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes(),
+    }));
+  }, [bookings]);
+
+  // Next booking start after a given minute (wall for end-time options)
+  const nextBookingAfter = (from: number) => {
+    const nexts = bookedIntervals.map(b => b.bs).filter(bs => bs > from);
+    return nexts.length ? Math.min(...nexts) : END_HOUR * 60;
+  };
+
+  // Valid start times: half-hour slots that are not inside any booking
+  const validStarts = useMemo(() => {
+    const slots: number[] = [];
+    for (let m = START_HOUR * 60; m < END_HOUR * 60; m += 30) {
+      const blocked = bookedIntervals.some(({ bs, be }) => m >= bs && m < be);
+      if (!blocked) slots.push(m);
+    }
+    return slots;
+  }, [bookedIntervals]);
+
+  // Valid end times for chosen start: every 30-min step up to (but not including) next booking
+  const validEnds = useMemo(() => {
+    const wall = nextBookingAfter(startMin);
+    const ends: number[] = [];
+    for (let m = startMin + 30; m <= Math.min(wall, END_HOUR * 60); m += 30) {
+      ends.push(m);
+    }
+    return ends;
+  }, [startMin, bookedIntervals]);
+
+  // When start changes, clamp end to first valid option
+  const handleStartChange = (val: number) => {
+    setStartMin(val);
+    const wall = nextBookingAfter(val);
+    const newEnd = val + 60 <= Math.min(wall, END_HOUR * 60) ? val + 60 : val + 30;
+    setEndMin(Math.min(newEnd, Math.min(wall, END_HOUR * 60)));
+  };
+
+  // When end changes, ensure it's still valid
+  const handleEndChange = (val: number) => {
+    setEndMin(val);
+  };
+
+  const durationMins = endMin - startMin;
+  const price = court.price_per_hour != null && durationMins > 0
     ? (court.price_per_hour / 100) * (durationMins / 60) : null;
 
   const dateLabel = new Date(date + "T00:00:00").toLocaleDateString("sl-SI", {
     weekday: "long", day: "numeric", month: "long",
   });
 
+  const fmtDuration = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (m === 0) return `${h}h`;
+    if (h === 0) return `${m}min`;
+    return `${h}h ${m}min`;
+  };
+
+  const isValid = validEnds.includes(endMin) && endMin > startMin;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -404,14 +459,14 @@ function BookingModal({
             <h2 className="text-base font-black text-slate-900 dark:text-white">Rezervacija igrišča</h2>
             <p className="text-xs text-slate-400 mt-0.5 capitalize">{dateLabel}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
         <div className="px-5 py-4 space-y-4">
 
-          {/* Court info */}
+          {/* Court badge */}
           <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl px-4 py-3">
             <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,52 +482,47 @@ function BookingModal({
             </div>
           </div>
 
-          {/* Start time */}
-          <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Začetek</label>
-            <div className="flex flex-wrap gap-2">
-              {timeOptions.filter(t => t < END_HOUR * 60).map(t => (
-                <button
-                  key={t}
-                  onClick={() => setStartMin(t)}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-semibold tabular-nums border transition-all ${
-                    startMin === t
-                      ? "bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/30"
-                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
-                  }`}
+          {/* Start + End dropdowns side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Začetek</label>
+              <div className="relative">
+                <select
+                  value={startMin}
+                  onChange={(e) => handleStartChange(Number(e.target.value))}
+                  className="w-full appearance-none text-sm font-semibold tabular-nums px-3 py-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer transition-all"
                 >
-                  {fmtTime(t)}
-                </button>
-              ))}
+                  {validStarts.map(t => (
+                    <option key={t} value={t}>{fmtTime(t)}</option>
+                  ))}
+                </select>
+                <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/></svg>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Konec</label>
+              <div className="relative">
+                <select
+                  value={endMin}
+                  onChange={(e) => handleEndChange(Number(e.target.value))}
+                  className="w-full appearance-none text-sm font-semibold tabular-nums px-3 py-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer transition-all"
+                >
+                  {validEnds.map(t => (
+                    <option key={t} value={t}>{fmtTime(t)}</option>
+                  ))}
+                </select>
+                <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/></svg>
+              </div>
             </div>
           </div>
 
-          {/* Duration */}
-          <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Trajanje</label>
-            <div className="flex gap-2">
-              {durationOptions.map(d => (
-                <button
-                  key={d}
-                  onClick={() => setDurationMins(d)}
-                  className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
-                    durationMins === d
-                      ? "bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/30"
-                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
-                  }`}
-                >
-                  {d < 60 ? `${d}m` : `${d / 60}h`}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Summary row */}
+          {/* Summary */}
           <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-500/10 rounded-xl px-4 py-3 border border-emerald-200 dark:border-emerald-500/30">
             <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Rezervacija</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Trajanje</p>
               <p className="text-base font-black text-slate-900 dark:text-white tabular-nums">
                 {fmtTime(startMin)} – {fmtTime(endMin)}
+                <span className="text-sm font-semibold text-slate-400 ml-2">({fmtDuration(durationMins)})</span>
               </p>
             </div>
             {price != null && (
@@ -484,16 +534,13 @@ function BookingModal({
           </div>
 
           {/* Notes */}
-          <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Opomba (neobvezno)</label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Npr. trening, turnir..."
-              className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-400 transition-all"
-            />
-          </div>
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Opomba (neobvezno) — npr. trening, turnir..."
+            className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-400 transition-all"
+          />
 
           {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-500/10 rounded-lg px-3 py-2">{error}</p>}
         </div>
@@ -508,8 +555,8 @@ function BookingModal({
           </button>
           <button
             onClick={() => onConfirm(startMin, endMin, notes)}
-            disabled={isPending || endMin > END_HOUR * 60}
-            className="flex-2 flex-grow-[2] py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:opacity-50 text-white text-sm font-black transition-colors shadow-lg shadow-emerald-500/20"
+            disabled={isPending || !isValid}
+            className="flex-grow-[2] py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:opacity-50 text-white text-sm font-black transition-colors shadow-lg shadow-emerald-500/20"
           >
             {isPending ? "Rezervacija..." : "Potrdi rezervacijo"}
           </button>
