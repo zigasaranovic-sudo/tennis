@@ -103,10 +103,7 @@ export default function VenueDetailPage() {
     onSuccess: () => {
       setBooked(true);
       setModalOpen(false);
-      // Refresh availability for all courts on this date
-      venue?.courts.forEach(c => {
-        utils.courts.getCourtAvailability.invalidate({ court_id: c.id, date });
-      });
+      utils.courts.getCourtAvailability.invalidate();
     },
   });
 
