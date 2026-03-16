@@ -52,18 +52,12 @@ const SURFACE_FALLBACK: Record<string, string> = {
 
 const START_HOUR = 7;
 const END_HOUR = 22;
-// Each 30-min slot = 32px → 1 hour = 64px
-const SLOT_H = 32;
-const HOUR_H = SLOT_H * 2;
-// 30-min slots
-const SLOTS = Array.from({ length: (END_HOUR - START_HOUR) * 2 }, (_, i) => {
-  const totalMin = START_HOUR * 60 + i * 30;
-  return totalMin;
-});
+const HOUR_H = 56; // px per hour
+const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
 function venueSlug(name: string): string {
   return name.toLowerCase()
-    .replace(/[čćžšđ]/g, (c) => ({ č:"c", ć:"c", ž:"z", š:"s", đ:"d" }[c] ?? c))
+    .replace(/[čćžšđ]/g, (c) => ({ č: "c", ć: "c", ž: "z", š: "s", đ: "d" }[c] ?? c))
     .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 function getVenueImage(name: string, surfaces: string[]): string {
@@ -95,83 +89,82 @@ export default function VenueDetailPage() {
   const [selection, setSelection] = useState<Selection>(null);
   const [notes, setNotes] = useState("");
   const [booked, setBooked] = useState(false);
-  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const { data: venueRaw, isLoading } = trpc.courts.getVenue.useQuery({ id: venueId }, { enabled: !!venueId });
   const venue = venueRaw as Venue | undefined;
 
-  const bookMutation = trpc.courts.bookCourt.useMutation({
-    onSuccess: () => setBooked(true),
-  });
+  const bookMutation = trpc.courts.bookCourt.useMutation({ onSuccess: () => setBooked(true) });
 
   const changeDate = (d: string) => { setDate(d); setSelection(null); setBooked(false); setNotes(""); };
 
+  // Day strip: always show 6 days starting from whichever week contains `date`
+  // Compute the window start: snap to the nearest group of 6 from today
+  const dayOffset = Math.max(0, Math.floor(
+    (new Date(date + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / (86400000 * 6)
+  ) * 6);
+  const windowStart = addDays(today, dayOffset);
+  const dayButtons = Array.from({ length: 6 }, (_, i) => addDays(windowStart, i));
+
+  const weekdayShort = (d: string) =>
+    new Date(d + "T00:00:00").toLocaleDateString("sl-SI", { weekday: "short" }).toUpperCase().slice(0, 3);
+  const dayNum = (d: string) => new Date(d + "T00:00:00").getDate();
+  const monthShort = (d: string) =>
+    new Date(d + "T00:00:00").toLocaleDateString("sl-SI", { month: "short" }).toUpperCase();
+
   const heroImg = getVenueImage(venue?.name ?? "", venue?.surfaces ?? []);
-
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const nowOffset = date === today
-    ? ((nowMin - toMin(START_HOUR)) / 30) * SLOT_H
-    : null;
-
   const selectedCourt = venue?.courts.find(c => c.id === selection?.courtId);
   const durationMins = selection ? selection.endMin - selection.startMin : 0;
   const price = selectedCourt?.price_per_hour != null && durationMins > 0
     ? (selectedCourt.price_per_hour / 100) * (durationMins / 60) : null;
 
-  // Build 6 day buttons centred on selected date (today … today+5)
-  const dayButtons = Array.from({ length: 6 }, (_, i) => addDays(today, i));
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowPx = date === today && nowMin >= toMin(START_HOUR) && nowMin <= toMin(END_HOUR)
+    ? ((nowMin - toMin(START_HOUR)) / 60) * HOUR_H : null;
 
-  const weekdayShort = (d: string) => {
-    const obj = new Date(d + "T00:00:00");
-    return obj.toLocaleDateString("sl-SI", { weekday: "short" }).toUpperCase().slice(0, 3);
-  };
-  const dayNum = (d: string) => new Date(d + "T00:00:00").getDate();
-  const monthShort = (d: string) =>
-    new Date(d + "T00:00:00").toLocaleDateString("sl-SI", { month: "short" }).toUpperCase();
+  const canGoPrev = date > today;
+  const canGoNext = true;
 
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-slate-50 dark:bg-slate-950">
 
-      {/* ── Hero ── */}
-      <div className="relative h-48 sm:h-60 overflow-hidden">
+      {/* Hero */}
+      <div className="relative h-44 sm:h-56 overflow-hidden">
         {venue
           ? <img src={heroImg} alt={venue.name} className="w-full h-full object-cover" />
           : <div className="w-full h-full bg-slate-200 dark:bg-slate-800 animate-pulse" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-        <div className="absolute top-4 left-4 sm:left-6 lg:left-8">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute top-4 left-4 sm:left-6">
           <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-black/40 hover:bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 transition-all">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             {t.common.back}
           </Link>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 lg:px-8 pb-5">
+        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 pb-4">
           {venue
             ? <h1 className="text-2xl sm:text-3xl font-black text-white drop-shadow-lg">{venue.name}</h1>
             : <div className="h-8 w-48 bg-white/20 rounded-lg animate-pulse" />}
         </div>
       </div>
 
-      {/* ── Body ── */}
-      <div className="px-4 sm:px-6 lg:px-8 py-5">
+      {/* Body */}
+      <div className="px-4 sm:px-6 py-5">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-5 items-start">
 
-          {/* ── Left: booking panel ── */}
+          {/* ── Booking panel ── */}
           <div className="flex-1 min-w-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
 
-            {/* ── Day strip header ── */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-              {/* Prev week */}
+            {/* Day strip */}
+            <div className="flex items-center gap-2 px-3 py-3 border-b border-slate-100 dark:border-slate-800">
               <button
-                onClick={() => changeDate(addDays(today, Math.max(0, dayButtons.indexOf(date) - 1 < 0 ? 0 : dayButtons.indexOf(date) - 1)))}
-                disabled={date <= today}
-                className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-25 transition-colors shrink-0"
+                onClick={() => changeDate(addDays(date, -1))}
+                disabled={!canGoPrev}
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-20 transition-colors shrink-0"
               >
-                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
               </button>
 
-              {/* Day buttons */}
-              <div className="flex gap-1.5 flex-1 overflow-x-auto no-scrollbar">
+              <div className="flex gap-1 flex-1 overflow-x-auto scrollbar-none">
                 {dayButtons.map((d) => {
                   const isActive = d === date;
                   const isT = d === today;
@@ -179,19 +172,21 @@ export default function VenueDetailPage() {
                     <button
                       key={d}
                       onClick={() => changeDate(d)}
-                      className={`flex flex-col items-center px-3 py-1.5 rounded-xl min-w-[52px] transition-all shrink-0 ${
+                      className={`flex flex-col items-center px-2.5 py-1.5 rounded-xl min-w-[46px] transition-all shrink-0 border ${
                         isActive
-                          ? "bg-green-500 text-white shadow-md shadow-green-500/30"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+                          ? "bg-sky-500 border-sky-500 text-white shadow-md shadow-sky-500/25"
+                          : "border-transparent hover:bg-slate-100 dark:hover:bg-slate-800"
                       }`}
                     >
-                      <span className={`text-[10px] font-bold tracking-wider ${isActive ? "text-green-100" : isT ? "text-green-600 dark:text-green-400" : "text-slate-400 dark:text-slate-500"}`}>
-                        {weekdayShort(d)}
+                      <span className={`text-[9px] font-bold tracking-widest ${
+                        isActive ? "text-sky-100" : isT ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
+                      }`}>
+                        {isT && !isActive ? "DANES" : weekdayShort(d)}
                       </span>
-                      <span className={`text-lg font-black leading-none ${isActive ? "text-white" : ""}`}>
+                      <span className={`text-base font-black leading-tight ${isActive ? "text-white" : "text-slate-800 dark:text-slate-200"}`}>
                         {dayNum(d)}
                       </span>
-                      <span className={`text-[10px] font-semibold ${isActive ? "text-green-100" : "text-slate-400 dark:text-slate-500"}`}>
+                      <span className={`text-[9px] font-semibold ${isActive ? "text-sky-100" : "text-slate-400 dark:text-slate-500"}`}>
                         {monthShort(d)}
                       </span>
                     </button>
@@ -199,17 +194,17 @@ export default function VenueDetailPage() {
                 })}
               </div>
 
-              {/* Next */}
               <button
                 onClick={() => changeDate(addDays(date, 1))}
-                className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+                disabled={!canGoNext}
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-20 transition-colors shrink-0"
               >
-                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
               </button>
 
-              {/* Calendar picker */}
-              <label className="relative cursor-pointer shrink-0">
-                <div className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
+              {/* Calendar icon — opens date picker */}
+              <label className="cursor-pointer shrink-0">
+                <div className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors border border-slate-200 dark:border-slate-700">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2}/>
                     <line x1="16" y1="2" x2="16" y2="6" strokeWidth={2}/>
@@ -218,7 +213,6 @@ export default function VenueDetailPage() {
                   </svg>
                 </div>
                 <input
-                  ref={dateInputRef}
                   type="date"
                   value={date}
                   min={today}
@@ -228,82 +222,54 @@ export default function VenueDetailPage() {
               </label>
             </div>
 
-            {/* Sport pill row */}
-            <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="inline-flex items-center gap-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold px-3 py-1.5 rounded-full">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Sport tag row */}
+            <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="9" strokeWidth="2"/>
                   <path strokeLinecap="round" strokeWidth="1.5" d="M12 3C8.5 6.5 8.5 17.5 12 21M12 3C15.5 6.5 15.5 17.5 12 21"/>
                 </svg>
                 Tennis
               </span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">
+                {new Date(date + "T00:00:00").toLocaleDateString("sl-SI", { weekday: "long", day: "numeric", month: "long" })}
+              </span>
             </div>
 
-            {/* ── Calendar grid ── */}
+            {/* Grid */}
             {isLoading ? (
-              <div className="p-5 space-y-3 animate-pulse">
-                {[...Array(8)].map((_, i) => <div key={i} className="h-8 bg-slate-100 dark:bg-slate-800 rounded-lg" />)}
+              <div className="p-4 space-y-2 animate-pulse">
+                {[...Array(10)].map((_, i) => <div key={i} className="h-14 bg-slate-100 dark:bg-slate-800 rounded-xl" />)}
               </div>
             ) : !venue || venue.courts.length === 0 ? (
               <div className="text-center py-16">
-                <p className="text-3xl mb-3">🎾</p>
-                <p className="font-bold text-slate-500 dark:text-slate-400">{t.courts.noVenues}</p>
+                <p className="text-3xl mb-2">🎾</p>
+                <p className="text-slate-500 dark:text-slate-400 font-semibold">{t.courts.noVenues}</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <div style={{ minWidth: `${64 + venue.courts.length * 150}px` }}>
-
-                  {/* Column headers */}
-                  <div className="flex border-b-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80">
-                    <div className="w-16 shrink-0" />
-                    {venue.courts.map((court) => (
-                      <div key={court.id} className="flex-1 min-w-[150px] border-l border-slate-200 dark:border-slate-700 px-3 py-3 text-center">
-                        <p className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">{court.name}</p>
-                        <div className="flex items-center justify-center gap-1.5 mt-1">
-                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600"}`}>
-                            {t.surfaces[court.surface as keyof typeof t.surfaces] ?? court.surface}
-                          </span>
-                          {court.price_per_hour != null && (
-                            <span className="text-[9px] font-black text-green-600 dark:text-green-400">{(court.price_per_hour / 100).toFixed(0)}€/h</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Grid body */}
-                  <CalendarGrid
-                    courts={venue.courts}
-                    date={date}
-                    today={today}
-                    nowOffset={nowOffset}
-                    selection={selection}
-                    onSelect={(sel) => { setSelection(sel); setBooked(false); setNotes(""); }}
-                  />
-                </div>
-              </div>
+              <CourtGrid
+                courts={venue.courts}
+                date={date}
+                today={today}
+                nowPx={nowPx}
+                selection={selection}
+                onSelect={(sel) => { setSelection(sel); setBooked(false); setNotes(""); }}
+              />
             )}
 
-            {/* ── Booking confirmation bar ── */}
+            {/* Booking bar */}
             {selection && !booked && (
-              <div className="border-t-2 border-green-300 dark:border-green-500/50 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 dark:from-green-500/10 dark:via-emerald-500/5 dark:to-green-500/10 px-5 py-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center shrink-0 shadow-lg shadow-green-500/30">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2}/>
-                        <line x1="16" y1="2" x2="16" y2="6" strokeWidth={2}/>
-                        <line x1="8" y1="2" x2="8" y2="6" strokeWidth={2}/>
-                        <line x1="3" y1="10" x2="21" y2="10" strokeWidth={2}/>
-                      </svg>
+              <div className="border-t-2 border-green-400/40 bg-green-50 dark:bg-green-500/10 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-green-500 flex items-center justify-center shrink-0 shadow shadow-green-500/30">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="font-black text-slate-900 dark:text-white text-sm">
-                        {selectedCourt?.name}
-                      </p>
-                      <p className="text-sm text-green-600 dark:text-green-400 font-bold">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{selectedCourt?.name}</p>
+                      <p className="text-xs text-green-600 dark:text-green-400 font-semibold tabular-nums">
                         {fmtTime(selection.startMin)} – {fmtTime(selection.endMin)}
-                        {price != null && <span className="text-slate-500 dark:text-slate-400 font-normal ml-1.5">· €{price.toFixed(2)}</span>}
+                        {price != null && <span className="text-slate-400 font-normal ml-1">· €{price.toFixed(2)}</span>}
                       </p>
                     </div>
                   </div>
@@ -312,10 +278,10 @@ export default function VenueDetailPage() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder={t.courts.notesPlaceholder}
-                    className="flex-1 min-w-0 sm:max-w-[220px] text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-green-400 transition-all"
+                    className="text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-green-400 w-full sm:w-48 transition-all"
                   />
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={() => setSelection(null)} className="px-3 py-2.5 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-white font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => setSelection(null)} className="px-3 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                       {t.common.cancel}
                     </button>
                     <button
@@ -329,7 +295,7 @@ export default function VenueDetailPage() {
                         });
                       }}
                       disabled={bookMutation.isPending}
-                      className="px-5 py-2.5 bg-green-500 hover:bg-green-400 active:bg-green-600 disabled:opacity-50 text-white text-sm font-black rounded-xl transition-colors shadow-lg shadow-green-500/20"
+                      className="px-5 py-2 bg-green-500 hover:bg-green-400 active:bg-green-600 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors shadow shadow-green-500/20"
                     >
                       {bookMutation.isPending ? t.courts.booking : t.courts.book}
                     </button>
@@ -339,39 +305,38 @@ export default function VenueDetailPage() {
               </div>
             )}
 
-            {/* Success */}
             {booked && selection && (
-              <div className="border-t border-green-400/30 bg-green-500 px-5 py-4 flex items-center gap-3">
-                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                </div>
+              <div className="border-t border-green-400/30 bg-green-500 px-4 py-3 flex items-center gap-3">
+                <svg className="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                 <div className="flex-1">
-                  <p className="text-white font-black text-sm">{t.courts.bookingConfirmed}</p>
+                  <p className="text-white font-bold text-sm">{t.courts.bookingConfirmed}</p>
                   <p className="text-white/70 text-xs">{selectedCourt?.name} · {fmtTime(selection.startMin)}–{fmtTime(selection.endMin)}</p>
                 </div>
-                <button onClick={() => { setBooked(false); setSelection(null); }} className="text-xs text-white/70 hover:text-white underline transition-colors">
+                <button onClick={() => { setBooked(false); setSelection(null); }} className="text-xs text-white/80 hover:text-white underline">
                   {t.courts.newBooking}
                 </button>
               </div>
             )}
           </div>
 
-          {/* ── Right sidebar ── */}
-          <div className="w-full lg:w-64 shrink-0 space-y-4">
+          {/* ── Sidebar ── */}
+          <div className="w-full lg:w-60 shrink-0 space-y-4">
 
             {/* Quick slots */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">
               <div className="flex items-center gap-2 mb-3">
                 <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.courts.quickBook}</h3>
               </div>
-              <p className="text-xs text-slate-400 mb-3">{t.courts.availableSlots}</p>
-              {venue?.courts.length ? <QuickSlots courtId={venue.courts[0].id} date={date} today={today} /> : <p className="text-xs text-slate-400">—</p>}
+              <p className="text-xs text-slate-400 mb-2">{t.courts.availableSlots}</p>
+              {venue?.courts.length
+                ? <QuickSlots courtId={venue.courts[0].id} date={date} today={today} />
+                : <p className="text-xs text-slate-400">—</p>}
             </div>
 
             {/* Pricing */}
             {venue?.courts.some(c => c.price_per_hour != null) && (
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" strokeWidth={2}/><line x1="2" y1="10" x2="22" y2="10" strokeWidth={2}/></svg>
                   <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.courts.pricing}</h3>
@@ -379,24 +344,24 @@ export default function VenueDetailPage() {
                 {venue.courts.filter(c => c.price_per_hour != null).slice(0, 1).map(c => (
                   <div key={c.id} className="flex justify-between text-sm">
                     <span className="text-slate-500 dark:text-slate-400">08:00 – 22:00</span>
-                    <span className="font-black text-slate-900 dark:text-white">{(c.price_per_hour! / 100).toFixed(0)}€/h</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{(c.price_per_hour! / 100).toFixed(0)} €/h</span>
                   </div>
                 ))}
               </div>
             )}
 
             {/* Location */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">
               <div className="flex items-center gap-2 mb-3">
                 <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.courts.location}</h3>
               </div>
               {venue
                 ? (
-                  <div className="space-y-1.5 text-sm text-slate-500 dark:text-slate-400">
-                    <p className="flex gap-2"><span>📍</span><span>{venue.city}{venue.address ? `, ${venue.address}` : ""}</span></p>
-                    {venue.phone && <a href={`tel:${venue.phone}`} className="flex gap-2 hover:text-green-600 dark:hover:text-green-400 transition-colors"><span>📞</span>{venue.phone}</a>}
-                    {venue.website && <a href={venue.website} target="_blank" rel="noopener noreferrer" className="flex gap-2 hover:text-green-600 dark:hover:text-green-400 transition-colors truncate"><span>🌐</span><span className="truncate">{venue.website.replace(/^https?:\/\//, "")}</span></a>}
+                  <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <p>{venue.city}{venue.address ? `, ${venue.address}` : ""}</p>
+                    {venue.phone && <a href={`tel:${venue.phone}`} className="block hover:text-sky-600 dark:hover:text-sky-400 transition-colors">{venue.phone}</a>}
+                    {venue.website && <a href={venue.website} target="_blank" rel="noopener noreferrer" className="block hover:text-sky-600 dark:hover:text-sky-400 transition-colors truncate">{venue.website.replace(/^https?:\/\//, "")}</a>}
                   </div>
                 )
                 : <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />}
@@ -404,11 +369,11 @@ export default function VenueDetailPage() {
 
             {/* Surfaces */}
             {venue?.surfaces && venue.surfaces.length > 0 && (
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">{t.courts.surfaces}</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">{t.courts.surfaces}</p>
+                <div className="flex flex-wrap gap-1.5">
                   {venue.surfaces.map((s) => (
-                    <span key={s} className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${SURFACE_COLORS[s] ?? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"}`}>
+                    <span key={s} className={`text-xs px-2 py-1 rounded-full font-semibold border ${SURFACE_COLORS[s] ?? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"}`}>
                       {t.surfaces[s as keyof typeof t.surfaces] ?? s}
                     </span>
                   ))}
@@ -422,202 +387,200 @@ export default function VenueDetailPage() {
   );
 }
 
-// ── CalendarGrid — fetches bookings per court, renders the full grid ──────────
+// ── CourtGrid ─────────────────────────────────────────────────────────────────
+// Renders the full time grid for all courts.
+// Fetches bookings once per court (not per cell).
 
-function CalendarGrid({
-  courts, date, today, nowOffset, selection, onSelect,
+function CourtGrid({
+  courts, date, today, nowPx, selection, onSelect,
 }: {
   courts: VenueCourt[];
   date: string;
   today: string;
-  nowOffset: number | null;
+  nowPx: number | null;
   selection: Selection;
   onSelect: (sel: Selection) => void;
 }) {
   return (
-    <div className="relative select-none">
-      {/* Now line */}
-      {nowOffset !== null && nowOffset >= 0 && nowOffset <= SLOT_H * SLOTS.length && (
-        <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: nowOffset }}>
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500 ml-[52px] shrink-0 shadow-sm" />
-          <div className="flex-1 h-[1.5px] bg-red-500/70" />
-        </div>
-      )}
+    <div className="overflow-x-auto">
+      <div style={{ minWidth: `${56 + courts.length * 140}px` }}>
 
-      {/* Every 30-min row */}
-      {SLOTS.map((slotMin, idx) => {
-        const isHour = slotMin % 60 === 0;
-        const isLast = idx === SLOTS.length - 1;
-        return (
-          <div key={slotMin} className="flex" style={{ height: SLOT_H }}>
-            {/* Time label — only on :00 */}
-            <div className={`w-16 shrink-0 flex items-start justify-end pr-3 pt-1 ${!isLast ? "border-b border-slate-100 dark:border-slate-800/60" : ""}`}>
-              {isHour && (
-                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold tabular-nums leading-none">
-                  {fmtTime(slotMin)}
+        {/* Court headers */}
+        <div className="flex sticky top-0 z-10 bg-slate-50 dark:bg-slate-900/90 border-b-2 border-slate-200 dark:border-slate-700 backdrop-blur-sm">
+          <div className="w-14 shrink-0" />
+          {courts.map((court) => (
+            <div key={court.id} className="flex-1 min-w-[140px] border-l border-slate-200 dark:border-slate-700 px-2 py-2.5 text-center">
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide truncate">{court.name}</p>
+              <div className="flex items-center justify-center gap-1 mt-0.5">
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600"}`}>
+                  {court.surface}
                 </span>
-              )}
+                {court.price_per_hour != null && (
+                  <span className="text-[9px] font-bold text-green-600 dark:text-green-400">{(court.price_per_hour / 100).toFixed(0)}€/h</span>
+                )}
+              </div>
             </div>
-            {/* Per-court cells */}
-            {courts.map((court) => (
-              <CourtSlotCell
-                key={court.id}
-                court={court}
-                slotMin={slotMin}
-                date={date}
-                today={today}
-                selection={selection}
-                onSelect={onSelect}
-                isHourBoundary={isHour}
-                isLast={isLast}
-              />
-            ))}
-          </div>
-        );
-      })}
+          ))}
+        </div>
+
+        {/* Time + court columns */}
+        <div className="relative">
+          {/* "Now" red line */}
+          {nowPx !== null && (
+            <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: nowPx }}>
+              <div className="w-2 h-2 rounded-full bg-red-500 ml-[46px] shrink-0" />
+              <div className="flex-1 h-px bg-red-500" />
+            </div>
+          )}
+
+          {HOURS.map((hour) => (
+            <div key={hour} className="flex" style={{ height: HOUR_H }}>
+              {/* Hour label */}
+              <div className="w-14 shrink-0 flex items-start justify-end pr-2.5 pt-1 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium tabular-nums">{String(hour).padStart(2, "0")}:00</span>
+              </div>
+              {/* Per-court hour cell */}
+              {courts.map((court) => (
+                <CourtHourCell
+                  key={court.id}
+                  court={court}
+                  hour={hour}
+                  date={date}
+                  today={today}
+                  selection={selection}
+                  onSelect={onSelect}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-// ── CourtSlotCell — one 30-min slot for one court ─────────────────────────────
+// ── CourtHourCell ─────────────────────────────────────────────────────────────
+// One hour block for one court. Fetches data once per court (query is shared/cached).
 
-function CourtSlotCell({
-  court, slotMin, date, today, selection, onSelect, isHourBoundary, isLast,
+function CourtHourCell({
+  court, hour, date, today, selection, onSelect,
 }: {
   court: VenueCourt;
-  slotMin: number;
+  hour: number;
   date: string;
   today: string;
   selection: Selection;
   onSelect: (sel: Selection) => void;
-  isHourBoundary: boolean;
-  isLast: boolean;
 }) {
   const { data: bookings } = trpc.courts.getCourtAvailability.useQuery(
     { court_id: court.id, date },
     { enabled: !!court.id && !!date }
   );
 
-  const slotEnd = slotMin + 30;
+  const slotStart = toMin(hour);
+  const slotEnd = slotStart + 60;
 
-  // Check if this slot overlaps any booking
-  const bookedEntry = useMemo(() => {
-    if (!bookings) return null;
-    return (bookings as Booking[]).find(b => {
+  // Find bookings that START within this hour (to draw the block)
+  const bookingsInSlot = useMemo(() => {
+    if (!bookings) return [];
+    return (bookings as Booking[]).filter(b => {
       const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
       const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
-      return slotMin < be && slotEnd > bs;
-    }) ?? null;
-  }, [bookings, slotMin, slotEnd]);
+      // starts within this hour
+      return bs >= slotStart && bs < slotEnd && be > bs;
+    });
+  }, [bookings, slotStart, slotEnd]);
 
-  const isBooked = !!bookedEntry;
+  // Is this hour fully covered by a booking that started before?
+  const coveredByPrev = useMemo(() => {
+    if (!bookings) return false;
+    return (bookings as Booking[]).some(b => {
+      const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
+      const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
+      return bs < slotStart && be > slotStart;
+    });
+  }, [bookings, slotStart]);
 
-  // Is this the *start* of a booked block?
-  const isBookedStart = useMemo(() => {
-    if (!bookedEntry) return false;
-    const bs = new Date(bookedEntry.starts_at).getHours() * 60 + new Date(bookedEntry.starts_at).getMinutes();
-    return slotMin === bs || (slotMin <= bs && slotEnd > bs);
-  }, [bookedEntry, slotMin, slotEnd]);
-
-  // Height of booked block in slots
-  const bookedSlots = useMemo(() => {
-    if (!bookedEntry || !isBookedStart) return 0;
-    const bs = new Date(bookedEntry.starts_at).getHours() * 60 + new Date(bookedEntry.starts_at).getMinutes();
-    const be = new Date(bookedEntry.ends_at).getHours() * 60 + new Date(bookedEntry.ends_at).getMinutes();
-    return Math.ceil((be - bs) / 30);
-  }, [bookedEntry, isBookedStart]);
-
-  // Is this slot within the current selection?
-  const isInSelection = selection?.courtId === court.id &&
-    slotMin >= selection.startMin && slotEnd <= selection.endMin;
-  const isSelectionStart = selection?.courtId === court.id && slotMin === selection.startMin;
-
-  // Past slot?
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const isPast = date === today && slotEnd <= nowMin;
 
-  const borderClasses = [
-    "border-l border-slate-200 dark:border-slate-700",
-    !isLast ? (isHourBoundary ? "border-b border-slate-200 dark:border-slate-700" : "border-b border-slate-100 dark:border-slate-800/50") : "",
-  ].join(" ");
+  const isSelected = selection?.courtId === court.id
+    && slotStart >= selection.startMin && slotEnd <= selection.endMin;
 
-  // Booked block - only render the card on the start slot, others are just spacer
-  if (isBooked && !isBookedStart) {
-    return <div className={`flex-1 min-w-[150px] ${borderClasses} bg-slate-50 dark:bg-slate-800/30`} style={{ height: SLOT_H }} />;
-  }
+  const isFullyBooked = coveredByPrev || bookingsInSlot.length > 0;
 
-  if (isBooked && isBookedStart) {
-    const bookerName = bookedEntry?.player?.full_name;
-    const bs = new Date(bookedEntry!.starts_at).getHours() * 60 + new Date(bookedEntry!.starts_at).getMinutes();
-    const be = new Date(bookedEntry!.ends_at).getHours() * 60 + new Date(bookedEntry!.ends_at).getMinutes();
-    const blockH = bookedSlots * SLOT_H;
+  const handleClick = () => {
+    if (isPast || isFullyBooked) return;
+    if (isSelected) { onSelect(null); return; }
+    onSelect({ courtId: court.id, startMin: slotStart, endMin: slotEnd });
+  };
 
+  const base = "flex-1 min-w-[140px] border-l border-b border-slate-200 dark:border-slate-700 relative overflow-hidden transition-colors";
+
+  // Booked — grey striped, like Courtiplay
+  if (isFullyBooked) {
+    const firstBooking = bookingsInSlot[0];
+    const name = firstBooking?.player?.full_name;
     return (
-      <div className="flex-1 min-w-[150px] border-l border-slate-200 dark:border-slate-700 relative" style={{ height: SLOT_H }}>
-        {/* Floating card above the cells */}
+      <div className={`${base} cursor-default`} style={{ height: HOUR_H }}>
+        {/* Stripe background */}
         <div
-          className="absolute left-1 right-1 z-10 rounded-xl overflow-hidden"
-          style={{ top: 2, height: blockH - 4 }}
-        >
-          <div className="w-full h-full bg-slate-200/80 dark:bg-slate-700/80 backdrop-blur-sm border border-slate-300 dark:border-slate-600 rounded-xl flex flex-col justify-center px-2.5 py-1.5"
-            style={{ backgroundImage: "repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(148,163,184,0.12) 6px, rgba(148,163,184,0.12) 7px)" }}>
-            {bookerName && (
-              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{bookerName}</p>
-            )}
-            <p className="text-[9px] text-slate-400 dark:text-slate-500 tabular-nums">{fmtTime(bs)}–{fmtTime(be)}</p>
+          className="absolute inset-0"
+          style={{
+            backgroundColor: "rgb(226 232 240 / 0.6)",
+            backgroundImage: "repeating-linear-gradient(135deg, transparent, transparent 5px, rgba(203,213,225,0.5) 5px, rgba(203,213,225,0.5) 6px)",
+          }}
+        />
+        {/* Show name only if booking starts here */}
+        {firstBooking && !coveredByPrev && (
+          <div className="absolute inset-0 flex flex-col justify-center px-2 py-1">
+            {name && <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">{name}</span>}
+            <span className="text-[9px] text-slate-400 dark:text-slate-500 tabular-nums">
+              {fmtTime(new Date(firstBooking.starts_at).getHours() * 60 + new Date(firstBooking.starts_at).getMinutes())}
+              –{fmtTime(new Date(firstBooking.ends_at).getHours() * 60 + new Date(firstBooking.ends_at).getMinutes())}
+            </span>
           </div>
-        </div>
+        )}
       </div>
     );
   }
 
-  // Selected slot
-  if (isInSelection) {
-    const isSelEnd = selection && slotEnd === selection.endMin;
+  // Past — muted
+  if (isPast) {
+    return (
+      <div className={`${base} bg-slate-50 dark:bg-slate-800/30 cursor-default`} style={{ height: HOUR_H }} />
+    );
+  }
+
+  // Selected — green
+  if (isSelected) {
     return (
       <div
-        className={`flex-1 min-w-[150px] ${borderClasses} relative bg-green-500 hover:bg-green-400 cursor-pointer transition-colors`}
-        style={{ height: SLOT_H }}
-        onClick={() => onSelect(null)}
+        className={`${base} bg-green-500 hover:bg-green-400 cursor-pointer`}
+        style={{ height: HOUR_H }}
+        onClick={handleClick}
       >
-        {isSelectionStart && (
-          <div className="absolute inset-0 flex items-center justify-center gap-1">
-            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-            <span className="text-[10px] text-white font-bold">{fmtTime(slotMin)}</span>
-          </div>
-        )}
-        {isSelEnd && (
-          <div className="absolute bottom-0 left-0 right-0 flex justify-center pb-0.5">
-            <span className="text-[9px] text-green-100 font-bold">{fmtTime(slotEnd)}</span>
-          </div>
-        )}
+        <div className="absolute inset-0 flex items-center justify-center gap-1">
+          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+          <span className="text-xs text-white font-bold tabular-nums">{fmtTime(slotStart)}</span>
+        </div>
       </div>
     );
   }
 
-  // Free slot
+  // Free — white, green on hover
   return (
     <div
-      className={`flex-1 min-w-[150px] ${borderClasses} relative cursor-pointer group transition-colors ${
-        isPast
-          ? "bg-slate-50 dark:bg-slate-900 cursor-default"
-          : "bg-white dark:bg-slate-900 hover:bg-green-50 dark:hover:bg-green-500/10"
-      }`}
-      style={{ height: SLOT_H }}
-      onClick={() => {
-        if (isPast) return;
-        // If already have a selection on same court, extend it (click = 1h block)
-        onSelect({ courtId: court.id, startMin: slotMin, endMin: slotMin + 60 });
-      }}
+      className={`${base} bg-white dark:bg-slate-900 hover:bg-green-50 dark:hover:bg-green-500/10 cursor-pointer group`}
+      style={{ height: HOUR_H }}
+      onClick={handleClick}
     >
-      {!isPast && (
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-100 dark:bg-green-500/20 px-2 py-0.5 rounded-md">
-            {fmtTime(slotMin)}
-          </span>
-        </div>
-      )}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="text-[11px] text-green-600 dark:text-green-400 font-semibold bg-green-100 dark:bg-green-500/20 px-2 py-0.5 rounded-lg tabular-nums">
+          {fmtTime(slotStart)}
+        </span>
+      </div>
     </div>
   );
 }
@@ -629,33 +592,33 @@ function QuickSlots({ courtId, date, today }: { courtId: string; date: string; t
     { court_id: courtId, date },
     { enabled: !!courtId && !!date }
   );
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
 
   const freeHours = useMemo(() => {
     if (!bookings) return null;
-    const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
-    return hours.filter(hour => {
+    return HOURS.filter(hour => {
       const s = toMin(hour), e = s + 60;
-      if (date === today && s <= nowMin) return false;
+      if (date === today && e <= nowMin) return false;
       return !(bookings as Booking[]).some(b => {
         const bs = new Date(b.starts_at).getHours() * 60 + new Date(b.starts_at).getMinutes();
         const be = new Date(b.ends_at).getHours() * 60 + new Date(b.ends_at).getMinutes();
         return s < be && e > bs;
       });
-    }).slice(0, 3);
+    }).slice(0, 4);
   }, [bookings, date, today, nowMin]);
 
   if (!freeHours) return (
-    <div className="flex gap-2">{[...Array(3)].map((_, i) => <div key={i} className="w-16 h-9 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />)}</div>
+    <div className="flex flex-wrap gap-2">
+      {[...Array(3)].map((_, i) => <div key={i} className="w-14 h-8 bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse" />)}
+    </div>
   );
 
   return freeHours.length === 0
     ? <p className="text-xs text-slate-400">—</p>
     : (
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {freeHours.map(hour => (
-          <span key={hour} className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 tabular-nums">
+          <span key={hour} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 tabular-nums">
             {String(hour).padStart(2, "0")}:00
           </span>
         ))}
