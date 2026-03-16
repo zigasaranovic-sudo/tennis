@@ -231,20 +231,6 @@ export default function VenueDetailPage() {
               </label>
             </div>
 
-            {/* Sport tag row */}
-            <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-bold px-3 py-1 rounded-full">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="9" strokeWidth="2"/>
-                  <path strokeLinecap="round" strokeWidth="1.5" d="M12 3C8.5 6.5 8.5 17.5 12 21M12 3C15.5 6.5 15.5 17.5 12 21"/>
-                </svg>
-                Tennis
-              </span>
-              <span className="text-xs text-slate-400 dark:text-slate-500">
-                {new Date(date + "T00:00:00").toLocaleDateString("sl-SI", { weekday: "long", day: "numeric", month: "long" })}
-              </span>
-            </div>
-
             {/* Grid */}
             {isLoading ? (
               <div className="p-4 space-y-2 animate-pulse">
@@ -283,18 +269,6 @@ export default function VenueDetailPage() {
 
           {/* ── Sidebar ── */}
           <div className="w-full lg:w-60 shrink-0 space-y-4">
-
-            {/* Quick slots */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.courts.quickBook}</h3>
-              </div>
-              <p className="text-xs text-slate-400 mb-2">{t.courts.availableSlots}</p>
-              {venue?.courts.length
-                ? <QuickSlots courtId={venue.courts[0].id} date={date} today={today} />
-                : <p className="text-xs text-slate-400">—</p>}
-            </div>
 
             {/* Pricing */}
             {venue?.courts.some(c => c.price_per_hour != null) && (
