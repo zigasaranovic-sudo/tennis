@@ -609,9 +609,6 @@ function CourtGrid({
                   <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600"}`}>
                     {court.surface}
                   </span>
-                  {court.price_per_hour != null && (
-                    <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">{(court.price_per_hour / 100).toFixed(0)}€/h</span>
-                  )}
                 </div>
               </div>
             ))}
