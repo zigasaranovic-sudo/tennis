@@ -87,15 +87,19 @@ export default function VenueDetailPage() {
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
   const [selection, setSelection] = useState<Selection>(null);
-  const [notes, setNotes] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
   const [booked, setBooked] = useState(false);
 
   const { data: venueRaw, isLoading } = trpc.courts.getVenue.useQuery({ id: venueId }, { enabled: !!venueId });
   const venue = venueRaw as Venue | undefined;
 
-  const bookMutation = trpc.courts.bookCourt.useMutation({ onSuccess: () => setBooked(true) });
+  const bookMutation = trpc.courts.bookCourt.useMutation({
+    onSuccess: () => { setBooked(true); setModalOpen(false); },
+  });
 
-  const changeDate = (d: string) => { setDate(d); setSelection(null); setBooked(false); setNotes(""); };
+  const changeDate = (d: string) => { setDate(d); setSelection(null); setModalOpen(false); setBooked(false); };
+
+  const openModal = (sel: Selection) => { setSelection(sel); setModalOpen(true); setBooked(false); };
 
   // Day strip: always show 6 days starting from whichever week contains `date`
   // Compute the window start: snap to the nearest group of 6 from today
@@ -113,9 +117,6 @@ export default function VenueDetailPage() {
 
   const heroImg = getVenueImage(venue?.name ?? "", venue?.surfaces ?? []);
   const selectedCourt = venue?.courts.find(c => c.id === selection?.courtId);
-  const durationMins = selection ? selection.endMin - selection.startMin : 0;
-  const price = selectedCourt?.price_per_hour != null && durationMins > 0
-    ? (selectedCourt.price_per_hour / 100) * (durationMins / 60) : null;
 
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -251,58 +252,11 @@ export default function VenueDetailPage() {
                 today={today}
                 nowPx={nowPx}
                 selection={selection}
-                onSelect={(sel) => { setSelection(sel); setBooked(false); setNotes(""); }}
+                onSelect={(sel) => { if (sel) openModal(sel); else setSelection(null); }}
               />
             )}
 
-            {/* Booking bar */}
-            {selection && !booked && (
-              <div className="border-t-2 border-green-400/40 bg-green-50 dark:bg-green-500/10 px-4 py-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-green-500 flex items-center justify-center shrink-0 shadow shadow-green-500/30">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{selectedCourt?.name}</p>
-                      <p className="text-xs text-green-600 dark:text-green-400 font-semibold tabular-nums">
-                        {fmtTime(selection.startMin)} – {fmtTime(selection.endMin)}
-                        {price != null && <span className="text-slate-400 font-normal ml-1">· €{price.toFixed(2)}</span>}
-                      </p>
-                    </div>
-                  </div>
-                  <input
-                    type="text"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder={t.courts.notesPlaceholder}
-                    className="text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-green-400 w-full sm:w-48 transition-all"
-                  />
-                  <div className="flex gap-2 shrink-0">
-                    <button onClick={() => setSelection(null)} className="px-3 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                      {t.common.cancel}
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (!selection) return;
-                        bookMutation.mutate({
-                          court_id: selection.courtId,
-                          starts_at: new Date(`${date}T${fmtTime(selection.startMin)}:00`).toISOString(),
-                          ends_at: new Date(`${date}T${fmtTime(selection.endMin)}:00`).toISOString(),
-                          notes: notes || undefined,
-                        });
-                      }}
-                      disabled={bookMutation.isPending}
-                      className="px-5 py-2 bg-green-500 hover:bg-green-400 active:bg-green-600 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-colors shadow shadow-green-500/20"
-                    >
-                      {bookMutation.isPending ? t.courts.booking : t.courts.book}
-                    </button>
-                  </div>
-                </div>
-                {bookMutation.error && <p className="text-xs text-red-500 mt-2">{bookMutation.error.message}</p>}
-              </div>
-            )}
-
+            {/* Success toast */}
             {booked && selection && (
               <div className="border-t border-green-400/30 bg-green-500 px-4 py-3 flex items-center gap-3">
                 <svg className="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
@@ -379,6 +333,186 @@ export default function VenueDetailPage() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Booking modal */}
+      {modalOpen && selection && (
+        <BookingModal
+          court={selectedCourt!}
+          date={date}
+          initialStart={selection.startMin}
+          initialEnd={selection.endMin}
+          onClose={() => { setModalOpen(false); setSelection(null); }}
+          onConfirm={(startMin, endMin, notes) => {
+            bookMutation.mutate({
+              court_id: selection.courtId,
+              starts_at: new Date(`${date}T${fmtTime(startMin)}:00`).toISOString(),
+              ends_at: new Date(`${date}T${fmtTime(endMin)}:00`).toISOString(),
+              notes: notes || undefined,
+            });
+          }}
+          isPending={bookMutation.isPending}
+          error={bookMutation.error?.message}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── BookingModal ──────────────────────────────────────────────────────────────
+
+function BookingModal({
+  court, date, initialStart, initialEnd, onClose, onConfirm, isPending, error,
+}: {
+  court: VenueCourt;
+  date: string;
+  initialStart: number;
+  initialEnd: number;
+  onClose: () => void;
+  onConfirm: (startMin: number, endMin: number, notes: string) => void;
+  isPending: boolean;
+  error?: string;
+}) {
+  // Build list of available half-hour start times
+  const timeOptions = Array.from({ length: (END_HOUR - START_HOUR) * 2 }, (_, i) => START_HOUR * 60 + i * 30);
+  const durationOptions = [30, 60, 90, 120, 150, 180];
+
+  const [startMin, setStartMin] = useState(initialStart);
+  const [durationMins, setDurationMins] = useState(Math.max(60, initialEnd - initialStart));
+  const [notes, setNotes] = useState("");
+
+  const endMin = startMin + durationMins;
+  const price = court.price_per_hour != null
+    ? (court.price_per_hour / 100) * (durationMins / 60) : null;
+
+  const dateLabel = new Date(date + "T00:00:00").toLocaleDateString("sl-SI", {
+    weekday: "long", day: "numeric", month: "long",
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <h2 className="text-base font-black text-slate-900 dark:text-white">Rezervacija igrišča</h2>
+            <p className="text-xs text-slate-400 mt-0.5 capitalize">{dateLabel}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+
+          {/* Court info */}
+          <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl px-4 py-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" strokeWidth="2"/>
+                <path strokeLinecap="round" strokeWidth="1.5" d="M12 3C8.5 6.5 8.5 17.5 12 21M12 3C15.5 6.5 15.5 17.5 12 21"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800 dark:text-white">{court.name}</p>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}>
+                {court.surface}
+              </span>
+            </div>
+          </div>
+
+          {/* Start time */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Začetek</label>
+            <div className="flex flex-wrap gap-2">
+              {timeOptions.filter(t => t < END_HOUR * 60).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setStartMin(t)}
+                  className={`px-3 py-1.5 rounded-xl text-sm font-semibold tabular-nums border transition-all ${
+                    startMin === t
+                      ? "bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/30"
+                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                  }`}
+                >
+                  {fmtTime(t)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Duration */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Trajanje</label>
+            <div className="flex gap-2">
+              {durationOptions.map(d => (
+                <button
+                  key={d}
+                  onClick={() => setDurationMins(d)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
+                    durationMins === d
+                      ? "bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/30"
+                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                  }`}
+                >
+                  {d < 60 ? `${d}m` : `${d / 60}h`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Summary row */}
+          <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-500/10 rounded-xl px-4 py-3 border border-emerald-200 dark:border-emerald-500/30">
+            <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Rezervacija</p>
+              <p className="text-base font-black text-slate-900 dark:text-white tabular-nums">
+                {fmtTime(startMin)} – {fmtTime(endMin)}
+              </p>
+            </div>
+            {price != null && (
+              <div className="text-right">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Cena</p>
+                <p className="text-base font-black text-emerald-600 dark:text-emerald-400">€{price.toFixed(2)}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Opomba (neobvezno)</label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Npr. trening, turnir..."
+              className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-400 transition-all"
+            />
+          </div>
+
+          {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-500/10 rounded-lg px-3 py-2">{error}</p>}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 pb-5 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Prekliči
+          </button>
+          <button
+            onClick={() => onConfirm(startMin, endMin, notes)}
+            disabled={isPending || endMin > END_HOUR * 60}
+            className="flex-2 flex-grow-[2] py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:opacity-50 text-white text-sm font-black transition-colors shadow-lg shadow-emerald-500/20"
+          >
+            {isPending ? "Rezervacija..." : "Potrdi rezervacijo"}
+          </button>
         </div>
       </div>
     </div>
