@@ -54,6 +54,7 @@ const START_HOUR = 7;
 const END_HOUR = 22;
 const HOUR_H = 56; // px per hour
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
+const PAGE_SIZE = 4;
 
 function venueSlug(name: string): string {
   return name.toLowerCase()
@@ -68,7 +69,6 @@ function toMin(h: number, m = 0) { return h * 60 + m; }
 function fmtTime(min: number) {
   return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 }
-// Parse a UTC ISO timestamp into local minutes-since-midnight
 function isoToLocalMin(iso: string): number {
   const d = new Date(iso);
   return d.getHours() * 60 + d.getMinutes();
@@ -82,7 +82,7 @@ function addDays(dateStr: string, n: number): string {
 type VenueCourt = { id: string; name: string; surface: string; is_indoor: boolean; price_per_hour: number | null };
 type Venue = { id: string; name: string; city: string; address: string | null; phone?: string | null; website?: string | null; surfaces?: string[]; courts: VenueCourt[] };
 type Booking = { starts_at: string; ends_at: string; player?: { full_name?: string } };
-type Selection = { courtId: string; startMin: number; endMin: number } | null;
+type Selection = { courtId: string; startMin: number } | null;
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -94,25 +94,31 @@ export default function VenueDetailPage() {
   const [selection, setSelection] = useState<Selection>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [booked, setBooked] = useState(false);
+  const [bookedInfo, setBookedInfo] = useState<{ courtName: string; start: number; end: number } | null>(null);
 
   const { data: venueRaw, isLoading } = trpc.courts.getVenue.useQuery({ id: venueId }, { enabled: !!venueId });
   const venue = venueRaw as Venue | undefined;
 
   const utils = trpc.useUtils();
   const bookMutation = trpc.courts.bookCourt.useMutation({
-    onSuccess: () => {
-      setBooked(true);
-      setModalOpen(false);
+    onSuccess: (_, vars) => {
       utils.courts.getCourtAvailability.invalidate();
+      setModalOpen(false);
+      setBooked(true);
+      const court = venue?.courts.find(c => c.id === vars.court_id);
+      setBookedInfo({
+        courtName: court?.name ?? "",
+        start: isoToLocalMin(vars.starts_at),
+        end: isoToLocalMin(vars.ends_at),
+      });
+      setSelection(null);
     },
   });
 
-  const changeDate = (d: string) => { setDate(d); setSelection(null); setModalOpen(false); setBooked(false); };
+  const changeDate = (d: string) => { setDate(d); setSelection(null); setModalOpen(false); setBooked(false); setBookedInfo(null); };
 
   const openModal = (sel: Selection) => { setSelection(sel); setModalOpen(true); setBooked(false); };
 
-  // Day strip: always show 6 days starting from whichever week contains `date`
-  // Compute the window start: snap to the nearest group of 6 from today
   const dayOffset = Math.max(0, Math.floor(
     (new Date(date + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / (86400000 * 6)
   ) * 6);
@@ -132,8 +138,6 @@ export default function VenueDetailPage() {
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const nowPx = date === today && nowMin >= toMin(START_HOUR) && nowMin <= toMin(END_HOUR)
     ? ((nowMin - toMin(START_HOUR)) / 60) * HOUR_H : null;
-
-  const canGoPrev = date > today;
 
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -168,7 +172,7 @@ export default function VenueDetailPage() {
             <div className="flex items-center gap-2 px-3 py-3 border-b border-slate-100 dark:border-slate-800">
               <button
                 onClick={() => changeDate(addDays(date, -1))}
-                disabled={!canGoPrev}
+                disabled={date <= today}
                 className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-20 transition-colors shrink-0"
               >
                 <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
@@ -211,7 +215,6 @@ export default function VenueDetailPage() {
                 <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
               </button>
 
-              {/* Calendar icon — opens date picker */}
               <label className="cursor-pointer shrink-0">
                 <div className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors border border-slate-200 dark:border-slate-700">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,14 +256,14 @@ export default function VenueDetailPage() {
             )}
 
             {/* Success toast */}
-            {booked && selection && (
-              <div className="border-t border-green-400/30 bg-green-500 px-4 py-3 flex items-center gap-3">
+            {booked && bookedInfo && (
+              <div className="border-t border-emerald-400/30 bg-emerald-500 px-4 py-3 flex items-center gap-3">
                 <svg className="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                 <div className="flex-1">
                   <p className="text-white font-bold text-sm">{t.courts.bookingConfirmed}</p>
-                  <p className="text-white/70 text-xs">{selectedCourt?.name} · {fmtTime(selection.startMin)}–{fmtTime(selection.endMin)}</p>
+                  <p className="text-white/80 text-xs">{bookedInfo.courtName} · {fmtTime(bookedInfo.start)}–{fmtTime(bookedInfo.end)}</p>
                 </div>
-                <button onClick={() => { setBooked(false); setSelection(null); }} className="text-xs text-white/80 hover:text-white underline">
+                <button onClick={() => setBooked(false)} className="text-xs text-white/80 hover:text-white underline">
                   {t.courts.newBooking}
                 </button>
               </div>
@@ -269,6 +272,18 @@ export default function VenueDetailPage() {
 
           {/* ── Sidebar ── */}
           <div className="w-full lg:w-60 shrink-0 space-y-4">
+
+            {/* Quick slots */}
+            {venue?.courts[0] && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-sm">{t.courts.quickBook}</h3>
+                </div>
+                <p className="text-xs text-slate-400 mb-3">{t.courts.availableSlots}</p>
+                <QuickSlots courtId={venue.courts[0].id} date={date} today={today} />
+              </div>
+            )}
 
             {/* Pricing */}
             {venue?.courts.some(c => c.price_per_hour != null) && (
@@ -325,6 +340,7 @@ export default function VenueDetailPage() {
         <BookingModal
           court={selectedCourt}
           date={date}
+          venueName={venue?.name ?? ""}
           initialStart={selection.startMin}
           onClose={() => { setModalOpen(false); setSelection(null); }}
           onConfirm={(startMin, endMin, notes) => {
@@ -343,13 +359,14 @@ export default function VenueDetailPage() {
   );
 }
 
-// ── BookingModal ──────────────────────────────────────────────────────────────
+// ── BookingModal — Figma-inspired design ──────────────────────────────────────
 
 function BookingModal({
-  court, date, initialStart, onClose, onConfirm, isPending, error,
+  court, date, venueName, initialStart, onClose, onConfirm, isPending, error,
 }: {
   court: VenueCourt;
   date: string;
+  venueName: string;
   initialStart: number;
   onClose: () => void;
   onConfirm: (startMin: number, endMin: number, notes: string) => void;
@@ -361,11 +378,8 @@ function BookingModal({
     { enabled: !!court.id && !!date }
   );
 
-  const [startMin, setStartMin] = useState(initialStart);
-  const [endMin, setEndMin] = useState(initialStart + 60);
-  const [notes, setNotes] = useState("");
+  const DURATION_OPTIONS = [30, 60, 90, 120];
 
-  // All booking intervals for this court/day
   const bookedIntervals = useMemo(() => {
     if (!bookings) return [] as { bs: number; be: number }[];
     return (bookings as Booking[]).map(b => ({
@@ -374,183 +388,217 @@ function BookingModal({
     }));
   }, [bookings]);
 
-  // Next booking start after a given minute (wall for end-time options)
-  const nextBookingAfter = (from: number) => {
-    const nexts = bookedIntervals.map(b => b.bs).filter(bs => bs > from);
-    return nexts.length ? Math.min(...nexts) : END_HOUR * 60;
-  };
+  // Snap initialStart to nearest valid free slot
+  const firstValidStart = useMemo(() => {
+    for (let m = initialStart; m < END_HOUR * 60; m += 30) {
+      const blocked = bookedIntervals.some(({ bs, be }) => m >= bs && m < be);
+      if (!blocked) return m;
+    }
+    return initialStart;
+  }, [initialStart, bookedIntervals]);
 
-  // Valid start times: half-hour slots that are not inside any booking
+  const [startMin, setStartMin] = useState(firstValidStart);
+  const [durationMins, setDurationMins] = useState(60);
+  const [notes, setNotes] = useState("");
+
+  // Valid start times: free 30-min slots
   const validStarts = useMemo(() => {
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const todayStr = now.toISOString().slice(0, 10);
     const slots: number[] = [];
     for (let m = START_HOUR * 60; m < END_HOUR * 60; m += 30) {
+      if (date === todayStr && m <= nowMin) continue;
       const blocked = bookedIntervals.some(({ bs, be }) => m >= bs && m < be);
       if (!blocked) slots.push(m);
     }
     return slots;
-  }, [bookedIntervals]);
+  }, [bookedIntervals, date]);
 
-  // Valid end times for chosen start: every 30-min step up to (but not including) next booking
-  const validEnds = useMemo(() => {
-    const wall = nextBookingAfter(startMin);
-    const ends: number[] = [];
-    for (let m = startMin + 30; m <= Math.min(wall, END_HOUR * 60); m += 30) {
-      ends.push(m);
-    }
-    return ends;
+  // Max duration from chosen start (until next booking or END_HOUR)
+  const maxDuration = useMemo(() => {
+    const nexts = bookedIntervals.map(b => b.bs).filter(bs => bs > startMin);
+    const wall = nexts.length ? Math.min(...nexts) : END_HOUR * 60;
+    return Math.min(wall - startMin, 240); // cap at 4h
   }, [startMin, bookedIntervals]);
 
-  // When start changes, clamp end to first valid option
+  // Clamp duration when start changes
   const handleStartChange = (val: number) => {
     setStartMin(val);
-    const wall = nextBookingAfter(val);
-    const newEnd = val + 60 <= Math.min(wall, END_HOUR * 60) ? val + 60 : val + 30;
-    setEndMin(Math.min(newEnd, Math.min(wall, END_HOUR * 60)));
   };
 
-  // When end changes, ensure it's still valid
-  const handleEndChange = (val: number) => {
-    setEndMin(val);
-  };
+  // Available duration pills based on maxDuration
+  const availableDurations = DURATION_OPTIONS.filter(d => d <= maxDuration);
+  const effectiveDuration = availableDurations.includes(durationMins)
+    ? durationMins
+    : availableDurations[availableDurations.length - 1] ?? 30;
 
-  const durationMins = endMin - startMin;
-  const price = court.price_per_hour != null && durationMins > 0
-    ? (court.price_per_hour / 100) * (durationMins / 60) : null;
+  const endMin = startMin + effectiveDuration;
+  const price = court.price_per_hour != null
+    ? (court.price_per_hour / 100) * (effectiveDuration / 60) : null;
 
   const dateLabel = new Date(date + "T00:00:00").toLocaleDateString("sl-SI", {
     weekday: "long", day: "numeric", month: "long",
   });
 
-  const fmtDuration = (mins: number) => {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    if (m === 0) return `${h}h`;
-    if (h === 0) return `${m}min`;
-    return `${h}h ${m}min`;
-  };
-
-  const isValid = validEnds.includes(endMin) && endMin > startMin;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full sm:max-w-md bg-slate-950 dark:bg-slate-950 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
+
+        {/* Drag handle (mobile) */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+          <div className="w-10 h-1 bg-slate-700 rounded-full" />
+        </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-start justify-between px-5 pt-4 pb-3">
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white">Rezervacija igrišča</h2>
-            <p className="text-xs text-slate-400 mt-0.5 capitalize">{dateLabel}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                Rezervacija
+              </span>
+            </div>
+            <h2 className="text-xl font-black text-white">{court.name}</h2>
+            <p className="text-sm text-slate-400 mt-0.5">
+              <svg className="w-3 h-3 inline mr-1 -mt-0.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              {venueName}
+            </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors mt-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-4">
+        <div className="px-5 space-y-4 pb-5">
 
-          {/* Court badge */}
-          <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl px-4 py-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="9" strokeWidth="2"/>
-                <path strokeLinecap="round" strokeWidth="1.5" d="M12 3C8.5 6.5 8.5 17.5 12 21M12 3C15.5 6.5 15.5 17.5 12 21"/>
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-slate-800 dark:text-white">{court.name}</p>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}>
-                {court.surface}
-              </span>
+          {/* Date row */}
+          <div className="flex items-center gap-2 bg-slate-800/60 rounded-xl px-3.5 py-2.5 border border-slate-700/50">
+            <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2}/>
+              <line x1="16" y1="2" x2="16" y2="6" strokeWidth={2}/>
+              <line x1="8" y1="2" x2="8" y2="6" strokeWidth={2}/>
+              <line x1="3" y1="10" x2="21" y2="10" strokeWidth={2}/>
+            </svg>
+            <span className="text-sm text-white font-semibold capitalize">{dateLabel}</span>
+          </div>
+
+          {/* Duration pills */}
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Trajanje</p>
+            <div className="flex gap-2">
+              {DURATION_OPTIONS.map(d => {
+                const available = d <= maxDuration;
+                const active = d === effectiveDuration;
+                return (
+                  <button
+                    key={d}
+                    onClick={() => available && setDurationMins(d)}
+                    disabled={!available}
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
+                      active
+                        ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                        : available
+                        ? "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white"
+                        : "bg-slate-800/40 border-slate-800 text-slate-600 cursor-not-allowed"
+                    }`}
+                  >
+                    {d < 60 ? `${d}m` : `${d / 60}h`}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Start + End dropdowns side by side */}
+          {/* Start time + End time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Začetek</label>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Začetek</p>
               <div className="relative">
                 <select
                   value={startMin}
                   onChange={(e) => handleStartChange(Number(e.target.value))}
-                  className="w-full appearance-none text-sm font-semibold tabular-nums px-3 py-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer transition-all"
+                  className="w-full appearance-none text-sm font-bold tabular-nums px-3 py-2.5 pr-8 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer transition-all"
                 >
-                  {validStarts.map(t => (
-                    <option key={t} value={t}>{fmtTime(t)}</option>
+                  {validStarts.map(s => (
+                    <option key={s} value={s}>{fmtTime(s)}</option>
                   ))}
                 </select>
                 <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/></svg>
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Konec</label>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Konec</p>
               <div className="relative">
-                <select
-                  value={endMin}
-                  onChange={(e) => handleEndChange(Number(e.target.value))}
-                  className="w-full appearance-none text-sm font-semibold tabular-nums px-3 py-2.5 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer transition-all"
-                >
-                  {validEnds.map(t => (
-                    <option key={t} value={t}>{fmtTime(t)}</option>
-                  ))}
-                </select>
-                <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/></svg>
+                <div className="w-full text-sm font-bold tabular-nums px-3 py-2.5 pr-8 rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-300 flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  {fmtTime(endMin)}
+                </div>
+                <p className="text-[9px] text-slate-500 mt-1">Auto iz trajanja</p>
               </div>
             </div>
-          </div>
-
-          {/* Summary */}
-          <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-500/10 rounded-xl px-4 py-3 border border-emerald-200 dark:border-emerald-500/30">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Trajanje</p>
-              <p className="text-base font-black text-slate-900 dark:text-white tabular-nums">
-                {fmtTime(startMin)} – {fmtTime(endMin)}
-                <span className="text-sm font-semibold text-slate-400 ml-2">({fmtDuration(durationMins)})</span>
-              </p>
-            </div>
-            {price != null && (
-              <div className="text-right">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Cena</p>
-                <p className="text-base font-black text-emerald-600 dark:text-emerald-400">€{price.toFixed(2)}</p>
-              </div>
-            )}
           </div>
 
           {/* Notes */}
-          <input
-            type="text"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Opomba (neobvezno) — npr. trening, turnir..."
-            className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-400 transition-all"
-          />
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Opomba <span className="normal-case font-normal">(neobvezno)</span></p>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="npr. trening, turnir..."
+              className="w-full text-sm px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+            />
+          </div>
 
-          {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-500/10 rounded-lg px-3 py-2">{error}</p>}
-        </div>
+          {error && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-3.5 py-2.5">
+              <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <p className="text-xs text-red-400">{error}</p>
+            </div>
+          )}
 
-        {/* Footer */}
-        <div className="px-5 pb-5 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            Prekliči
-          </button>
-          <button
-            onClick={() => onConfirm(startMin, endMin, notes)}
-            disabled={isPending || !isValid}
-            className="flex-grow-[2] py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:opacity-50 text-white text-sm font-black transition-colors shadow-lg shadow-emerald-500/20"
-          >
-            {isPending ? "Rezervacija..." : "Potrdi rezervacijo"}
-          </button>
+          {/* Divider */}
+          <div className="border-t border-slate-800" />
+
+          {/* Total + confirm */}
+          <div className="flex items-center justify-between">
+            <div>
+              {price != null ? (
+                <>
+                  <p className="text-xs text-slate-400">Skupaj</p>
+                  <p className="text-2xl font-black text-white">{price % 1 === 0 ? price.toFixed(0) : price.toFixed(2)} €</p>
+                </>
+              ) : (
+                <p className="text-sm text-slate-400">{fmtTime(startMin)} – {fmtTime(endMin)}</p>
+              )}
+            </div>
+            <button
+              onClick={() => onConfirm(startMin, endMin, notes)}
+              disabled={isPending || availableDurations.length === 0}
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:opacity-50 text-white font-black rounded-xl transition-colors shadow-lg shadow-emerald-500/25"
+            >
+              {isPending ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                  Rezervacija...
+                </>
+              ) : (
+                <>
+                  Potrdi
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                </>
+              )}
+            </button>
+          </div>
+
+          <p className="text-[10px] text-slate-500 text-center">Z rezervacijo sprejemate pravila in pogoje igrišča</p>
         </div>
       </div>
     </div>
   );
 }
-
-const PAGE_SIZE = 4; // max courts visible at once
 
 // ── CourtGrid ─────────────────────────────────────────────────────────────────
 
@@ -571,7 +619,6 @@ function CourtGrid({
 
   return (
     <div>
-      {/* Page navigation — only when more than PAGE_SIZE courts */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
           <span className="text-xs text-slate-400 font-medium">
@@ -605,7 +652,7 @@ function CourtGrid({
             {visible.map((court) => (
               <div key={court.id} className="flex-1 min-w-[160px] border-l border-slate-200 dark:border-slate-700 px-2 py-3 text-center">
                 <p className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide truncate">{court.name}</p>
-                <div className="flex items-center justify-center gap-1.5 mt-1">
+                <div className="flex items-center justify-center mt-1">
                   <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${SURFACE_COLORS[court.surface] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600"}`}>
                     {court.surface}
                   </span>
@@ -616,8 +663,6 @@ function CourtGrid({
 
           {/* Grid body */}
           <div className="relative flex" style={{ height: totalH }}>
-
-            {/* Now line */}
             {nowPx !== null && (
               <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: nowPx }}>
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500 ml-[46px] shrink-0 shadow-sm" />
@@ -625,20 +670,18 @@ function CourtGrid({
               </div>
             )}
 
-          {/* Time axis */}
-          <div className="w-14 shrink-0 relative">
-            {HOURS.map((hour) => (
-              <div key={hour} className="absolute right-0 flex justify-end pr-2.5" style={{ top: (hour - START_HOUR) * HOUR_H, height: HOUR_H }}>
-                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium tabular-nums mt-1">{String(hour).padStart(2, "0")}:00</span>
-              </div>
-            ))}
-            {/* Horizontal hour lines on axis */}
-            {HOURS.map((hour) => (
-              <div key={hour} className="absolute left-0 right-0 border-b border-slate-100 dark:border-slate-800" style={{ top: (hour - START_HOUR) * HOUR_H + HOUR_H }} />
-            ))}
-          </div>
+            {/* Time axis */}
+            <div className="w-14 shrink-0 relative">
+              {HOURS.map((hour) => (
+                <div key={hour} className="absolute right-0 flex justify-end pr-2.5" style={{ top: (hour - START_HOUR) * HOUR_H, height: HOUR_H }}>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium tabular-nums mt-1">{String(hour).padStart(2, "0")}:00</span>
+                </div>
+              ))}
+              {HOURS.map((hour) => (
+                <div key={hour} className="absolute left-0 right-0 border-b border-slate-100 dark:border-slate-800" style={{ top: (hour - START_HOUR) * HOUR_H + HOUR_H }} />
+              ))}
+            </div>
 
-            {/* One column per visible court */}
             {visible.map((court) => (
               <CourtColumn
                 key={court.id}
@@ -658,7 +701,6 @@ function CourtGrid({
 }
 
 // ── CourtColumn ───────────────────────────────────────────────────────────────
-// One court's full column: background cells + floating booking cards.
 
 function CourtColumn({
   court, date, today, selection, onSelect, totalH,
@@ -678,14 +720,12 @@ function CourtColumn({
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
-  // Pre-compute which hour-slots are booked (for background coloring)
   const bookedMins = useMemo(() => {
     if (!bookings) return new Set<number>();
     const set = new Set<number>();
     for (const b of bookings as Booking[]) {
       const bs = isoToLocalMin(b.starts_at);
       const be = isoToLocalMin(b.ends_at);
-      // mark every 30-min slot inside this booking
       for (let m = bs; m < be; m += 30) set.add(m);
     }
     return set;
@@ -694,14 +734,13 @@ function CourtColumn({
   const handleCellClick = (hour: number) => {
     const slotStart = toMin(hour);
     const slotEnd = slotStart + 60;
-    // block if any 30-min chunk of this hour is booked
     if (bookedMins.has(slotStart) || bookedMins.has(slotStart + 30)) return;
     if (date === today && slotEnd <= nowMin) return;
     if (selection?.courtId === court.id && slotStart === selection.startMin) {
       onSelect(null);
       return;
     }
-    onSelect({ courtId: court.id, startMin: slotStart, endMin: slotEnd });
+    onSelect({ courtId: court.id, startMin: slotStart });
   };
 
   return (
@@ -713,23 +752,24 @@ function CourtColumn({
         const slotEnd = slotStart + 60;
         const isBooked = bookedMins.has(slotStart) || bookedMins.has(slotStart + 30);
         const isPast = date === today && slotEnd <= nowMin;
-        const isSelected = selection?.courtId === court.id
-          && slotStart >= selection.startMin && slotEnd <= selection.endMin;
+        const isSelected = selection?.courtId === court.id && slotStart === selection.startMin;
 
         return (
           <div
             key={hour}
             className={[
               "absolute left-0 right-0 border-b border-slate-100 dark:border-slate-800 transition-colors",
-              isBooked ? "cursor-default" :
-              isPast   ? "bg-slate-50 dark:bg-slate-800/20 cursor-default" :
-              isSelected ? "bg-emerald-500 hover:bg-emerald-400 cursor-pointer" :
-                           "bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 cursor-pointer group",
+              isBooked
+                ? "cursor-default bg-slate-100/50 dark:bg-slate-800/30"
+                : isPast
+                ? "bg-slate-50 dark:bg-slate-800/20 cursor-default"
+                : isSelected
+                ? "bg-sky-500 hover:bg-sky-400 cursor-pointer"
+                : "bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 cursor-pointer group",
             ].join(" ")}
             style={{ top: (hour - START_HOUR) * HOUR_H, height: HOUR_H }}
             onClick={() => handleCellClick(hour)}
           >
-            {/* Hover time label on free cells */}
             {!isBooked && !isPast && !isSelected && (
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                 <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-md tabular-nums">
@@ -737,18 +777,17 @@ function CourtColumn({
                 </span>
               </div>
             )}
-            {/* Selected checkmark */}
-            {isSelected && selection?.startMin === slotStart && (
-              <div className="absolute inset-0 flex items-center justify-center gap-1 pointer-events-none">
-                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                <span className="text-xs text-white font-bold tabular-nums">{fmtTime(slotStart)}</span>
+            {isSelected && (
+              <div className="absolute inset-0 flex items-center justify-center gap-1.5 pointer-events-none">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                <span className="text-sm text-white font-bold tabular-nums">{fmtTime(slotStart)}</span>
               </div>
             )}
           </div>
         );
       })}
 
-      {/* Floating booking cards — span full duration */}
+      {/* Floating booking cards */}
       {(bookings as Booking[] | undefined)?.map((b, i) => {
         const bs = isoToLocalMin(b.starts_at);
         const be = isoToLocalMin(b.ends_at);
@@ -761,19 +800,15 @@ function CourtColumn({
             className="absolute left-1 right-1 z-10 rounded-xl overflow-hidden pointer-events-none"
             style={{ top: top + 2, height: height - 4 }}
           >
-            <div
-              className="w-full h-full flex flex-col justify-center px-3 py-2 rounded-xl border border-slate-400/40 dark:border-slate-500/40"
-              style={{
-                background: "rgba(203,213,225,0.92)",
-                backgroundImage: "repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(148,163,184,0.3) 6px,rgba(148,163,184,0.3) 7px)",
-              }}
+            <div className="w-full h-full flex flex-col justify-center px-3 py-2 rounded-xl bg-slate-300/90 dark:bg-slate-600/90 border border-slate-400/50 dark:border-slate-500/50"
+              style={{ backgroundImage: "repeating-linear-gradient(135deg,transparent,transparent 5px,rgba(100,116,139,0.15) 5px,rgba(100,116,139,0.15) 6px)" }}
             >
               {b.player?.full_name && (
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate leading-snug">
+                <span className="text-sm font-black text-slate-800 dark:text-slate-100 truncate leading-tight">
                   {b.player.full_name}
                 </span>
               )}
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums leading-snug">{fmtTime(bs)}–{fmtTime(be)}</span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 tabular-nums">{fmtTime(bs)}–{fmtTime(be)}</span>
             </div>
           </div>
         );
