@@ -3,65 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
-import { useT } from "@/lib/i18n/context";
 
-// ── Venue photo map ────────────────────────────────────────────────────────────
+// ── Surface filter config ─────────────────────────────────────────────────────
 
-const VENUE_PHOTOS: Record<string, string> = {
-  "tc-fuzine":        "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80",
-  "tk-ilirija":       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80",
-  "tk-olimpija":      "https://images.unsplash.com/photo-1530915365347-e35b749a0381?w=800&q=80",
-  "tc-smarna-gora":   "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80",
-  "tenis-center-btc": "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80",
-  "tk-tivoli":        "https://images.unsplash.com/photo-1530915365347-e35b749a0381?w=800&q=80",
-  "tenis-padel-smartno": "https://api.courtiplay.com/storage/v1/render/image/public/banners/20524ba5-f937-401e-8dc1-f8383db87c23/1000008160.jpg?height=600&resize=contain",
-  "tenis-ruski-car":  "https://api.courtiplay.com/storage/v1/render/image/public/banners/7f4b2f5d-72bb-49fa-9971-b3f308e5e89b/7e0a35a4-3bab-4685-8343-ed54867d1d4a-1024x768.jpg?height=600&resize=contain",
-  "tk-strazisce":     "https://api.courtiplay.com/storage/v1/render/image/public/banners/707f60ba-39f4-4a67-9f9d-52b7dc25428b/1000005826.jpg?height=600&resize=contain",
-  "sobec":            "https://api.courtiplay.com/storage/v1/render/image/public/banners/6c6ac6f3-1dfb-43f3-af77-e92a5c62852d/13_1678487216.jpeg?height=600&resize=contain",
-  "tenis-kamp-danica":"https://api.courtiplay.com/storage/v1/render/image/public/banners/4f5629d5-8b60-41bd-8988-1e381bc6d7d2/Image%2023.%207.%2024%20at%2009.50.jpeg?height=600&resize=contain",
-  "bernardi":         "https://api.courtiplay.com/storage/v1/render/image/public/banners/b84559a9-d3c4-425a-8bab-1fd3acb6ebcf/Putr%20avgust24%20edited-66.jpg?height=600&resize=contain",
-  "tenis-klub-kamnik":"https://api.courtiplay.com/storage/v1/render/image/public/banners/33a4b992-23df-4ca8-90f6-80645fed4f92/IMG_1742.jpeg?height=600&resize=contain",
-  "tk-duplica":       "https://api.courtiplay.com/storage/v1/render/image/public/banners/88ededf0-92b4-4bbe-ab00-401b7ff7f963/IMG_4317.jpeg?height=600&resize=contain",
-  "rimski-vrelec":    "https://api.courtiplay.com/storage/v1/render/image/public/banners/d7e43b12-9b33-4e1e-8bbe-b6c897d37b1b/Rimski_igrisce_1515.jpg?height=600&resize=contain",
-  "tk-menges":        "https://api.courtiplay.com/storage/v1/render/image/public/banners/8b90f4f8-3860-426b-95ed-9a7ae1e7d005/IMG_20240224_190336.jpg?height=600&resize=contain",
-  "tenis-portoroz":   "https://api.courtiplay.com/storage/v1/render/image/public/banners/a8e8ea59-3403-4ff5-ad74-afacf5923add/270620241719495595_tennis-portoroz.jpg?height=600&resize=contain",
-  "sport-park-krsnik":"https://api.courtiplay.com/storage/v1/render/image/public/banners/761ffce5-c2bb-4355-a9c6-80bf01a85cb4/d9f433_215fbfabdedb44b8b58c154eeef93c1a_mv2.avif?height=600&resize=contain",
-  "cokan-tennis-academy": "https://api.courtiplay.com/storage/v1/render/image/public/banners/4b3997df-f2b9-46d7-9af7-9f84e0501644/teniska-sola-celje-z-okolico-cokan-tennis-academy-sportna-akademija-d-o-o_5-1024x1024-.png?height=600&resize=contain",
-  "tenis-center-murko": "https://api.courtiplay.com/storage/v1/render/image/public/banners/02b43766-01d2-41e5-9178-7d4f3ff70782/32519417qCE816CBDB99047000AC87D99C3117782_1200.webp?height=600&resize=contain",
-  "tenis-in-padel-koroska": "https://api.courtiplay.com/storage/v1/render/image/public/banners/edf0b7bb-9b00-44d0-81f8-fc386c6aa243/Koroska.jpg?height=600&resize=contain",
-  "tenis-gust-bar":   "https://api.courtiplay.com/storage/v1/render/image/public/banners/27dee8f7-c1cb-4c8e-8a20-3229cbc31f99/485341474_2897361857122781_7367172855721233389_n.jpg?height=600&resize=contain",
-  "tenis-hala-gokop": "https://api.courtiplay.com/storage/v1/render/image/public/banners/a4c78234-1eda-4d6c-b950-b5e3da099e6f/Screenshot%202025-10-26%20at%2015.34.33.png?height=600&resize=contain",
-  "teniska-klub-murska-sobota": "https://api.courtiplay.com/storage/v1/render/image/public/banners/f297ccbc-c39f-49a1-995b-f71226271996/received_311205469980915-scaled.jpeg?height=600&resize=contain",
-  "tk-radlje":        "https://api.courtiplay.com/storage/v1/render/image/public/banners/f47a157b-e0f7-4c15-af29-a17b2d9c3d1e/tk%20radlje.jpeg?height=600&resize=contain",
-  "tenisko-drustvo-dovce": "https://api.courtiplay.com/storage/v1/render/image/public/banners/240f0bc1-c9f1-4adf-b61c-e9aab7fbd861/40_1556566401.jpeg?height=600&resize=contain",
-};
-
-const SURFACE_FALLBACK: Record<string, string> = {
-  clay:    "https://images.unsplash.com/photo-1542144582-1ba00456b5e3?w=800&q=80",
-  hard:    "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80",
-  grass:   "https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?w=800&q=80",
-  indoor:  "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80",
-  default: "https://images.unsplash.com/photo-1530915365347-e35b749a0381?w=800&q=80",
-};
-
-// Surface filter pills config
 const SURFACE_FILTERS = [
   { key: "", label: "All Venues" },
-  { key: "clay", label: "Clay Court" },
-  { key: "hard", label: "Hard Court" },
-  { key: "grass", label: "Grass Court" },
+  { key: "clay", label: "Clay" },
+  { key: "hard", label: "Hard" },
+  { key: "grass", label: "Grass" },
   { key: "indoor", label: "Indoor" },
 ];
 
-function venueSlug(name: string) {
-  return name.toLowerCase()
-    .replace(/[čćžšđ]/g, (c) => ({ č: "c", ć: "c", ž: "z", š: "s", đ: "d" }[c] ?? c))
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-function getVenueImage(name: string, surfaces: string[]) {
-  const slug = venueSlug(name);
-  return VENUE_PHOTOS[slug] ?? SURFACE_FALLBACK[surfaces[0] ?? "default"] ?? SURFACE_FALLBACK.default;
+// Deterministic court count from venue id to avoid hydration mismatch
+function courtCountFromId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffffffff;
+  return (Math.abs(h) % 8) + 2;
 }
 
 type Venue = {
@@ -73,218 +30,281 @@ type Venue = {
   surfaces?: string[];
 };
 
-// ── Main page ──────────────────────────────────────────────────────────────────
+// ── Gradient placeholder colors by surface ───────────────────────────────────
+
+const SURFACE_GRADIENT: Record<string, string> = {
+  clay:    "from-[#3d1f0a] to-[#5c2e12]",
+  hard:    "from-[#0a1a3d] to-[#122b5c]",
+  grass:   "from-[#0a2e14] to-[#12472a]",
+  indoor:  "from-[#1b1c1c] to-[#242626]",
+  default: "from-[#1b1c1c] to-[#202020]",
+};
+
+function placeholderGradient(surfaces: string[]) {
+  return SURFACE_GRADIENT[surfaces[0] ?? "default"] ?? SURFACE_GRADIENT.default;
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { t } = useT();
   const [search, setSearch] = useState("");
   const [surfaceFilter, setSurfaceFilter] = useState("");
 
   const { data: venuesData, isLoading } = trpc.courts.getVenues.useQuery({ city: undefined });
-  const { data: profile } = trpc.player.getProfile.useQuery();
 
   const venues = (venuesData ?? []) as unknown as Venue[];
 
   const filtered = venues.filter((v) => {
-    const matchesSearch = !search ||
+    const matchesSearch =
+      !search ||
       v.name.toLowerCase().includes(search.toLowerCase()) ||
       v.city.toLowerCase().includes(search.toLowerCase());
-    const matchesSurface = !surfaceFilter ||
-      (v.surfaces ?? []).includes(surfaceFilter);
+    const matchesSurface =
+      !surfaceFilter || (v.surfaces ?? []).includes(surfaceFilter);
     return matchesSearch && matchesSurface;
   });
 
-  const firstName = profile?.full_name?.split(" ")[0] ?? null;
-
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[#131313] -mx-4 sm:-mx-6 lg:-mx-8">
 
-      {/* ── Hero ── */}
-      <div className="px-4 sm:px-6 pt-8 pb-6">
-        <p className="text-[#22c55e] text-xs font-bold uppercase tracking-[0.2em] mb-2">
+      {/* ── Top section ── */}
+      <div className="px-5 pt-10 pb-4">
+        {/* Premium label */}
+        <p className="text-[#4be277] text-[10px] font-extrabold uppercase tracking-[0.25em] mb-3">
           PREMIUM DISCOVERY
         </p>
-        <h1 className="text-4xl sm:text-5xl font-black text-white leading-tight mb-1">
-          {firstName ? `Pozdravljeni, ${firstName}.` : "Najdi svoje"}
+
+        {/* Heading */}
+        <h1 className="text-[2.6rem] leading-[1.1] font-extrabold text-white mb-0.5">
+          Find your
         </h1>
-        <h1 className="text-4xl sm:text-5xl font-black text-[#22c55e] leading-tight mb-6">
-          {firstName ? "Rezerviraj igrišče." : "Igrišče."}
+        <h1
+          className="text-[2.6rem] leading-[1.1] font-extrabold mb-6"
+          style={{
+            background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          Perfect Court.
         </h1>
 
-        {/* Filter pills */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1 mb-5">
+        {/* ── Filter pills ── */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1 mb-5 -mx-1 px-1">
           {SURFACE_FILTERS.map((f) => (
             <button
               key={f.key}
               onClick={() => setSurfaceFilter(f.key)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap border transition-all ${
+              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
                 surfaceFilter === f.key
-                  ? "bg-[#22c55e] border-[#22c55e] text-white shadow-lg shadow-green-500/30"
-                  : "bg-transparent border-[#2a2a2a] text-[#6b7280] hover:border-[#22c55e]/50 hover:text-white"
+                  ? "text-[#131313] font-bold"
+                  : "bg-[#202020] text-[#e5e2e1]/60 hover:text-[#e5e2e1]"
               }`}
+              style={
+                surfaceFilter === f.key
+                  ? { background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }
+                  : undefined
+              }
             >
               {f.label}
             </button>
           ))}
         </div>
 
-        {/* Search bar */}
-        <div className="flex items-center gap-3 bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 focus-within:border-[#22c55e]/40 transition-colors">
-          <svg className="w-4 h-4 text-[#4b5563] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        {/* ── Search bar ── */}
+        <div className="flex items-center gap-3 bg-[#1b1c1c] border-b border-[#3d4a3d]/20 px-4 py-3.5 rounded-2xl">
+          {/* Location pin */}
+          <svg
+            className="w-4 h-4 text-[#4be277] shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            />
           </svg>
+
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t.home.searchPlaceholder}
-            className="flex-1 bg-transparent text-sm text-white placeholder-[#4b5563] outline-none"
+            placeholder="Search by venue or city…"
+            className="flex-1 bg-transparent text-sm text-[#e5e2e1] placeholder-[#e5e2e1]/30 outline-none"
           />
+
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="w-6 h-6 rounded-full bg-[#222] text-[#6b7280] hover:text-white flex items-center justify-center text-sm transition-colors"
+              className="w-5 h-5 rounded-full bg-[#202020] text-[#e5e2e1]/40 hover:text-[#e5e2e1] flex items-center justify-center text-xs transition-colors"
             >
               ×
             </button>
           )}
-          <button className="w-8 h-8 bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl flex items-center justify-center text-[#6b7280] hover:text-white transition-colors shrink-0">
+
+          {/* Tune / filter icon */}
+          <button className="w-8 h-8 bg-[#202020] rounded-xl flex items-center justify-center text-[#e5e2e1]/40 hover:text-[#4be277] transition-colors shrink-0">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+              />
             </svg>
           </button>
         </div>
       </div>
 
       {/* ── Venue list ── */}
-      <div className="px-4 sm:px-6 pb-32">
+      <div className="px-5 pb-36">
         {isLoading ? (
-          <div className="space-y-4">
+          <div className="space-y-6 pt-2">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-56 bg-[#141414] rounded-3xl mb-3" />
-                <div className="h-4 bg-[#141414] rounded w-2/3 mb-2" />
-                <div className="h-3 bg-[#141414] rounded w-1/2" />
+                <div className="aspect-[4/5] rounded-3xl bg-[#1b1c1c] mb-3" />
+                <div className="h-5 bg-[#1b1c1c] rounded w-3/5 mb-2" />
+                <div className="h-3.5 bg-[#1b1c1c] rounded w-2/5" />
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-24">
-            <p className="text-5xl mb-4">🏟️</p>
-            <p className="font-black text-white text-lg">{t.courts.noVenues}</p>
-            <p className="text-sm text-[#6b7280] mt-1">{search || surfaceFilter ? t.courts.tryClearing : t.courts.noVenuesDB}</p>
+          <div className="text-center py-28">
+            <p className="text-[#e5e2e1]/20 text-5xl mb-4">🏟</p>
+            <p className="font-bold text-[#e5e2e1] text-lg mb-1">No venues found</p>
+            <p className="text-sm text-[#e5e2e1]/40">
+              {search || surfaceFilter ? "Try clearing your filters" : "No venues in database yet"}
+            </p>
             {(search || surfaceFilter) && (
               <button
                 onClick={() => { setSearch(""); setSurfaceFilter(""); }}
-                className="mt-5 px-5 py-2.5 rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-white text-sm font-bold transition-colors"
+                className="mt-5 px-5 py-2.5 rounded-full text-[#131313] text-sm font-bold transition-opacity hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
               >
-                {t.common.clearFilters}
+                Clear filters
               </button>
             )}
           </div>
         ) : (
-          <div className="space-y-5">
-            {filtered.map((venue, idx) => (
-              <VenueCard key={venue.id} venue={venue} featured={idx === 0 && !search && !surfaceFilter} />
+          <div className="space-y-8 pt-2">
+            {filtered.map((venue) => (
+              <VenueCard key={venue.id} venue={venue} />
             ))}
           </div>
         )}
+      </div>
+
+      {/* ── FAB: Map ── */}
+      <div className="fixed bottom-28 right-6 z-50">
+        <button
+          className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl shadow-[#4be277]/20 active:scale-95 transition-transform"
+          style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
+          aria-label="View map"
+        >
+          <svg className="w-6 h-6 text-[#131313]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   );
 }
 
-// ── VenueCard ──────────────────────────────────────────────────────────────────
+// ── VenueCard ─────────────────────────────────────────────────────────────────
 
-function VenueCard({ venue, featured }: { venue: Venue; featured?: boolean }) {
-  const { t } = useT();
+function VenueCard({ venue }: { venue: Venue }) {
   const surfaces = venue.surfaces ?? [];
-  const imgUrl = getVenueImage(venue.name, surfaces);
-  const courtCount = Math.floor(Math.random() * 8) + 2; // placeholder — replace with real data when available
+  const courtCount = courtCountFromId(venue.id);
+  const gradientClasses = placeholderGradient(surfaces);
 
-  if (featured) {
-    // Large featured card (first venue) — like "The Grand Slam Club" in Figma
-    return (
-      <Link href={`/courts/${venue.id}`} className="block group">
-        <div className="relative h-64 rounded-3xl overflow-hidden mb-3">
-          <img
-            src={imgUrl}
-            alt={venue.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-            loading="eager"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-          {/* Court count badge */}
-          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm border border-white/10 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
-            {courtCount} COURTS
-          </div>
-
-          {/* Available now dot */}
-          <div className="absolute bottom-4 left-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#22c55e] shadow-lg shadow-green-500/50 animate-pulse" />
-              <span className="text-[#22c55e] text-xs font-bold uppercase tracking-widest">AVAILABLE NOW</span>
-            </div>
-          </div>
-        </div>
-
-        <h2 className="text-xl font-black text-white mb-1 group-hover:text-[#22c55e] transition-colors">
-          {venue.name}
-        </h2>
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-[#6b7280]">
-            {venue.city}{venue.address ? ` · ${venue.address}` : ""}
-          </p>
-          <div className="flex gap-1.5">
-            {surfaces.slice(0, 2).map((s) => (
-              <span key={s} className="text-[10px] font-black uppercase tracking-wide text-[#9ca3af] bg-[#141414] border border-[#222] px-2 py-1 rounded-lg">
-                {t.surfaces[s as keyof typeof t.surfaces] ?? s}
-              </span>
-            ))}
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
-  // Regular card — like "Emerald Lawn Estates" in Figma
   return (
     <Link href={`/courts/${venue.id}`} className="block group">
-      <div className="relative h-52 rounded-3xl overflow-hidden mb-3">
-        <img
-          src={imgUrl}
-          alt={venue.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+      {/* Image area */}
+      <div className="relative aspect-[4/5] rounded-3xl overflow-hidden mb-4">
+        {/* Placeholder gradient background */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradientClasses}`} />
 
-        {/* Court count */}
-        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm border border-white/10 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
-          {courtCount} COURTS
+        {/* Subtle tennis court lines overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-x-[10%] top-[20%] bottom-[20%] border border-white/40 rounded-sm" />
+          <div className="absolute left-1/2 top-[20%] bottom-[20%] w-px bg-white/40 -translate-x-px" />
+          <div className="absolute inset-x-[10%] top-1/2 h-px bg-white/40 -translate-y-px" />
+          <div className="absolute inset-x-[10%] top-[20%] h-[18%] border-b border-white/30" />
+          <div className="absolute inset-x-[10%] bottom-[20%] h-[18%] border-t border-white/30" />
         </div>
 
-        {/* Next available */}
-        <div className="absolute bottom-4 left-4">
-          <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest mb-0.5">NEXT AVAILABLE</p>
-          <p className="text-white text-sm font-black">{venue.name}</p>
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#131313]/90 via-transparent to-transparent" />
+
+        {/* Court count badge — top right */}
+        <div className="absolute top-3 right-3">
+          <div className="bg-[#131313]/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-extrabold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full">
+            {courtCount} COURTS
+          </div>
+        </div>
+
+        {/* Available now — bottom left */}
+        <div className="absolute bottom-4 left-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#4be277] shadow-lg shadow-[#4be277]/60 animate-pulse" />
+          <span className="text-[#4be277] text-[10px] font-extrabold uppercase tracking-[0.18em]">
+            AVAILABLE NOW
+          </span>
         </div>
       </div>
 
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-sm text-[#6b7280] truncate">
-            {venue.city}{venue.address ? ` · ${venue.address}` : ""}
-          </p>
-          <div className="flex gap-1.5 mt-1.5">
-            {surfaces.slice(0, 3).map((s) => (
-              <span key={s} className="text-[10px] font-black uppercase tracking-wide text-[#9ca3af] bg-[#141414] border border-[#222] px-2 py-1 rounded-lg">
-                {t.surfaces[s as keyof typeof t.surfaces] ?? s}
-              </span>
-            ))}
-          </div>
+      {/* Venue info below image */}
+      <h2 className="text-[1.35rem] font-extrabold text-[#e5e2e1] leading-tight mb-1.5 group-hover:text-[#4be277] transition-colors">
+        {venue.name}
+      </h2>
+
+      <div className="flex items-center justify-between gap-3">
+        {/* Location */}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <svg className="w-3.5 h-3.5 text-[#e5e2e1]/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          <span className="text-sm text-[#e5e2e1]/40 truncate">
+            {venue.city}
+            {venue.address ? ` · ${venue.address}` : ""}
+          </span>
+        </div>
+
+        {/* Surface tags + price */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {surfaces.slice(0, 2).map((s) => (
+            <span
+              key={s}
+              className="text-[10px] font-bold uppercase tracking-wide text-[#e5e2e1]/40 bg-[#202020] px-2.5 py-1 rounded-lg"
+            >
+              {s}
+            </span>
+          ))}
         </div>
       </div>
     </Link>

@@ -2,11 +2,10 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { useT } from "@/lib/i18n/context";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────────
 
 const VENUE_PHOTOS: Record<string, string> = {
   "tc-fuzine":        "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1200&q=80",
@@ -43,11 +42,17 @@ const SURFACE_FALLBACK: Record<string, string> = {
   default: "https://api.courtiplay.com/storage/v1/render/image/public/banners/d7e43b12-9b33-4e1e-8bbe-b6c897d37b1b/Rimski_igrisce_1515.jpg?height=600&resize=contain",
 };
 
-const START_HOUR = 7;
-const END_HOUR = 22;
-const SLOT_H = 44; // px per 30-min slot
+const START_HOUR = 8;
+const END_HOUR = 20;
+const SLOT_H = 64; // px per 30-min slot
 const SLOTS = Array.from({ length: (END_HOUR - START_HOUR) * 2 }, (_, i) => i);
 const PAGE_SIZE = 4;
+
+// Kinetic gradient (used across CTA buttons and selected slots)
+const KINETIC_GRADIENT = "linear-gradient(135deg, #4be277 0%, #22c55e 50%, #16a34a 100%)";
+const STRIPE_PATTERN = "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px)";
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function venueSlug(name: string): string {
   return name.toLowerCase()
@@ -75,15 +80,17 @@ function slotIndexToMin(i: number): number {
   return START_HOUR * 60 + i * 30;
 }
 
+// ── Types ──────────────────────────────────────────────────────────────────────
+
 type VenueCourt = { id: string; name: string; surface: string; is_indoor: boolean; price_per_hour: number | null };
 type Venue = { id: string; name: string; city: string; address: string | null; phone?: string | null; website?: string | null; surfaces?: string[]; courts: VenueCourt[] };
 type Booking = { starts_at: string; ends_at: string; player?: { full_name?: string } };
 type Selection = { courtId: string; startMin: number } | null;
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Main page ──────────────────────────────────────────────────────────────────
 
-export default function VenueDetailPage() {
-  const { venueId } = useParams<{ venueId: string }>();
+export default function VenueDetailPage({ params }: { params: { venueId: string } }) {
+  const { venueId } = params;
   const { t } = useT();
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
@@ -114,6 +121,7 @@ export default function VenueDetailPage() {
   const changeDate = (d: string) => { setDate(d); setSelection(null); setModalOpen(false); setBooked(false); setBookedInfo(null); };
   const openModal = (sel: Selection) => { setSelection(sel); setModalOpen(true); setBooked(false); };
 
+  // Day window: 6 tiles centred on current view
   const dayOffset = Math.max(0, Math.floor(
     (new Date(date + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / (86400000 * 6)
   ) * 6);
@@ -132,59 +140,77 @@ export default function VenueDetailPage() {
   const nowPx = date === today && nowMin >= toMin(START_HOUR) && nowMin <= toMin(END_HOUR)
     ? ((nowMin - toMin(START_HOUR)) / 30) * SLOT_H : null;
 
-  // Day-of-week + date label for bottom bar
   const selectionDateLabel = (d: string) =>
     new Date(d + "T00:00:00").toLocaleDateString("sl-SI", { weekday: "short" }).replace(".", "").toUpperCase();
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-[#0a0a0a]">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen" style={{ background: "#131313" }}>
 
-      {/* Hero */}
-      <div className="relative h-48 sm:h-60 overflow-hidden">
+      {/* ── Hero ── */}
+      <div className="relative h-52 sm:h-64 overflow-hidden">
         {venue
           ? <img src={heroImg} alt={venue.name} className="w-full h-full object-cover" />
-          : <div className="w-full h-full bg-[#1a1a1a] animate-pulse" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/50 to-transparent" />
+          : <div className="w-full h-full animate-pulse" style={{ background: "#1b1c1c" }} />}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #131313 0%, rgba(0,0,0,0.55) 50%, transparent 100%)" }} />
+
+        {/* Back button */}
         <div className="absolute top-4 left-4 sm:left-6">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 transition-all">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white backdrop-blur-sm px-3 py-1.5 rounded-full border transition-all"
+            style={{ background: "rgba(0,0,0,0.5)", borderColor: "rgba(255,255,255,0.1)" }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
             {t.common.back}
           </Link>
         </div>
+
+        {/* Venue title */}
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 pb-5">
           {venue ? (
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-white drop-shadow-lg">{venue.name}</h1>
-              <p className="text-sm text-[#9ca3af] mt-0.5 flex items-center gap-1">
-                <svg className="w-3.5 h-3.5 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <p className="text-sm mt-0.5 flex items-center gap-1" style={{ color: "rgba(188,203,185,0.6)" }}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
                 {venue.city}{venue.address ? `, ${venue.address}` : ""}
               </p>
             </div>
-          ) : <div className="h-8 w-48 bg-white/10 rounded-lg animate-pulse" />}
+          ) : (
+            <div className="h-8 w-48 rounded-lg animate-pulse" style={{ background: "rgba(255,255,255,0.1)" }} />
+          )}
         </div>
       </div>
 
-      {/* Body */}
-      <div className="px-4 sm:px-6 py-5 pb-28">
+      {/* ── Body ── */}
+      <div className="px-4 sm:px-6 py-5 pb-32">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-5 items-start">
 
-          {/* ── Booking panel ── */}
-          <div className="flex-1 min-w-0 bg-[#141414] rounded-2xl border border-[#222] overflow-hidden">
+          {/* ── Left: Booking Panel ── */}
+          <div className="flex-1 min-w-0 rounded-2xl overflow-hidden border" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
 
             {/* Day strip */}
-            <div className="flex items-center gap-2 px-3 py-3 border-b border-[#222]">
+            <div className="flex items-center gap-2 px-3 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              {/* Prev */}
               <button
                 onClick={() => changeDate(addDays(date, -1))}
                 disabled={date <= today}
-                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1a1a1a] disabled:opacity-20 transition-colors shrink-0"
+                className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors shrink-0 disabled:opacity-20"
+                style={{ color: "#bccbb9" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#252626")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
-                <svg className="w-4 h-4 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                </svg>
               </button>
 
-              <div className="flex gap-1.5 flex-1 overflow-x-auto scrollbar-none">
+              {/* Day tiles */}
+              <div className="flex gap-1.5 flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
                 {dayButtons.map((d) => {
                   const isActive = d === date;
                   const isT = d === today;
@@ -192,18 +218,25 @@ export default function VenueDetailPage() {
                     <button
                       key={d}
                       onClick={() => changeDate(d)}
-                      className={`flex flex-col items-center justify-center min-w-[60px] h-[72px] rounded-xl transition-all shrink-0 border ${
-                        isActive
-                          ? "bg-[#22c55e] border-[#22c55e] shadow-lg shadow-green-500/20"
-                          : "bg-[#1a1a1a] border-[#222] hover:border-[#333] hover:bg-[#222]"
-                      }`}
+                      className="flex flex-col items-center justify-center min-w-[60px] h-20 rounded-2xl transition-all shrink-0 border"
+                      style={isActive ? {
+                        background: "rgba(75,226,119,0.1)",
+                        borderColor: "rgba(75,226,119,0.2)",
+                      } : {
+                        background: "#1b1c1c",
+                        borderColor: "rgba(61,74,61,0.1)",
+                      }}
                     >
-                      <span className={`text-[10px] font-bold tracking-widest uppercase ${
-                        isActive ? "text-green-100" : isT ? "text-[#22c55e]" : "text-[#6b7280]"
-                      }`}>
+                      <span
+                        className="text-[10px] font-bold tracking-widest uppercase"
+                        style={{ color: isActive ? "#4be277" : isT ? "#4be277" : "rgba(188,203,185,0.4)" }}
+                      >
                         {weekdayShort(d)}
                       </span>
-                      <span className={`text-xl font-black leading-tight ${isActive ? "text-white" : "text-white"}`}>
+                      <span
+                        className="text-xl font-black leading-tight"
+                        style={{ color: isActive ? "#4be277" : "#fff" }}
+                      >
                         {dayNum(d)}
                       </span>
                     </button>
@@ -211,15 +244,27 @@ export default function VenueDetailPage() {
                 })}
               </div>
 
+              {/* Next */}
               <button
                 onClick={() => changeDate(addDays(date, 1))}
-                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1a1a1a] transition-colors shrink-0"
+                className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors shrink-0"
+                style={{ color: "#bccbb9" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#252626")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
-                <svg className="w-4 h-4 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
 
+              {/* Calendar picker */}
               <label className="cursor-pointer shrink-0">
-                <div className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1a1a1a] text-[#6b7280] transition-colors border border-[#222]">
+                <div
+                  className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors border"
+                  style={{ color: "#bccbb9", borderColor: "rgba(61,74,61,0.2)" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#252626")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2}/>
                     <line x1="16" y1="2" x2="16" y2="6" strokeWidth={2}/>
@@ -240,12 +285,14 @@ export default function VenueDetailPage() {
             {/* Grid */}
             {isLoading ? (
               <div className="p-4 space-y-2 animate-pulse">
-                {[...Array(10)].map((_, i) => <div key={i} className="h-11 bg-[#1a1a1a] rounded-xl" />)}
+                {[...Array(10)].map((_, i) => (
+                  <div key={i} className="h-16 rounded-xl" style={{ background: "#202020" }} />
+                ))}
               </div>
             ) : !venue || venue.courts.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-3xl mb-2">🎾</p>
-                <p className="text-[#6b7280] font-semibold">{t.courts.noVenues}</p>
+                <p className="font-semibold" style={{ color: "rgba(188,203,185,0.4)" }}>{t.courts.noVenues}</p>
               </div>
             ) : (
               <CourtGrid
@@ -260,41 +307,54 @@ export default function VenueDetailPage() {
 
             {/* Success banner */}
             {booked && bookedInfo && (
-              <div className="border-t border-[#22c55e]/20 bg-[#22c55e]/10 px-4 py-3 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-[#22c55e] flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+              <div
+                className="border-t flex items-center gap-3 px-4 py-3"
+                style={{ borderColor: "rgba(75,226,119,0.2)", background: "rgba(75,226,119,0.08)" }}
+              >
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#4be277" }}>
+                  <svg className="w-4 h-4" fill="none" stroke="#003915" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
                 <div className="flex-1">
                   <p className="text-white font-bold text-sm">{t.courts.bookingConfirmed}</p>
-                  <p className="text-[#9ca3af] text-xs">{bookedInfo.courtName} · {fmtTime(bookedInfo.start)}–{fmtTime(bookedInfo.end)}</p>
+                  <p className="text-xs" style={{ color: "rgba(188,203,185,0.6)" }}>
+                    {bookedInfo.courtName} · {fmtTime(bookedInfo.start)}–{fmtTime(bookedInfo.end)}
+                  </p>
                 </div>
-                <button onClick={() => setBooked(false)} className="text-xs text-[#22c55e] hover:text-green-400 font-semibold">
+                <button
+                  onClick={() => setBooked(false)}
+                  className="text-xs font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: "#4be277" }}
+                >
                   {t.courts.newBooking}
                 </button>
               </div>
             )}
           </div>
 
-          {/* ── Quick Booking Sidebar (desktop) ── */}
+          {/* ── Right: Quick Booking Sidebar (desktop) ── */}
           <div className="hidden lg:block w-72 shrink-0">
-            <div className="bg-[#141414] rounded-2xl border border-[#222] overflow-hidden sticky top-6">
+            <div className="rounded-2xl overflow-hidden sticky top-6 border" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
 
               {/* Venue photo */}
               <div className="relative h-36 overflow-hidden">
                 {venue
-                  ? <img src={heroImg} alt={venue?.name} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-[#1a1a1a] animate-pulse" />}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/20 to-transparent" />
+                  ? <img src={heroImg} alt={venue.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full animate-pulse" style={{ background: "#202020" }} />}
+                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #1b1c1c 0%, rgba(0,0,0,0.2) 100%)" }} />
               </div>
 
-              <div className="px-4 pt-1 pb-4 space-y-4">
+              <div className="px-4 pt-2 pb-5 space-y-4">
 
                 {/* Header */}
                 <div>
-                  <p className="text-[10px] font-bold text-[#22c55e] tracking-widest uppercase mb-1">Quick Booking</p>
+                  <p className="text-[10px] font-bold tracking-widest uppercase mb-1" style={{ color: "#4be277" }}>
+                    Quick Booking
+                  </p>
                   <p className="text-base font-black text-white leading-tight">{venue?.name ?? "—"}</p>
                   {venue && (
-                    <p className="text-xs text-[#6b7280] mt-0.5 flex items-center gap-1">
+                    <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "rgba(188,203,185,0.5)" }}>
                       <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -304,72 +364,86 @@ export default function VenueDetailPage() {
                   )}
                 </div>
 
-                {/* Selection info */}
                 {selection && selectedCourt ? (
                   <>
-                    <div className="bg-[#1a1a1a] rounded-xl border border-[#222] p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Igrišče</span>
-                        <span className="text-sm font-bold text-white">{selectedCourt.name}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Datum</span>
-                        <span className="text-sm font-semibold text-[#9ca3af]">
-                          {new Date(date + "T00:00:00").toLocaleDateString("sl-SI", { day: "numeric", month: "short" })}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Čas</span>
-                        <span className="text-sm font-semibold text-[#22c55e] tabular-nums">
-                          {fmtTime(selection.startMin)} – {fmtTime(selection.startMin + 60)}
-                        </span>
-                      </div>
+                    {/* Selection details */}
+                    <div className="rounded-xl border p-3 space-y-2" style={{ background: "#202020", borderColor: "rgba(255,255,255,0.05)" }}>
+                      <SidebarRow label="Court" value={selectedCourt.name} valueClass="text-white font-bold" />
+                      <SidebarRow
+                        label="Date"
+                        value={new Date(date + "T00:00:00").toLocaleDateString("sl-SI", { day: "numeric", month: "short" })}
+                        valueClass="font-semibold"
+                        valueStyle={{ color: "rgba(188,203,185,0.7)" }}
+                      />
+                      <SidebarRow
+                        label="Time"
+                        value={`${fmtTime(selection.startMin)} – ${fmtTime(selection.startMin + 60)}`}
+                        valueClass="font-semibold tabular-nums"
+                        valueStyle={{ color: "#4be277" }}
+                      />
                     </div>
 
+                    {/* Pricing */}
                     {selectedCourt.price_per_hour != null && (
-                      <div className="bg-[#1a1a1a] rounded-xl border border-[#222] p-3">
+                      <div className="rounded-xl border p-3" style={{ background: "#202020", borderColor: "rgba(255,255,255,0.05)" }}>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Cena / uro</span>
-                          <span className="text-sm text-[#9ca3af]">{(selectedCourt.price_per_hour / 100).toFixed(0)} €</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(188,203,185,0.4)" }}>Rate / hr</span>
+                          <span className="text-sm" style={{ color: "rgba(188,203,185,0.6)" }}>{(selectedCourt.price_per_hour / 100).toFixed(0)} €</span>
                         </div>
-                        <div className="flex items-center justify-between border-t border-[#222] pt-2">
-                          <span className="text-sm font-bold text-white">Skupaj (1h)</span>
+                        <div className="flex items-center justify-between border-t pt-2" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                          <span className="text-sm font-bold text-white">Total (1h)</span>
                           <span className="text-lg font-black text-white">{(selectedCourt.price_per_hour / 100).toFixed(0)} €</span>
                         </div>
                       </div>
                     )}
 
+                    {/* Confirm button */}
                     <button
                       onClick={() => openModal(selection)}
-                      className="w-full py-3 bg-[#22c55e] hover:bg-[#16a34a] active:bg-[#15803d] text-white font-black rounded-full transition-colors shadow-lg shadow-green-500/20 text-sm tracking-wide"
+                      className="w-full py-3 text-sm font-black rounded-full tracking-wide transition-opacity hover:opacity-90"
+                      style={{ background: KINETIC_GRADIENT, color: "#003915" }}
                     >
                       Confirm Booking
                     </button>
-                    <p className="text-[10px] text-[#3a3a3a] text-center uppercase tracking-wider">Free cancellation up to 24h before</p>
+                    <p className="text-[10px] text-center uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.12)" }}>
+                      Free cancellation up to 24h before
+                    </p>
                   </>
                 ) : (
-                  <div className="bg-[#1a1a1a] rounded-xl border border-[#222] p-4 text-center">
-                    <div className="w-10 h-10 rounded-full bg-[#222] flex items-center justify-center mx-auto mb-2">
-                      <svg className="w-5 h-5 text-[#3a3a3a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  /* Empty state */
+                  <div className="rounded-xl border p-4 text-center" style={{ background: "#202020", borderColor: "rgba(255,255,255,0.05)" }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background: "#252626" }}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: "rgba(188,203,185,0.2)" }}>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                       </svg>
                     </div>
-                    <p className="text-xs text-[#4b5563]">Izberite termin v urniku</p>
+                    <p className="text-xs" style={{ color: "rgba(188,203,185,0.3)" }}>Select a slot in the grid</p>
                   </div>
                 )}
 
                 {/* Contact */}
                 {venue && (venue.phone || venue.website) && (
-                  <div className="space-y-1.5 pt-1 border-t border-[#1e1e1e]">
+                  <div className="space-y-1.5 pt-1 border-t" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
                     {venue.phone && (
-                      <a href={`tel:${venue.phone}`} className="flex items-center gap-2 text-xs text-[#6b7280] hover:text-[#22c55e] transition-colors">
-                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                      <a href={`tel:${venue.phone}`} className="flex items-center gap-2 text-xs transition-colors"
+                         style={{ color: "rgba(188,203,185,0.4)" }}
+                         onMouseEnter={e => (e.currentTarget.style.color = "#4be277")}
+                         onMouseLeave={e => (e.currentTarget.style.color = "rgba(188,203,185,0.4)")}>
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
                         {venue.phone}
                       </a>
                     )}
                     {venue.website && (
-                      <a href={venue.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-[#6b7280] hover:text-[#22c55e] transition-colors truncate">
-                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+                      <a href={venue.website} target="_blank" rel="noopener noreferrer"
+                         className="flex items-center gap-2 text-xs transition-colors truncate"
+                         style={{ color: "rgba(188,203,185,0.4)" }}
+                         onMouseEnter={e => (e.currentTarget.style.color = "#4be277")}
+                         onMouseLeave={e => (e.currentTarget.style.color = "rgba(188,203,185,0.4)")}>
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/>
+                        </svg>
                         <span className="truncate">{venue.website.replace(/^https?:\/\//, "")}</span>
                       </a>
                     )}
@@ -382,25 +456,34 @@ export default function VenueDetailPage() {
         </div>
       </div>
 
-      {/* ── Bottom bar (mobile/tablet — shown when slot selected) ── */}
+      {/* ── YOUR SELECTION bottom card (mobile/tablet) ── */}
       {selection && selectedCourt && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#141414] border-t border-[#222] px-4 py-3 flex items-center justify-between gap-3 lg:hidden">
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-[#6b7280] uppercase tracking-widest font-bold">Your Selection</p>
-            <p className="text-sm font-bold text-white truncate">
-              {selectionDateLabel(date)}, {fmtTime(selection.startMin)} – {fmtTime(selection.startMin + 60)} · {selectedCourt.name}
-            </p>
+        <div
+          className="fixed bottom-0 left-0 right-0 z-40 lg:hidden px-4 py-4"
+          style={{ background: "#131313", borderTop: "1px solid rgba(75,226,119,0.1)" }}
+        >
+          <div className="rounded-2xl p-4 border flex items-center justify-between gap-3" style={{ background: "#202020", borderColor: "rgba(75,226,119,0.1)" }}>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "#4be277" }}>Your Selection</p>
+              <p className="text-sm font-bold text-white truncate">
+                {selectedCourt.name}
+              </p>
+              <p className="text-xs tabular-nums" style={{ color: "rgba(188,203,185,0.6)" }}>
+                {selectionDateLabel(date)}, {fmtTime(selection.startMin)} – {fmtTime(selection.startMin + 60)}
+              </p>
+            </div>
+            <button
+              onClick={() => openModal(selection)}
+              className="shrink-0 px-5 py-2.5 text-sm font-black rounded-full transition-opacity hover:opacity-90"
+              style={{ background: KINETIC_GRADIENT, color: "#003915" }}
+            >
+              Book Now
+            </button>
           </div>
-          <button
-            onClick={() => openModal(selection)}
-            className="shrink-0 px-5 py-2.5 bg-[#22c55e] hover:bg-[#16a34a] text-white font-black rounded-full transition-colors shadow-lg shadow-green-500/20 text-sm"
-          >
-            Book Now
-          </button>
         </div>
       )}
 
-      {/* Booking modal */}
+      {/* ── Booking Modal ── */}
       {modalOpen && selection && selectedCourt && (
         <BookingModal
           court={selectedCourt}
@@ -425,10 +508,28 @@ export default function VenueDetailPage() {
   );
 }
 
+// ── SidebarRow (tiny helper) ───────────────────────────────────────────────────
+
+function SidebarRow({
+  label, value, valueClass = "", valueStyle,
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+  valueStyle?: React.CSSProperties;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(188,203,185,0.35)" }}>{label}</span>
+      <span className={`text-sm ${valueClass}`} style={valueStyle}>{value}</span>
+    </div>
+  );
+}
+
 // ── BookingModal ───────────────────────────────────────────────────────────────
 
 function BookingModal({
-  court, date, venueName, heroImg, initialStart, onClose, onConfirm, isPending, error,
+  court, date, venueName, initialStart, onClose, onConfirm, isPending, error,
 }: {
   court: VenueCourt;
   date: string;
@@ -495,35 +596,54 @@ function BookingModal({
   const price = court.price_per_hour != null
     ? (court.price_per_hour / 100) * (effectiveDuration / 60) : null;
 
-  // 4 date tiles: selected date ± context
   const today = new Date().toISOString().slice(0, 10);
   const dateTiles = Array.from({ length: 4 }, (_, i) => addDays(date, i - 1)).filter(d => d >= today).slice(0, 4);
-
   const [selectedDate, setSelectedDate] = useState(date);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ background: "rgba(14,14,14,0.8)" }}
+        onClick={onClose}
+      />
 
-      <div className="relative w-full sm:max-w-lg bg-[#141414] rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden border border-[#222]">
-
+      {/* Sheet */}
+      <div
+        className="relative w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden border"
+        style={{ background: "#202020", borderColor: "rgba(255,255,255,0.06)" }}
+      >
         {/* Drag handle (mobile) */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-10 h-1 bg-[#2a2a2a] rounded-full" />
+          <div className="w-10 h-1 rounded-full" style={{ background: "#2a2a2a" }} />
         </div>
 
         {/* Header */}
-        <div className="flex items-start justify-between px-5 pt-4 pb-4 border-b border-[#1e1e1e]">
+        <div className="flex items-start justify-between px-5 pt-4 pb-4 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
           <div>
-            <span className="text-[10px] font-bold text-[#22c55e] tracking-widest uppercase">Reservation Details</span>
+            <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#4be277" }}>
+              Reservation Details
+            </span>
             <h2 className="text-2xl font-black text-white mt-0.5">{court.name}</h2>
-            <p className="text-sm text-[#6b7280] flex items-center gap-1 mt-0.5">
-              <svg className="w-3 h-3 text-[#4b5563]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <p className="text-sm flex items-center gap-1 mt-0.5" style={{ color: "rgba(188,203,185,0.5)" }}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
               {venueName}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#1e1e1e] hover:bg-[#2a2a2a] text-[#6b7280] hover:text-white transition-colors mt-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-xl transition-colors mt-1"
+            style={{ background: "#2a2a2a", color: "rgba(188,203,185,0.5)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#333"; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#2a2a2a"; e.currentTarget.style.color = "rgba(188,203,185,0.5)"; }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
@@ -531,7 +651,7 @@ function BookingModal({
 
           {/* Date tiles */}
           <div>
-            <p className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest mb-2.5">Select Date</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "rgba(188,203,185,0.4)" }}>Select Date</p>
             <div className="flex gap-2">
               {dateTiles.map((d) => {
                 const isActive = d === selectedDate;
@@ -541,42 +661,53 @@ function BookingModal({
                   <button
                     key={d}
                     onClick={() => setSelectedDate(d)}
-                    className={`flex-1 flex flex-col items-center py-2.5 rounded-xl border transition-all ${
-                      isActive
-                        ? "bg-[#22c55e] border-[#22c55e] shadow-md shadow-green-500/20"
-                        : "bg-[#1a1a1a] border-[#222] hover:border-[#333]"
-                    }`}
+                    className="flex-1 flex flex-col items-center py-2.5 rounded-xl border transition-all"
+                    style={isActive ? {
+                      background: "rgba(75,226,119,0.1)",
+                      borderColor: "rgba(75,226,119,0.2)",
+                    } : {
+                      background: "#1b1c1c",
+                      borderColor: "rgba(61,74,61,0.1)",
+                    }}
                   >
-                    <span className={`text-[9px] font-bold tracking-widest ${isActive ? "text-green-100" : "text-[#6b7280]"}`}>{wd}</span>
-                    <span className={`text-lg font-black leading-tight ${isActive ? "text-white" : "text-white"}`}>{dn}</span>
+                    <span className="text-[9px] font-bold tracking-widest" style={{ color: isActive ? "#4be277" : "rgba(188,203,185,0.35)" }}>{wd}</span>
+                    <span className="text-lg font-black leading-tight text-white">{dn}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Time slot */}
+          {/* Start / End time */}
           <div>
-            <p className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest mb-2.5">Time Slot</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "rgba(188,203,185,0.4)" }}>Time Slot</p>
             <div className="grid grid-cols-2 gap-3">
+              {/* Start */}
               <div>
-                <p className="text-[10px] font-semibold text-[#4b5563] uppercase tracking-widest mb-1.5">Start Time</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "rgba(188,203,185,0.3)" }}>Start Time</p>
                 <div className="relative">
                   <select
                     value={startMin}
                     onChange={(e) => setStartMin(Number(e.target.value))}
-                    className="w-full appearance-none text-base font-black tabular-nums px-4 py-3.5 pr-8 rounded-xl bg-[#1a1a1a] border border-[#222] text-white outline-none focus:ring-2 focus:ring-[#22c55e]/50 cursor-pointer transition-all"
+                    className="w-full appearance-none text-base font-black tabular-nums px-4 py-3.5 pr-8 rounded-xl border text-white outline-none cursor-pointer transition-all"
+                    style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.06)" }}
                   >
                     {validStarts.map(s => (
-                      <option key={s} value={s}>{fmtTime(s)}</option>
+                      <option key={s} value={s} style={{ background: "#202020" }}>{fmtTime(s)}</option>
                     ))}
                   </select>
-                  <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/></svg>
+                  <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: "rgba(188,203,185,0.4)" }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/>
+                  </svg>
                 </div>
               </div>
+              {/* End */}
               <div>
-                <p className="text-[10px] font-semibold text-[#4b5563] uppercase tracking-widest mb-1.5">End Time</p>
-                <div className="w-full text-base font-black tabular-nums px-4 py-3.5 rounded-xl bg-[#1a1a1a] border border-[#222] text-[#9ca3af] flex items-center gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "rgba(188,203,185,0.3)" }}>End Time</p>
+                <div
+                  className="w-full text-base font-black tabular-nums px-4 py-3.5 rounded-xl border flex items-center"
+                  style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.06)", color: "rgba(188,203,185,0.5)" }}
+                >
                   {fmtTime(endMin)}
                 </div>
               </div>
@@ -586,8 +717,8 @@ function BookingModal({
           {/* Duration */}
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <p className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Total Duration</p>
-              <span className="text-xs font-semibold text-[#9ca3af]">{effectiveDuration} min</span>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(188,203,185,0.4)" }}>Total Duration</p>
+              <span className="text-xs font-semibold" style={{ color: "rgba(188,203,185,0.6)" }}>{effectiveDuration} min</span>
             </div>
             <div className="flex gap-2">
               {DURATION_OPTIONS.map(d => {
@@ -598,13 +729,21 @@ function BookingModal({
                     key={d}
                     onClick={() => available && setDurationMins(d)}
                     disabled={!available}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${
-                      active
-                        ? "bg-[#22c55e] border-[#22c55e] text-white shadow-md shadow-green-500/20"
-                        : available
-                        ? "bg-[#1a1a1a] border-[#222] text-[#9ca3af] hover:border-[#333] hover:text-white"
-                        : "bg-[#111] border-[#1a1a1a] text-[#2a2a2a] cursor-not-allowed"
-                    }`}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all"
+                    style={active ? {
+                      background: KINETIC_GRADIENT,
+                      borderColor: "transparent",
+                      color: "#003915",
+                    } : available ? {
+                      background: "#1b1c1c",
+                      borderColor: "rgba(61,74,61,0.15)",
+                      color: "rgba(188,203,185,0.6)",
+                    } : {
+                      background: "rgba(27,28,28,0.4)",
+                      borderColor: "rgba(255,255,255,0.03)",
+                      color: "rgba(188,203,185,0.15)",
+                      cursor: "not-allowed",
+                    }}
                   >
                     {d < 60 ? `${d}m` : `${d / 60}h`}
                   </button>
@@ -615,32 +754,53 @@ function BookingModal({
 
           {/* Notes */}
           <div>
-            <p className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest mb-2">Note <span className="normal-case font-normal text-[#3a3a3a]">(optional)</span></p>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(188,203,185,0.4)" }}>
+              Note <span className="normal-case font-normal" style={{ color: "rgba(188,203,185,0.2)" }}>(optional)</span>
+            </p>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. training, tournament..."
-              className="w-full text-sm px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#222] text-white placeholder-[#3a3a3a] outline-none focus:ring-2 focus:ring-[#22c55e]/50 transition-all"
+              className="w-full text-sm px-4 py-3 rounded-xl border text-white outline-none transition-all"
+              style={{
+                background: "#1b1c1c",
+                borderColor: "rgba(255,255,255,0.06)",
+              }}
+              onFocus={e => (e.currentTarget.style.borderColor = "rgba(75,226,119,0.3)")}
+              onBlur={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
             />
           </div>
 
+          {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-3.5 py-2.5">
-              <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <p className="text-xs text-red-400">{error}</p>
+            <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 border" style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.2)" }}>
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="#f87171" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <p className="text-xs" style={{ color: "#f87171" }}>{error}</p>
             </div>
           )}
 
           {/* Price card */}
           {price != null && (
-            <div className="bg-[#1a1a1a] rounded-xl border border-[#222] p-4">
-              <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#222]">
-                <span className="text-xs text-[#6b7280]">{fmtTime(startMin)} – {fmtTime(endMin)}</span>
-                <span className="text-xs text-[#9ca3af]">{effectiveDuration} min</span>
+            <div className="rounded-xl border p-4" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-3 mb-3 pb-3 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                {/* Wallet icon */}
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(75,226,119,0.1)" }}>
+                  <svg className="w-4 h-4" fill="none" stroke="#4be277" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "rgba(188,203,185,0.4)" }}>Estimated Cost</p>
+                  <p className="text-xs tabular-nums" style={{ color: "rgba(188,203,185,0.6)" }}>
+                    {fmtTime(startMin)} – {fmtTime(endMin)} · {effectiveDuration} min
+                  </p>
+                </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-white">Estimated Total</span>
+                <span className="text-sm font-bold text-white">Total</span>
                 <span className="text-2xl font-black text-white">{price % 1 === 0 ? price.toFixed(0) : price.toFixed(2)} €</span>
               </div>
             </div>
@@ -650,26 +810,30 @@ function BookingModal({
           <button
             onClick={() => onConfirm(startMin, endMin, notes)}
             disabled={isPending || availableDurations.length === 0}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-[#22c55e] hover:bg-[#16a34a] active:bg-[#15803d] disabled:opacity-50 text-white font-black rounded-full transition-colors shadow-lg shadow-green-500/20 text-base tracking-wide"
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-full font-black text-base tracking-wide transition-opacity disabled:opacity-50 hover:opacity-90"
+            style={{ background: KINETIC_GRADIENT, color: "#003915" }}
           >
             {isPending ? (
               <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
                 Booking...
               </>
-            ) : (
-              "Confirm Booking"
-            )}
+            ) : "Confirm Booking"}
           </button>
 
-          <p className="text-[10px] text-[#3a3a3a] text-center uppercase tracking-widest">Free cancellation up to 24h before</p>
+          <p className="text-[10px] text-center uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.1)" }}>
+            Free Cancellation Up To 24H Before
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-// ── CourtGrid ─────────────────────────────────────────────────────────────────
+// ── CourtGrid ──────────────────────────────────────────────────────────────────
 
 function CourtGrid({
   courts, date, today, nowPx, selection, onSelect,
@@ -689,88 +853,115 @@ function CourtGrid({
   return (
     <div>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-2 border-b border-[#1e1e1e] bg-[#0f0f0f]">
-          <span className="text-xs text-[#4b5563] font-medium">
+        <div className="flex items-center justify-between px-4 py-2 border-b" style={{ background: "#131313", borderColor: "rgba(255,255,255,0.05)" }}>
+          <span className="text-xs font-medium" style={{ color: "rgba(188,203,185,0.35)" }}>
             Courts {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, courts.length)} / {courts.length}
           </span>
           <div className="flex gap-1">
             <button
               onClick={() => setPage(p => p - 1)}
               disabled={page === 0}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#1e1e1e] disabled:opacity-30 transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors disabled:opacity-30"
+              style={{ color: "rgba(188,203,185,0.5)" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#202020")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
-              <svg className="w-3.5 h-3.5 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/>
+              </svg>
             </button>
             <button
               onClick={() => setPage(p => p + 1)}
               disabled={page >= totalPages - 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#1e1e1e] disabled:opacity-30 transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors disabled:opacity-30"
+              style={{ color: "rgba(188,203,185,0.5)" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#202020")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
-              <svg className="w-3.5 h-3.5 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/>
+              </svg>
             </button>
           </div>
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <div style={{ minWidth: `${56 + visible.length * 160}px` }}>
+      {/* Grid container */}
+      <div className="m-1 rounded-2xl overflow-hidden border" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
+        <div className="overflow-x-auto">
+          <div style={{ minWidth: `${64 + visible.length * 160}px` }}>
 
-          {/* Court headers */}
-          <div className="flex sticky top-0 z-10 bg-[#141414] border-b border-[#222]">
-            <div className="w-14 shrink-0" />
-            {visible.map((court) => (
-              <div key={court.id} className="flex-1 min-w-[160px] border-l border-[#1e1e1e] px-2 py-3 text-center">
-                <p className="text-xs font-bold text-[#22c55e] uppercase tracking-widest truncate">{court.name}</p>
-                <p className="text-[10px] text-[#6b7280] mt-0.5 capitalize">
-                  {court.is_indoor ? "Indoor " : "Outdoor "}{court.surface}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* Grid body */}
-          <div className="relative flex" style={{ height: totalH }}>
-            {nowPx !== null && (
-              <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: nowPx }}>
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500 ml-[46px] shrink-0" />
-                <div className="flex-1 h-px bg-red-500/60" />
-              </div>
-            )}
-
-            {/* Time axis */}
-            <div className="w-14 shrink-0 relative">
-              {SLOTS.map((i) => {
-                const isFullHour = i % 2 === 0;
-                const min = slotIndexToMin(i);
+            {/* Court header row */}
+            <div className="flex sticky top-0 z-10 border-b" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
+              <div className="w-16 shrink-0" />
+              {visible.map((court, idx) => {
+                const isActive = selection?.courtId === court.id;
                 return (
-                  <div key={i} className="absolute right-0 flex justify-end pr-2.5" style={{ top: i * SLOT_H, height: SLOT_H }}>
-                    {isFullHour && (
-                      <span className="text-[11px] text-[#4b5563] font-medium tabular-nums mt-1">{fmtTime(min)}</span>
-                    )}
+                  <div
+                    key={court.id}
+                    className="flex-1 min-w-[160px] border-l px-2 py-2.5 text-center"
+                    style={{ borderColor: "rgba(255,255,255,0.04)" }}
+                  >
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-widest truncate"
+                      style={{ color: isActive ? "#4be277" : "rgba(188,203,185,0.45)" }}
+                    >
+                      {court.name}
+                    </p>
+                    <p className="text-[9px] mt-0.5 capitalize" style={{ color: "rgba(188,203,185,0.25)" }}>
+                      {court.is_indoor ? "Indoor " : "Outdoor "}{court.surface}
+                    </p>
                   </div>
                 );
               })}
-              {/* Hour dividers */}
-              {SLOTS.map((i) => (
+            </div>
+
+            {/* Grid body */}
+            <div className="relative flex" style={{ height: totalH }}>
+              {/* Now line */}
+              {nowPx !== null && (
                 <div
-                  key={i}
-                  className={`absolute left-0 right-0 ${i % 2 === 0 ? "border-b border-[#1e1e1e]" : "border-b border-[#181818]"}`}
-                  style={{ top: i * SLOT_H + SLOT_H }}
+                  className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
+                  style={{ top: nowPx }}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0 ml-[52px]" style={{ background: "#ef4444" }} />
+                  <div className="flex-1 h-px" style={{ background: "rgba(239,68,68,0.5)" }} />
+                </div>
+              )}
+
+              {/* Time axis */}
+              <div className="w-16 shrink-0 relative">
+                {SLOTS.map((i) => {
+                  const isFullHour = i % 2 === 0;
+                  const min = slotIndexToMin(i);
+                  return (
+                    <div
+                      key={i}
+                      className="absolute right-0 flex justify-end pr-2"
+                      style={{ top: i * SLOT_H, height: SLOT_H }}
+                    >
+                      {isFullHour && (
+                        <span className="text-[10px] font-medium tabular-nums mt-1" style={{ color: "rgba(188,203,185,0.3)" }}>
+                          {fmtTime(min)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {visible.map((court) => (
+                <CourtColumn
+                  key={court.id}
+                  court={court}
+                  date={date}
+                  today={today}
+                  selection={selection}
+                  onSelect={onSelect}
+                  totalH={totalH}
                 />
               ))}
             </div>
-
-            {visible.map((court) => (
-              <CourtColumn
-                key={court.id}
-                court={court}
-                date={date}
-                today={today}
-                selection={selection}
-                onSelect={onSelect}
-                totalH={totalH}
-              />
-            ))}
           </div>
         </div>
       </div>
@@ -778,7 +969,7 @@ function CourtGrid({
   );
 }
 
-// ── CourtColumn ───────────────────────────────────────────────────────────────
+// ── CourtColumn ────────────────────────────────────────────────────────────────
 
 function CourtColumn({
   court, date, today, selection, onSelect, totalH,
@@ -809,7 +1000,6 @@ function CourtColumn({
     return set;
   }, [bookings]);
 
-  // Map from booking start minute to booking info
   const bookingByStart = useMemo(() => {
     if (!bookings) return new Map<number, Booking>();
     const map = new Map<number, Booking>();
@@ -832,52 +1022,59 @@ function CourtColumn({
   };
 
   return (
-    <div className="flex-1 min-w-[150px] border-l border-[#1e1e1e] relative" style={{ height: totalH }}>
-
+    <div
+      className="flex-1 min-w-[150px] border-l relative"
+      style={{ height: totalH, borderColor: "rgba(255,255,255,0.04)" }}
+    >
       {SLOTS.map((i) => {
         const slotMin = slotIndexToMin(i);
         const slotEnd = slotMin + 30;
         const isBooked = bookedMins.has(slotMin);
         const isPast = date === today && slotEnd <= nowMin;
         const isSelected = selection?.courtId === court.id && slotMin === selection.startMin;
-        const isFullHour = i % 2 === 0;
 
-        if (isBooked) return null; // rendered via floating cards
+        if (isBooked) return null; // rendered via overlay blocks
 
         return (
           <div
             key={i}
-            className={[
-              "absolute left-0 right-0 transition-colors",
-              isFullHour ? "border-b border-[#1e1e1e]" : "border-b border-[#181818]",
-              isPast
-                ? "bg-[#0f0f0f] cursor-default"
-                : isSelected
-                ? "bg-[#22c55e] hover:bg-[#1db954] cursor-pointer"
-                : "bg-[#141414] hover:bg-[#1a1a1a] cursor-pointer group",
-            ].join(" ")}
-            style={{ top: i * SLOT_H, height: SLOT_H }}
+            className="absolute left-1 right-1 rounded-md transition-colors"
+            style={{
+              top: i * SLOT_H + 2,
+              height: SLOT_H - 4,
+              background: isSelected
+                ? KINETIC_GRADIENT
+                : isPast
+                ? "rgba(27,28,28,0.4)"
+                : "#202020",
+              cursor: isPast ? "default" : "pointer",
+            }}
             onClick={() => handleSlotClick(slotMin)}
+            onMouseEnter={e => {
+              if (!isPast && !isSelected) e.currentTarget.style.background = "#2a2a2a";
+            }}
+            onMouseLeave={e => {
+              if (!isPast && !isSelected) e.currentTarget.style.background = "#202020";
+            }}
           >
-            {!isPast && !isSelected && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="text-2xl text-[#2a2a2a] font-light leading-none group-hover:text-[#3a3a3a] transition-colors">+</span>
-              </div>
-            )}
             {isSelected && (
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-0.5">
                 <div className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                  <span className="text-[10px] text-white font-bold uppercase tracking-wider">Selected Slot</span>
+                  <svg className="w-3 h-3" fill="none" stroke="#003915" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: "#003915" }}>Selected</span>
                 </div>
-                <span className="text-[9px] text-green-100 tabular-nums font-semibold">{fmtTime(slotMin)} – {fmtTime(slotEnd)}</span>
+                <span className="text-[7px] tabular-nums font-semibold" style={{ color: "rgba(0,57,21,0.7)" }}>
+                  {fmtTime(slotMin)} – {fmtTime(slotEnd)}
+                </span>
               </div>
             )}
           </div>
         );
       })}
 
-      {/* Booked slots — rendered as overlay blocks per booking */}
+      {/* Booked overlay blocks */}
       {(bookings as Booking[] | undefined)?.map((b, bi) => {
         const bs = isoToLocalMin(b.starts_at);
         const be = isoToLocalMin(b.ends_at);
@@ -888,18 +1085,23 @@ function CourtColumn({
         return (
           <div
             key={bi}
-            className="absolute left-0 right-0 z-10 pointer-events-none overflow-hidden border-b border-[#1e1e1e]"
-            style={{ top: topIdx * SLOT_H, height: numSlots * SLOT_H }}
+            className="absolute left-1 right-1 z-10 pointer-events-none overflow-hidden rounded-md"
+            style={{
+              top: topIdx * SLOT_H + 2,
+              height: numSlots * SLOT_H - 4,
+              background: "rgba(53,53,53,0.2)",
+              backgroundImage: STRIPE_PATTERN,
+            }}
           >
-            <div
-              className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[#111]"
-              style={{
-                backgroundImage: "repeating-linear-gradient(135deg,transparent,transparent 8px,rgba(255,255,255,0.015) 8px,rgba(255,255,255,0.015) 9px)"
-              }}
-            >
-              <span className="text-[10px] font-bold text-[#3a3a3a] uppercase tracking-widest">Booked</span>
+            <div className="w-full h-full flex flex-col items-center justify-center gap-0.5">
+              <span className="text-[8px] font-bold uppercase tracking-widest" style={{ color: "rgba(188,203,185,0.25)" }}>
+                Booked
+              </span>
               {b.player?.full_name && (
-                <span className="text-[11px] font-semibold text-[#4b5563] truncate px-2 max-w-full text-center leading-tight">
+                <span
+                  className="text-[8px] font-semibold truncate px-2 max-w-full text-center leading-tight"
+                  style={{ color: "rgba(188,203,185,0.35)" }}
+                >
                   {b.player.full_name}
                 </span>
               )}
@@ -908,20 +1110,15 @@ function CourtColumn({
         );
       })}
 
-      {/* Mark booked slots as non-interactive */}
+      {/* Cursor-not-allowed overlay for booked slots */}
       {SLOTS.map((i) => {
         const slotMin = slotIndexToMin(i);
         const isBooked = bookedMins.has(slotMin);
-        const isPast = date === today && slotMin + 30 <= nowMin;
-        const isFullHour = i % 2 === 0;
         if (!isBooked) return null;
         return (
           <div
-            key={`booked-bg-${i}`}
-            className={[
-              "absolute left-0 right-0 cursor-not-allowed",
-              isFullHour ? "border-b border-[#1e1e1e]" : "border-b border-[#181818]",
-            ].join(" ")}
+            key={`booked-cursor-${i}`}
+            className="absolute left-0 right-0 cursor-not-allowed"
             style={{ top: i * SLOT_H, height: SLOT_H, zIndex: 9 }}
           />
         );

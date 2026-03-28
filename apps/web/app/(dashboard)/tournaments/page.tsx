@@ -2,15 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { useT } from "@/lib/i18n/context";
 
-const SLOVENIAN_CITIES = [
-  "Ljubljana","Maribor","Celje","Kranj","Koper","Novo Mesto",
-  "Velenje","Nova Gorica","Murska Sobota","Ptuj","Kamnik","Domžale",
-  "Škofja Loka","Postojna","Bled",
-];
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 type TournamentItem = {
   id: string;
@@ -28,21 +23,157 @@ type TournamentItem = {
   participant_count: number;
 };
 
+// ── Mock bracket data for hero section ────────────────────────────────────────
+
+type BracketPlayer = { initials: string; name: string; score: string; winner?: boolean };
+type BracketMatch = {
+  id: string;
+  player1: BracketPlayer;
+  player2: BracketPlayer;
+  live?: boolean;
+  completed?: boolean;
+};
+
+const DEMO_BRACKET: BracketMatch[] = [
+  {
+    id: "m1",
+    live: true,
+    player1: { initials: "NK", name: "N. Kovač", score: "6-4 3" },
+    player2: { initials: "MT", name: "M. Tomić", score: "2-6 2" },
+  },
+  {
+    id: "m2",
+    completed: true,
+    player1: { initials: "AJ", name: "A. Janez", score: "6-3 6-1", winner: true },
+    player2: { initials: "BK", name: "B. Kos", score: "3-6 1-6" },
+  },
+  {
+    id: "m3",
+    player1: { initials: "PH", name: "P. Horvat", score: "–" },
+    player2: { initials: "SD", name: "S. Dolar", score: "–" },
+  },
+  {
+    id: "m4",
+    completed: true,
+    player1: { initials: "LV", name: "L. Vidmar", score: "7-5 6-4", winner: true },
+    player2: { initials: "RN", name: "R. Novak", score: "5-7 4-6" },
+  },
+];
+
+const SLOVENIAN_CITIES = [
+  "Ljubljana", "Maribor", "Celje", "Kranj", "Koper", "Novo Mesto",
+  "Velenje", "Nova Gorica", "Murska Sobota", "Ptuj", "Kamnik", "Domžale",
+  "Škofja Loka", "Postojna", "Bled",
+];
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function getInitials(name: string) {
+  const parts = name.trim().split(" ");
+  if (parts.length >= 2) return (parts[0]![0] ?? "") + (parts[1]![0] ?? "");
+  return name.slice(0, 2).toUpperCase();
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("sl-SI", {
+    weekday: "short", month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+
+// ── Status / format badge colours ─────────────────────────────────────────────
+
+const STATUS_COLOR: Record<string, string> = {
+  open:      "text-[#4be277] bg-[#4be277]/10 border-[#4be277]/20",
+  full:      "text-amber-400 bg-amber-400/10 border-amber-400/20",
+  cancelled: "text-red-400 bg-red-400/10 border-red-400/20",
+  completed: "text-[#6b7280] bg-[#1b1c1c] border-[#2a2a2a]",
+};
+const FORMAT_COLOR: Record<string, string> = {
+  singles: "text-blue-400 bg-blue-400/10 border-blue-400/20",
+  doubles: "text-purple-400 bg-purple-400/10 border-purple-400/20",
+  both:    "text-indigo-400 bg-indigo-400/10 border-indigo-400/20",
+};
+
+// ── BracketCard ────────────────────────────────────────────────────────────────
+
+function BracketCard({ match }: { match: BracketMatch }) {
+  return (
+    <div
+      className={`relative shrink-0 w-56 bg-[#1b1c1c] rounded-2xl overflow-hidden
+        ${match.live ? "border border-[#4be277]/30" : "border border-transparent"}`}
+    >
+      {/* LIVE badge */}
+      {match.live && (
+        <span className="absolute top-2 left-2 bg-[#4be277] text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest z-10">
+          LIVE
+        </span>
+      )}
+
+      {/* Right kinetic accent strip */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full"
+        style={{ background: "linear-gradient(180deg, #4be277 0%, #22c55e 50%, #16a34a 100%)" }}
+      />
+
+      <div className="p-4 pt-3 space-y-3">
+        {/* Player 1 */}
+        <PlayerRow player={match.player1} dim={match.completed && !match.player1.winner} />
+        {/* divider */}
+        <div className="h-px bg-[#202020]" />
+        {/* Player 2 */}
+        <PlayerRow player={match.player2} dim={match.completed && !match.player2.winner} />
+      </div>
+    </div>
+  );
+}
+
+function PlayerRow({ player, dim }: { player: BracketPlayer; dim?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between gap-2 ${dim ? "opacity-60" : ""}`}>
+      <div className="flex items-center gap-2 min-w-0">
+        {/* initials circle */}
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 text-black"
+          style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
+        >
+          {player.initials}
+        </div>
+        <span className="text-white text-xs font-semibold truncate">{player.name}</span>
+      </div>
+      <span className={`text-xs font-black tabular-nums shrink-0 ${player.winner ? "text-[#4be277]" : "text-[#9ca3af]"}`}>
+        {player.score}
+      </span>
+    </div>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────────
+
 export default function TournamentsPage() {
   const { t: tr } = useT();
-  const router = useRouter();
 
   const { data: rawTournaments, refetch } = trpc.tournament.list.useQuery({ limit: 30 });
   const tournaments = (rawTournaments ?? []) as unknown as TournamentItem[];
   const { data: profile } = trpc.player.getProfile.useQuery();
-  const { data: clubs } = trpc.player.getClubs.useQuery();
 
+  // — Join state —
+  const [joinTournamentId, setJoinTournamentId] = useState<string | null>(null);
+  const [joinPlayFormat, setJoinPlayFormat] = useState<"singles" | "doubles">("singles");
+  const joinTournament = tournaments.find((t) => t.id === joinTournamentId);
+
+  const joinMutation = trpc.tournament.join.useMutation({
+    onSuccess: () => { setJoinTournamentId(null); void refetch(); },
+  });
+
+  // — Withdraw state —
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
   const withdrawMutation = trpc.tournament.withdraw.useMutation({
     onSuccess: () => { void refetch(); setWithdrawingId(null); },
     onError: () => setWithdrawingId(null),
   });
 
+  // — Create state —
   const [showCreate, setShowCreate] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createDesc, setCreateDesc] = useState("");
@@ -52,21 +183,14 @@ export default function TournamentsPage() {
   const [createMaxSpots, setCreateMaxSpots] = useState(8);
   const [createFormat, setCreateFormat] = useState<"singles" | "doubles" | "both">("singles");
 
-  const [joinTournamentId, setJoinTournamentId] = useState<string | null>(null);
-  const [joinPlayFormat, setJoinPlayFormat] = useState<"singles" | "doubles">("singles");
-  const joinTournament = tournaments.find((t) => t.id === joinTournamentId);
-
   const createMutation = trpc.tournament.create.useMutation({
     onSuccess: () => {
       setShowCreate(false);
-      setCreateName(""); setCreateDesc(""); setCreateCity(""); setCreateVenue(""); setCreateDate("");
+      setCreateName(""); setCreateDesc(""); setCreateCity("");
+      setCreateVenue(""); setCreateDate("");
       setCreateMaxSpots(8); setCreateFormat("singles");
       void refetch();
     },
-  });
-
-  const joinMutation = trpc.tournament.join.useMutation({
-    onSuccess: () => { setJoinTournamentId(null); void refetch(); },
   });
 
   const handleCreate = () => {
@@ -82,198 +206,388 @@ export default function TournamentsPage() {
     });
   };
 
+  const openJoinModal = (t: TournamentItem, e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    setJoinPlayFormat("singles");
+    setJoinTournamentId(t.id);
+  };
+
   const handleJoin = () => {
     if (!joinTournamentId) return;
     joinMutation.mutate({ tournament_id: joinTournamentId, play_format: joinPlayFormat });
   };
 
-  const openJoinModal = (t: TournamentItem, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setJoinPlayFormat("singles");
-    setJoinTournamentId(t.id);
-  };
-
-  const STATUS_COLOR: Record<string, string> = {
-    open: "text-[#22c55e] bg-[#22c55e]/10 border-[#22c55e]/20",
-    full: "text-amber-400 bg-amber-400/10 border-amber-400/20",
-    cancelled: "text-red-400 bg-red-400/10 border-red-400/20",
-    completed: "text-[#6b7280] bg-[#1e1e1e] border-[#2a2a2a]",
-  };
-  const FORMAT_COLOR: Record<string, string> = {
-    singles: "text-blue-400 bg-blue-400/10 border-blue-400/20",
-    doubles: "text-purple-400 bg-purple-400/10 border-purple-400/20",
-    both: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20",
-  };
-
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-[#0a0a0a] px-4 sm:px-6 pt-6 pb-32">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-[#131313] pb-36">
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-[#22c55e] text-xs font-bold uppercase tracking-widest mb-1">TOURNAMENTS</p>
-          <h1 className="text-2xl font-black text-white">{tr.tournaments.title}</h1>
+      {/* ── Hero / live match header ─────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 pt-8 pb-6">
+        <p className="text-[#4be277] text-[10px] font-black uppercase tracking-[0.25em] mb-2">
+          LJUBLJANA OPEN 2024
+        </p>
+        <div className="flex items-center gap-3 mb-6">
+          <h1 className="text-3xl sm:text-4xl font-black text-white">Quarter-finals</h1>
+          {/* LIVE NOW pill */}
+          <span className="flex items-center gap-1.5 bg-[#4be277]/10 border border-[#4be277]/30 text-[#4be277] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#4be277] animate-pulse" />
+            LIVE NOW
+          </span>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2.5 bg-[#22c55e] text-black font-black rounded-2xl hover:bg-[#16a34a] transition-colors text-sm shadow-lg shadow-green-500/20"
-        >
-          + {tr.tournaments.create}
-        </button>
       </div>
 
-      {/* Tournament list */}
-      {tournaments.length === 0 ? (
-        <div className="bg-[#141414] rounded-3xl border border-dashed border-[#222] p-12 text-center">
-          <p className="text-5xl mb-4">🏆</p>
-          <p className="font-black text-white text-lg">{tr.tournaments.noTournaments}</p>
-          <p className="text-sm text-[#6b7280] mt-1 mb-5">{tr.tournaments.beFirstCreate}</p>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="px-5 py-2.5 bg-[#22c55e] text-black font-black rounded-2xl hover:bg-[#16a34a] transition-colors text-sm shadow-lg shadow-green-500/20"
-          >
-            {tr.tournaments.createTournament}
-          </button>
+      {/* ── Bracket horizontal scroll ─────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 mb-8">
+        <p className="text-[#6b7280] text-[10px] font-black uppercase tracking-widest mb-3">
+          Tournament Bracket
+        </p>
+        <div className="flex gap-3 overflow-x-auto scrollbar-none pb-2">
+          {DEMO_BRACKET.map((match) => (
+            <BracketCard key={match.id} match={match} />
+          ))}
         </div>
-      ) : (
-        <div className="space-y-3">
-          {tournaments.map((t) => {
-            const spotsLeft = t.max_spots - t.participant_count;
-            const isLive = t.status === "open" && new Date(t.scheduled_at) <= new Date();
-            return (
-              <Link
-                key={t.id}
-                href={`/tournaments/${t.id}`}
-                className="block bg-[#141414] rounded-3xl border border-[#222] p-5 hover:border-[#22c55e]/30 transition-colors"
-              >
-                {/* Live badge + name */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex-1 min-w-0">
-                    {isLive && (
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
-                        <span className="text-[10px] font-black text-[#22c55e] uppercase tracking-widest">LIVE NOW</span>
-                      </div>
-                    )}
-                    <h3 className="font-black text-white text-base truncate">{t.name}</h3>
-                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${STATUS_COLOR[t.status] ?? STATUS_COLOR.open}`}>
-                        {tr.tournaments[t.status as keyof typeof tr.tournaments] ?? t.status}
-                      </span>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${FORMAT_COLOR[t.format] ?? FORMAT_COLOR.singles}`}>
-                        {tr.tournaments[t.format as keyof typeof tr.tournaments] ?? t.format}
-                      </span>
-                    </div>
-                  </div>
+      </div>
 
-                  {t.creator_id !== profile?.id && t.status === "open" && (
-                    <button
-                      onClick={(e) => openJoinModal(t, e)}
-                      className="shrink-0 px-4 py-2 bg-[#22c55e] text-black text-sm font-black rounded-xl hover:bg-[#16a34a] transition-colors shadow-lg shadow-green-500/20"
-                    >
-                      {tr.common.join}
-                    </button>
-                  )}
-                </div>
+      {/* ── On-Court Momentum ─────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 mb-10">
+        <p className="text-[#6b7280] text-[10px] font-black uppercase tracking-widest mb-3">
+          On-Court Momentum
+        </p>
 
-                {/* Details */}
-                <div className="space-y-1.5 text-sm text-[#6b7280]">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2}/>
-                      <line x1="3" y1="10" x2="21" y2="10" strokeWidth={2}/>
-                    </svg>
-                    {new Date(t.scheduled_at).toLocaleDateString("sl-SI", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    {t.location_city && ` · ${t.location_city}`}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                    {t.participant_count}/{t.max_spots}
-                    {spotsLeft > 0 && t.status === "open" && (
-                      <span className="text-[#22c55e] font-semibold">· {spotsLeft} spots left</span>
-                    )}
-                  </div>
-
-                  {t.creator && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full bg-[#22c55e] flex items-center justify-center text-black text-[9px] font-black shrink-0">
-                        {t.creator.full_name[0]}
-                      </div>
-                      <span>{tr.tournaments.by} {t.creator.full_name}</span>
-                    </div>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
+        {/* Full-width court photo placeholder */}
+        <div
+          className="w-full h-44 rounded-2xl mb-3 overflow-hidden relative"
+          style={{ background: "linear-gradient(135deg, #1b1c1c 0%, #202020 60%, #131313 100%)" }}
+        >
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-20">
+            <svg className="w-14 h-14 text-[#4be277]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" strokeWidth={1.5}/>
+              <path strokeLinecap="round" strokeWidth={1.5}
+                d="M3 12c2-4 7-7 9-0s7 4 9 0M12 2c-2 3-2 7 0 10s2 7 0 10"/>
+            </svg>
+          </div>
+          {/* gradient overlay at bottom */}
+          <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-[#131313] to-transparent" />
+          <span className="absolute bottom-3 left-4 text-[10px] font-black text-[#6b7280] uppercase tracking-widest">
+            Live Court Cam
+          </span>
         </div>
-      )}
 
-      {/* Create modal */}
-      {showCreate && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#141414] border border-[#222] rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md p-5 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-black text-white">{tr.tournaments.createTournament}</h2>
-              <button onClick={() => setShowCreate(false)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#1e1e1e] hover:bg-[#2a2a2a] text-[#6b7280] hover:text-white transition-colors">
-                ×
-              </button>
+        {/* Stats row */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          {/* Fastest serve */}
+          <div className="bg-[#1b1c1c] rounded-2xl p-4">
+            <p className="text-[#6b7280] text-[9px] font-black uppercase tracking-widest mb-1">
+              Fastest Serve
+            </p>
+            <p className="text-[#4be277] text-2xl font-black leading-none mb-1">214 km/h</p>
+            <p className="text-white text-xs font-semibold">N. Kovač</p>
+          </div>
+
+          {/* Aces */}
+          <div className="bg-[#1b1c1c] rounded-2xl p-4">
+            <p className="text-[#6b7280] text-[9px] font-black uppercase tracking-widest mb-1">
+              Aces This Set
+            </p>
+            <p className="text-[#4be277] text-2xl font-black leading-none mb-1">7</p>
+            <p className="text-white text-xs font-semibold">M. Tomić</p>
+          </div>
+        </div>
+
+        {/* Win probability bar */}
+        <div className="bg-[#1b1c1c] rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white text-xs font-black">N. Kovač</span>
+            <span className="text-[#6b7280] text-[9px] font-black uppercase tracking-widest">
+              Win Probability
+            </span>
+            <span className="text-white text-xs font-black">M. Tomić</span>
+          </div>
+          <div className="flex rounded-full overflow-hidden h-2.5">
+            <div
+              className="h-full transition-all duration-700"
+              style={{
+                width: "67%",
+                background: "linear-gradient(90deg, #4be277 0%, #22c55e 100%)",
+              }}
+            />
+            <div className="h-full flex-1 bg-[#202020]" />
+          </div>
+          <div className="flex justify-between mt-1.5">
+            <span className="text-[#4be277] text-[10px] font-black">67%</span>
+            <span className="text-[#6b7280] text-[10px] font-black">33%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tournament list ───────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6">
+        <p className="text-[#6b7280] text-[10px] font-black uppercase tracking-widest mb-4">
+          All Tournaments
+        </p>
+
+        {tournaments.length === 0 ? (
+          <div className="bg-[#1b1c1c] rounded-3xl border border-dashed border-[#2a2a2a] p-12 text-center">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
+            >
+              <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
             </div>
-            <div className="space-y-3">
+            <p className="font-black text-white text-lg mb-1">{tr.tournaments.noTournaments}</p>
+            <p className="text-sm text-[#6b7280] mb-5">{tr.tournaments.beFirstCreate}</p>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="px-5 py-2.5 font-black text-black rounded-2xl text-sm shadow-lg shadow-green-500/20"
+              style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
+            >
+              {tr.tournaments.createTournament}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {tournaments.map((t) => {
+              const spotsLeft = t.max_spots - t.participant_count;
+              const isLive = t.status === "open" && new Date(t.scheduled_at) <= new Date();
+              return (
+                <Link
+                  key={t.id}
+                  href={`/tournaments/${t.id}`}
+                  className={`block relative bg-[#1b1c1c] rounded-2xl overflow-hidden
+                    ${isLive ? "border border-[#4be277]/30" : "border border-transparent hover:border-[#4be277]/20"}
+                    transition-colors`}
+                >
+                  {/* Live badge */}
+                  {isLive && (
+                    <span className="absolute top-3 left-3 bg-[#4be277] text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest z-10">
+                      LIVE
+                    </span>
+                  )}
+
+                  {/* Kinetic right accent strip */}
+                  <div
+                    className="absolute top-0 right-0 w-1 h-full"
+                    style={{ background: "linear-gradient(180deg, #4be277 0%, #22c55e 50%, #16a34a 100%)" }}
+                  />
+
+                  <div className="p-4 pl-4 pr-5">
+                    {/* Name + join */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex-1 min-w-0">
+                        {isLive && <div className="h-5" />}
+                        <h3 className="font-black text-white text-base truncate">{t.name}</h3>
+                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${STATUS_COLOR[t.status] ?? STATUS_COLOR.open}`}>
+                            {tr.tournaments[t.status as keyof typeof tr.tournaments] ?? t.status}
+                          </span>
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${FORMAT_COLOR[t.format] ?? FORMAT_COLOR.singles}`}>
+                            {tr.tournaments[t.format as keyof typeof tr.tournaments] ?? t.format}
+                          </span>
+                        </div>
+                      </div>
+
+                      {t.creator_id !== profile?.id && t.status === "open" && (
+                        <button
+                          onClick={(e) => openJoinModal(t, e)}
+                          className="shrink-0 px-3 py-1.5 text-black text-xs font-black rounded-xl shadow-lg shadow-green-500/20"
+                          style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
+                        >
+                          {tr.common.join}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="space-y-1.5 text-xs text-[#6b7280]">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2}/>
+                          <line x1="3" y1="10" x2="21" y2="10" strokeWidth={2}/>
+                        </svg>
+                        {formatDate(t.scheduled_at)}
+                        {t.location_city && ` · ${t.location_city}`}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {t.participant_count}/{t.max_spots}
+                        {spotsLeft > 0 && t.status === "open" && (
+                          <span className="text-[#4be277] font-semibold">· {spotsLeft} spots left</span>
+                        )}
+                      </div>
+
+                      {t.creator && (
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-black text-[9px] font-black shrink-0"
+                            style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
+                          >
+                            {t.creator.full_name[0]}
+                          </div>
+                          <span>{tr.tournaments.by} {t.creator.full_name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── FAB: Create Tournament ────────────────────────────────────────────── */}
+      <button
+        onClick={() => setShowCreate(true)}
+        aria-label="Create tournament"
+        className="fixed bottom-28 right-6 w-14 h-14 rounded-full shadow-2xl shadow-green-500/30 flex items-center justify-center z-40 transition-transform active:scale-95"
+        style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
+      >
+        <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/>
+        </svg>
+      </button>
+
+      {/* ── Create tournament modal ───────────────────────────────────────────── */}
+      {showCreate && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end justify-center z-50"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCreate(false); }}
+        >
+          <div className="bg-[#1b1c1c] rounded-t-2xl w-full max-w-lg max-h-[88vh] overflow-y-auto">
+            {/* drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-[#2a2a2a]" />
+            </div>
+
+            <div className="px-5 pb-8 pt-3 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-black text-white">{tr.tournaments.createTournament}</h2>
+                <button
+                  onClick={() => setShowCreate(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#202020] hover:bg-[#2a2a2a] text-[#6b7280] hover:text-white transition-colors text-xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Name */}
               <div>
-                <label className="block text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-1.5">{tr.tournaments.name} *</label>
-                <input type="text" value={createName} onChange={(e) => setCreateName(e.target.value)}
+                <label className="block text-[9px] font-black text-[#6b7280] uppercase tracking-wider mb-1.5">
+                  {tr.tournaments.name} *
+                </label>
+                <input
+                  type="text"
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
                   placeholder={tr.tournaments.namePlaceholder}
-                  className="w-full px-3.5 py-2.5 border border-[#222] bg-[#1a1a1a] text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#22c55e]/50 placeholder-[#4b5563]" />
+                  className="w-full px-4 py-3 border border-[#2a2a2a] bg-[#202020] text-white rounded-xl text-sm
+                    focus:outline-none focus:ring-2 focus:ring-[#4be277]/40 placeholder-[#4b5563]"
+                />
               </div>
+
+              {/* Description */}
               <div>
-                <label className="block text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-1.5">{tr.tournaments.description}</label>
-                <textarea value={createDesc} onChange={(e) => setCreateDesc(e.target.value)} rows={2} maxLength={500}
+                <label className="block text-[9px] font-black text-[#6b7280] uppercase tracking-wider mb-1.5">
+                  {tr.tournaments.description}
+                </label>
+                <textarea
+                  value={createDesc}
+                  onChange={(e) => setCreateDesc(e.target.value)}
+                  rows={2} maxLength={500}
                   placeholder={tr.tournaments.descPlaceholder}
-                  className="w-full px-3.5 py-2.5 border border-[#222] bg-[#1a1a1a] text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#22c55e]/50 placeholder-[#4b5563] resize-none" />
+                  className="w-full px-4 py-3 border border-[#2a2a2a] bg-[#202020] text-white rounded-xl text-sm
+                    focus:outline-none focus:ring-2 focus:ring-[#4be277]/40 placeholder-[#4b5563] resize-none"
+                />
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-1.5">{tr.tournaments.dateTime} *</label>
-                <input type="datetime-local" value={createDate} onChange={(e) => setCreateDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-[#222] bg-[#1a1a1a] text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#22c55e]/50" />
-              </div>
+
+              {/* Date + city */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-1.5">{tr.tournaments.city}</label>
-                  <select value={createCity} onChange={(e) => setCreateCity(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border border-[#222] bg-[#1a1a1a] text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#22c55e]/50">
+                  <label className="block text-[9px] font-black text-[#6b7280] uppercase tracking-wider mb-1.5">
+                    {tr.tournaments.dateTime} *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={createDate}
+                    onChange={(e) => setCreateDate(e.target.value)}
+                    className="w-full px-3 py-3 border border-[#2a2a2a] bg-[#202020] text-white rounded-xl text-sm
+                      focus:outline-none focus:ring-2 focus:ring-[#4be277]/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-[#6b7280] uppercase tracking-wider mb-1.5">
+                    {tr.tournaments.city}
+                  </label>
+                  <select
+                    value={createCity}
+                    onChange={(e) => setCreateCity(e.target.value)}
+                    className="w-full px-3 py-3 border border-[#2a2a2a] bg-[#202020] text-white rounded-xl text-sm
+                      focus:outline-none focus:ring-2 focus:ring-[#4be277]/40"
+                  >
                     <option value="">{tr.tournaments.selectCity}</option>
                     {SLOVENIAN_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
+              </div>
+
+              {/* Format + max spots */}
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-1.5">{tr.tournaments.format}</label>
-                  <select value={createFormat} onChange={(e) => setCreateFormat(e.target.value as "singles" | "doubles" | "both")}
-                    className="w-full px-3.5 py-2.5 border border-[#222] bg-[#1a1a1a] text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#22c55e]/50">
+                  <label className="block text-[9px] font-black text-[#6b7280] uppercase tracking-wider mb-1.5">
+                    {tr.tournaments.format}
+                  </label>
+                  <select
+                    value={createFormat}
+                    onChange={(e) => setCreateFormat(e.target.value as "singles" | "doubles" | "both")}
+                    className="w-full px-3 py-3 border border-[#2a2a2a] bg-[#202020] text-white rounded-xl text-sm
+                      focus:outline-none focus:ring-2 focus:ring-[#4be277]/40"
+                  >
                     <option value="singles">{tr.tournaments.singles}</option>
                     <option value="doubles">{tr.tournaments.doubles}</option>
                     <option value="both">{tr.tournaments.both}</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-[9px] font-black text-[#6b7280] uppercase tracking-wider mb-1.5">
+                    {tr.tournaments.maxSpots}
+                  </label>
+                  <input
+                    type="number"
+                    value={createMaxSpots}
+                    min={2} max={64}
+                    onChange={(e) => setCreateMaxSpots(Math.min(64, Math.max(2, Number(e.target.value))))}
+                    className="w-full px-3 py-3 border border-[#2a2a2a] bg-[#202020] text-white rounded-xl text-sm
+                      focus:outline-none focus:ring-2 focus:ring-[#4be277]/40"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-1.5">{tr.tournaments.maxSpots}</label>
-                <input type="number" value={createMaxSpots} min={2} max={64}
-                  onChange={(e) => setCreateMaxSpots(Math.min(64, Math.max(2, Number(e.target.value))))}
-                  className="w-full px-3.5 py-2.5 border border-[#222] bg-[#1a1a1a] text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#22c55e]/50" />
-              </div>
-              {createMutation.error && <p className="text-sm text-red-400">{createMutation.error.message}</p>}
+
+              {createMutation.error && (
+                <p className="text-sm text-red-400">{createMutation.error.message}</p>
+              )}
+
+              {/* Actions */}
               <div className="flex gap-3 pt-1">
-                <button onClick={() => setShowCreate(false)}
-                  className="flex-1 py-3 border border-[#222] text-[#9ca3af] font-semibold rounded-2xl hover:bg-[#1a1a1a] hover:text-white transition-colors text-sm">
+                <button
+                  onClick={() => setShowCreate(false)}
+                  className="flex-1 py-3 border border-[#2a2a2a] text-[#9ca3af] font-semibold rounded-xl
+                    hover:bg-[#202020] hover:text-white transition-colors text-sm"
+                >
                   {tr.common.cancel}
                 </button>
-                <button onClick={handleCreate} disabled={!createName.trim() || !createDate || createMutation.isPending}
-                  className="flex-1 py-3 bg-[#22c55e] text-black font-black rounded-2xl hover:bg-[#16a34a] disabled:opacity-50 transition-colors text-sm shadow-lg shadow-green-500/20">
+                <button
+                  onClick={handleCreate}
+                  disabled={!createName.trim() || !createDate || createMutation.isPending}
+                  className="flex-1 py-3 text-black font-black rounded-xl shadow-lg shadow-green-500/20
+                    disabled:opacity-50 transition-opacity text-sm"
+                  style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
+                >
                   {createMutation.isPending ? tr.common.creating : tr.common.create}
                 </button>
               </div>
@@ -282,37 +596,74 @@ export default function TournamentsPage() {
         </div>
       )}
 
-      {/* Join modal */}
+      {/* ── Join modal ────────────────────────────────────────────────────────── */}
       {joinTournamentId && joinTournament && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div className="bg-[#141414] border border-[#222] rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm p-5">
-            <h2 className="text-lg font-black text-white mb-1">{tr.tournaments.joinTournament}</h2>
-            <p className="text-sm text-[#6b7280] mb-5">{joinTournament.name}</p>
-            <p className="text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-3">{tr.tournaments.howWillYouPlay}</p>
-            <div className="space-y-2">
-              {(joinTournament.format === "singles" || joinTournament.format === "both") && (
-                <label className={`flex items-center gap-3 p-3.5 border rounded-2xl cursor-pointer transition-colors ${joinPlayFormat === "singles" ? "border-[#22c55e]/50 bg-[#22c55e]/5" : "border-[#222] hover:border-[#333]"}`}>
-                  <input type="radio" name="play_format" value="singles" checked={joinPlayFormat === "singles"} onChange={() => setJoinPlayFormat("singles")} className="accent-[#22c55e]" />
-                  <span className="text-sm font-bold text-white">{tr.tournaments.singles}</span>
-                </label>
-              )}
-              {(joinTournament.format === "doubles" || joinTournament.format === "both") && (
-                <label className={`flex items-center gap-3 p-3.5 border rounded-2xl cursor-pointer transition-colors ${joinPlayFormat === "doubles" ? "border-[#22c55e]/50 bg-[#22c55e]/5" : "border-[#222] hover:border-[#333]"}`}>
-                  <input type="radio" name="play_format" value="doubles" checked={joinPlayFormat === "doubles"} onChange={() => setJoinPlayFormat("doubles")} className="accent-[#22c55e]" />
-                  <span className="text-sm font-bold text-white">{tr.tournaments.doubles}</span>
-                </label>
-              )}
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end justify-center z-50"
+          onClick={(e) => { if (e.target === e.currentTarget) setJoinTournamentId(null); }}
+        >
+          <div className="bg-[#1b1c1c] rounded-t-2xl w-full max-w-lg">
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-[#2a2a2a]" />
             </div>
-            {joinMutation.error && <p className="text-sm text-red-400 mt-3">{joinMutation.error.message}</p>}
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setJoinTournamentId(null)}
-                className="flex-1 py-3 border border-[#222] text-[#9ca3af] font-semibold rounded-2xl hover:bg-[#1a1a1a] hover:text-white transition-colors text-sm">
-                {tr.common.cancel}
-              </button>
-              <button onClick={handleJoin} disabled={joinMutation.isPending}
-                className="flex-1 py-3 bg-[#22c55e] text-black font-black rounded-2xl hover:bg-[#16a34a] disabled:opacity-50 transition-colors text-sm shadow-lg shadow-green-500/20">
-                {joinMutation.isPending ? tr.common.joining : tr.common.confirm}
-              </button>
+
+            <div className="px-5 pb-8 pt-3">
+              <h2 className="text-lg font-black text-white mb-1">{tr.tournaments.joinTournament}</h2>
+              <p className="text-sm text-[#6b7280] mb-5">{joinTournament.name}</p>
+
+              <p className="text-[9px] font-black text-[#6b7280] uppercase tracking-wider mb-3">
+                {tr.tournaments.howWillYouPlay}
+              </p>
+
+              <div className="space-y-2 mb-5">
+                {(joinTournament.format === "singles" || joinTournament.format === "both") && (
+                  <label className={`flex items-center gap-3 p-3.5 border rounded-xl cursor-pointer transition-colors
+                    ${joinPlayFormat === "singles" ? "border-[#4be277]/50 bg-[#4be277]/5" : "border-[#2a2a2a] hover:border-[#333]"}`}>
+                    <input
+                      type="radio" name="play_format" value="singles"
+                      checked={joinPlayFormat === "singles"}
+                      onChange={() => setJoinPlayFormat("singles")}
+                      className="accent-[#4be277]"
+                    />
+                    <span className="text-sm font-bold text-white">{tr.tournaments.singles}</span>
+                  </label>
+                )}
+                {(joinTournament.format === "doubles" || joinTournament.format === "both") && (
+                  <label className={`flex items-center gap-3 p-3.5 border rounded-xl cursor-pointer transition-colors
+                    ${joinPlayFormat === "doubles" ? "border-[#4be277]/50 bg-[#4be277]/5" : "border-[#2a2a2a] hover:border-[#333]"}`}>
+                    <input
+                      type="radio" name="play_format" value="doubles"
+                      checked={joinPlayFormat === "doubles"}
+                      onChange={() => setJoinPlayFormat("doubles")}
+                      className="accent-[#4be277]"
+                    />
+                    <span className="text-sm font-bold text-white">{tr.tournaments.doubles}</span>
+                  </label>
+                )}
+              </div>
+
+              {joinMutation.error && (
+                <p className="text-sm text-red-400 mb-3">{joinMutation.error.message}</p>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setJoinTournamentId(null)}
+                  className="flex-1 py-3 border border-[#2a2a2a] text-[#9ca3af] font-semibold rounded-xl
+                    hover:bg-[#202020] hover:text-white transition-colors text-sm"
+                >
+                  {tr.common.cancel}
+                </button>
+                <button
+                  onClick={handleJoin}
+                  disabled={joinMutation.isPending}
+                  className="flex-1 py-3 text-black font-black rounded-xl shadow-lg shadow-green-500/20
+                    disabled:opacity-50 transition-opacity text-sm"
+                  style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
+                >
+                  {joinMutation.isPending ? tr.common.joining : tr.common.confirm}
+                </button>
+              </div>
             </div>
           </div>
         </div>
