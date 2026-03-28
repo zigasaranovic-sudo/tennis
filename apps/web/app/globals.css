@@ -5,8 +5,8 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-  --accent: #16a34a;
-  --accent-dim: #15803d;
+  --accent: #22c55e;
+  --accent-dim: #16a34a;
   --surface: #ffffff;
   --surface-raised: #f1f5f9;
   --border: #e2e8f0;
@@ -15,14 +15,14 @@
 }
 
 .dark {
-  --background: #0f172a;
+  --background: #0d0d0d;
   --foreground: #f1f5f9;
   --accent: #22c55e;
   --accent-dim: #16a34a;
-  --surface: #1e293b;
-  --surface-raised: #243044;
-  --border: #1e293b;
-  --muted: #64748b;
+  --surface: #1a1a1a;
+  --surface-raised: #1e1e1e;
+  --border: #2a2a2a;
+  --muted: #6b7280;
   color-scheme: dark;
 }
 
@@ -36,25 +36,21 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   font-size: 16px;
   line-height: 1.6;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
 
-/* Larger minimum tap targets for accessibility */
 button, a, [role="button"] {
-  min-height: 40px;
-}
-
-/* Slightly larger base text for readability */
-p, li, span, label {
-  font-size: 1rem;
+  min-height: 36px;
 }
 
 input, select, textarea, option {
