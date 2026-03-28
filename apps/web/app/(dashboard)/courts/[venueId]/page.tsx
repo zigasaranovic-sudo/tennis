@@ -8,13 +8,6 @@ import { useT } from "@/lib/i18n/context";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const SURFACE_COLORS: Record<string, string> = {
-  clay:   "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  hard:   "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  grass:  "bg-green-500/20 text-green-400 border-green-500/30",
-  indoor: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-};
-
 const VENUE_PHOTOS: Record<string, string> = {
   "tc-fuzine":        "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1200&q=80",
   "tk-ilirija":       "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1200&q=80",
@@ -52,8 +45,8 @@ const SURFACE_FALLBACK: Record<string, string> = {
 
 const START_HOUR = 7;
 const END_HOUR = 22;
-const HOUR_H = 56; // px per hour
-const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
+const SLOT_H = 44; // px per 30-min slot
+const SLOTS = Array.from({ length: (END_HOUR - START_HOUR) * 2 }, (_, i) => i);
 const PAGE_SIZE = 4;
 
 function venueSlug(name: string): string {
@@ -77,6 +70,9 @@ function addDays(dateStr: string, n: number): string {
   const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
+}
+function slotIndexToMin(i: number): number {
+  return START_HOUR * 60 + i * 30;
 }
 
 type VenueCourt = { id: string; name: string; surface: string; is_indoor: boolean; price_per_hour: number | null };
@@ -127,8 +123,6 @@ export default function VenueDetailPage() {
   const weekdayShort = (d: string) =>
     new Date(d + "T00:00:00").toLocaleDateString("sl-SI", { weekday: "short" }).toUpperCase().slice(0, 3);
   const dayNum = (d: string) => new Date(d + "T00:00:00").getDate();
-  const monthShort = (d: string) =>
-    new Date(d + "T00:00:00").toLocaleDateString("sl-SI", { month: "short" }).toUpperCase();
 
   const heroImg = getVenueImage(venue?.name ?? "", venue?.surfaces ?? []);
   const selectedCourt = venue?.courts.find(c => c.id === selection?.courtId);
@@ -136,17 +130,21 @@ export default function VenueDetailPage() {
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const nowPx = date === today && nowMin >= toMin(START_HOUR) && nowMin <= toMin(END_HOUR)
-    ? ((nowMin - toMin(START_HOUR)) / 60) * HOUR_H : null;
+    ? ((nowMin - toMin(START_HOUR)) / 30) * SLOT_H : null;
+
+  // Day-of-week + date label for bottom bar
+  const selectionDateLabel = (d: string) =>
+    new Date(d + "T00:00:00").toLocaleDateString("sl-SI", { weekday: "short" }).replace(".", "").toUpperCase();
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-[#0d0d0d]">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-[#0a0a0a]">
 
       {/* Hero */}
       <div className="relative h-48 sm:h-60 overflow-hidden">
         {venue
           ? <img src={heroImg} alt={venue.name} className="w-full h-full object-cover" />
           : <div className="w-full h-full bg-[#1a1a1a] animate-pulse" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/50 to-transparent" />
         <div className="absolute top-4 left-4 sm:left-6">
           <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 transition-all">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -170,23 +168,23 @@ export default function VenueDetailPage() {
       </div>
 
       {/* Body */}
-      <div className="px-4 sm:px-6 py-5">
+      <div className="px-4 sm:px-6 py-5 pb-28">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-5 items-start">
 
           {/* ── Booking panel ── */}
-          <div className="flex-1 min-w-0 bg-[#111111] rounded-2xl border border-[#1e1e1e] overflow-hidden">
+          <div className="flex-1 min-w-0 bg-[#141414] rounded-2xl border border-[#222] overflow-hidden">
 
             {/* Day strip */}
-            <div className="flex items-center gap-2 px-3 py-3 border-b border-[#1e1e1e]">
+            <div className="flex items-center gap-2 px-3 py-3 border-b border-[#222]">
               <button
                 onClick={() => changeDate(addDays(date, -1))}
                 disabled={date <= today}
-                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1e1e1e] disabled:opacity-20 transition-colors shrink-0"
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1a1a1a] disabled:opacity-20 transition-colors shrink-0"
               >
                 <svg className="w-4 h-4 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
               </button>
 
-              <div className="flex gap-1 flex-1 overflow-x-auto scrollbar-none">
+              <div className="flex gap-1.5 flex-1 overflow-x-auto scrollbar-none">
                 {dayButtons.map((d) => {
                   const isActive = d === date;
                   const isT = d === today;
@@ -194,22 +192,19 @@ export default function VenueDetailPage() {
                     <button
                       key={d}
                       onClick={() => changeDate(d)}
-                      className={`flex flex-col items-center px-2.5 py-1.5 rounded-xl min-w-[46px] transition-all shrink-0 border ${
+                      className={`flex flex-col items-center justify-center min-w-[60px] h-[72px] rounded-xl transition-all shrink-0 border ${
                         isActive
-                          ? "bg-[#22c55e] border-[#22c55e] text-white shadow-lg shadow-green-500/20"
-                          : "border-transparent hover:bg-[#1e1e1e]"
+                          ? "bg-[#22c55e] border-[#22c55e] shadow-lg shadow-green-500/20"
+                          : "bg-[#1a1a1a] border-[#222] hover:border-[#333] hover:bg-[#222]"
                       }`}
                     >
-                      <span className={`text-[9px] font-bold tracking-widest ${
-                        isActive ? "text-green-100" : isT ? "text-[#22c55e]" : "text-[#4b5563]"
+                      <span className={`text-[10px] font-bold tracking-widest uppercase ${
+                        isActive ? "text-green-100" : isT ? "text-[#22c55e]" : "text-[#6b7280]"
                       }`}>
-                        {isT && !isActive ? "DANES" : weekdayShort(d)}
+                        {weekdayShort(d)}
                       </span>
-                      <span className={`text-base font-black leading-tight ${isActive ? "text-white" : "text-white"}`}>
+                      <span className={`text-xl font-black leading-tight ${isActive ? "text-white" : "text-white"}`}>
                         {dayNum(d)}
-                      </span>
-                      <span className={`text-[9px] font-semibold ${isActive ? "text-green-100" : "text-[#4b5563]"}`}>
-                        {monthShort(d)}
                       </span>
                     </button>
                   );
@@ -218,13 +213,13 @@ export default function VenueDetailPage() {
 
               <button
                 onClick={() => changeDate(addDays(date, 1))}
-                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1e1e1e] transition-colors shrink-0"
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1a1a1a] transition-colors shrink-0"
               >
                 <svg className="w-4 h-4 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
               </button>
 
               <label className="cursor-pointer shrink-0">
-                <div className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1e1e1e] text-[#6b7280] transition-colors border border-[#2a2a2a]">
+                <div className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1a1a1a] text-[#6b7280] transition-colors border border-[#222]">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2}/>
                     <line x1="16" y1="2" x2="16" y2="6" strokeWidth={2}/>
@@ -245,7 +240,7 @@ export default function VenueDetailPage() {
             {/* Grid */}
             {isLoading ? (
               <div className="p-4 space-y-2 animate-pulse">
-                {[...Array(10)].map((_, i) => <div key={i} className="h-14 bg-[#1a1a1a] rounded-xl" />)}
+                {[...Array(10)].map((_, i) => <div key={i} className="h-11 bg-[#1a1a1a] rounded-xl" />)}
               </div>
             ) : !venue || venue.courts.length === 0 ? (
               <div className="text-center py-16">
@@ -280,64 +275,130 @@ export default function VenueDetailPage() {
             )}
           </div>
 
-          {/* ── Sidebar ── */}
-          <div className="w-full lg:w-56 shrink-0 space-y-3">
+          {/* ── Quick Booking Sidebar (desktop) ── */}
+          <div className="hidden lg:block w-72 shrink-0">
+            <div className="bg-[#141414] rounded-2xl border border-[#222] overflow-hidden sticky top-6">
 
-            {/* Surfaces */}
-            {venue?.surfaces && venue.surfaces.length > 0 && (
-              <div className="bg-[#111111] rounded-2xl border border-[#1e1e1e] p-4">
-                <p className="text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-2.5">{t.courts.surfaces}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {venue.surfaces.map((s) => (
-                    <span key={s} className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${SURFACE_COLORS[s] ?? "bg-[#1e1e1e] text-[#9ca3af] border-[#2a2a2a]"}`}>
-                      {t.surfaces[s as keyof typeof t.surfaces] ?? s}
-                    </span>
-                  ))}
-                </div>
+              {/* Venue photo */}
+              <div className="relative h-36 overflow-hidden">
+                {venue
+                  ? <img src={heroImg} alt={venue?.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full bg-[#1a1a1a] animate-pulse" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/20 to-transparent" />
               </div>
-            )}
 
-            {/* Location */}
-            <div className="bg-[#111111] rounded-2xl border border-[#1e1e1e] p-4">
-              <p className="text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-2.5">{t.courts.location}</p>
-              {venue ? (
-                <div className="space-y-1.5 text-xs text-[#6b7280]">
-                  <p className="text-[#9ca3af]">{venue.city}{venue.address ? `, ${venue.address}` : ""}</p>
-                  {venue.phone && (
-                    <a href={`tel:${venue.phone}`} className="flex items-center gap-1.5 hover:text-[#22c55e] transition-colors">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                      {venue.phone}
-                    </a>
-                  )}
-                  {venue.website && (
-                    <a href={venue.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-[#22c55e] transition-colors truncate">
-                      <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
-                      <span className="truncate">{venue.website.replace(/^https?:\/\//, "")}</span>
-                    </a>
+              <div className="px-4 pt-1 pb-4 space-y-4">
+
+                {/* Header */}
+                <div>
+                  <p className="text-[10px] font-bold text-[#22c55e] tracking-widest uppercase mb-1">Quick Booking</p>
+                  <p className="text-base font-black text-white leading-tight">{venue?.name ?? "—"}</p>
+                  {venue && (
+                    <p className="text-xs text-[#6b7280] mt-0.5 flex items-center gap-1">
+                      <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                      {venue.city}{venue.address ? `, ${venue.address}` : ""}
+                    </p>
                   )}
                 </div>
-              ) : <div className="h-4 bg-[#1a1a1a] rounded animate-pulse" />}
-            </div>
 
-            {/* Legend */}
-            <div className="bg-[#111111] rounded-2xl border border-[#1e1e1e] p-4">
-              <p className="text-[10px] font-bold text-[#4b5563] uppercase tracking-wider mb-2.5">Legenda</p>
-              <div className="space-y-2">
-                {[
-                  { color: "bg-[#1a2e1a] border-[#22c55e]/30", label: "Prosto" },
-                  { color: "bg-[#1e1e1e] border-[#2a2a2a]", label: "Zasedeno" },
-                  { color: "bg-[#22c55e] border-[#22c55e]", label: "Izbrano" },
-                ].map(item => (
-                  <div key={item.label} className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-md border ${item.color}`} />
-                    <span className="text-xs text-[#6b7280]">{item.label}</span>
+                {/* Selection info */}
+                {selection && selectedCourt ? (
+                  <>
+                    <div className="bg-[#1a1a1a] rounded-xl border border-[#222] p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Igrišče</span>
+                        <span className="text-sm font-bold text-white">{selectedCourt.name}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Datum</span>
+                        <span className="text-sm font-semibold text-[#9ca3af]">
+                          {new Date(date + "T00:00:00").toLocaleDateString("sl-SI", { day: "numeric", month: "short" })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Čas</span>
+                        <span className="text-sm font-semibold text-[#22c55e] tabular-nums">
+                          {fmtTime(selection.startMin)} – {fmtTime(selection.startMin + 60)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {selectedCourt.price_per_hour != null && (
+                      <div className="bg-[#1a1a1a] rounded-xl border border-[#222] p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Cena / uro</span>
+                          <span className="text-sm text-[#9ca3af]">{(selectedCourt.price_per_hour / 100).toFixed(0)} €</span>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-[#222] pt-2">
+                          <span className="text-sm font-bold text-white">Skupaj (1h)</span>
+                          <span className="text-lg font-black text-white">{(selectedCourt.price_per_hour / 100).toFixed(0)} €</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => openModal(selection)}
+                      className="w-full py-3 bg-[#22c55e] hover:bg-[#16a34a] active:bg-[#15803d] text-white font-black rounded-full transition-colors shadow-lg shadow-green-500/20 text-sm tracking-wide"
+                    >
+                      Confirm Booking
+                    </button>
+                    <p className="text-[10px] text-[#3a3a3a] text-center uppercase tracking-wider">Free cancellation up to 24h before</p>
+                  </>
+                ) : (
+                  <div className="bg-[#1a1a1a] rounded-xl border border-[#222] p-4 text-center">
+                    <div className="w-10 h-10 rounded-full bg-[#222] flex items-center justify-center mx-auto mb-2">
+                      <svg className="w-5 h-5 text-[#3a3a3a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      </svg>
+                    </div>
+                    <p className="text-xs text-[#4b5563]">Izberite termin v urniku</p>
                   </div>
-                ))}
+                )}
+
+                {/* Contact */}
+                {venue && (venue.phone || venue.website) && (
+                  <div className="space-y-1.5 pt-1 border-t border-[#1e1e1e]">
+                    {venue.phone && (
+                      <a href={`tel:${venue.phone}`} className="flex items-center gap-2 text-xs text-[#6b7280] hover:text-[#22c55e] transition-colors">
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        {venue.phone}
+                      </a>
+                    )}
+                    {venue.website && (
+                      <a href={venue.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-[#6b7280] hover:text-[#22c55e] transition-colors truncate">
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+                        <span className="truncate">{venue.website.replace(/^https?:\/\//, "")}</span>
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
         </div>
       </div>
+
+      {/* ── Bottom bar (mobile/tablet — shown when slot selected) ── */}
+      {selection && selectedCourt && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#141414] border-t border-[#222] px-4 py-3 flex items-center justify-between gap-3 lg:hidden">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-[#6b7280] uppercase tracking-widest font-bold">Your Selection</p>
+            <p className="text-sm font-bold text-white truncate">
+              {selectionDateLabel(date)}, {fmtTime(selection.startMin)} – {fmtTime(selection.startMin + 60)} · {selectedCourt.name}
+            </p>
+          </div>
+          <button
+            onClick={() => openModal(selection)}
+            className="shrink-0 px-5 py-2.5 bg-[#22c55e] hover:bg-[#16a34a] text-white font-black rounded-full transition-colors shadow-lg shadow-green-500/20 text-sm"
+          >
+            Book Now
+          </button>
+        </div>
+      )}
 
       {/* Booking modal */}
       {modalOpen && selection && selectedCourt && (
@@ -345,6 +406,7 @@ export default function VenueDetailPage() {
           court={selectedCourt}
           date={date}
           venueName={venue?.name ?? ""}
+          heroImg={heroImg}
           initialStart={selection.startMin}
           onClose={() => { setModalOpen(false); setSelection(null); }}
           onConfirm={(startMin, endMin, notes) => {
@@ -366,11 +428,12 @@ export default function VenueDetailPage() {
 // ── BookingModal ───────────────────────────────────────────────────────────────
 
 function BookingModal({
-  court, date, venueName, initialStart, onClose, onConfirm, isPending, error,
+  court, date, venueName, heroImg, initialStart, onClose, onConfirm, isPending, error,
 }: {
   court: VenueCourt;
   date: string;
   venueName: string;
+  heroImg: string;
   initialStart: number;
   onClose: () => void;
   onConfirm: (startMin: number, endMin: number, notes: string) => void;
@@ -432,15 +495,17 @@ function BookingModal({
   const price = court.price_per_hour != null
     ? (court.price_per_hour / 100) * (effectiveDuration / 60) : null;
 
-  const dateLabel = new Date(date + "T00:00:00").toLocaleDateString("sl-SI", {
-    weekday: "long", day: "numeric", month: "long",
-  });
+  // 4 date tiles: selected date ± context
+  const today = new Date().toISOString().slice(0, 10);
+  const dateTiles = Array.from({ length: 4 }, (_, i) => addDays(date, i - 1)).filter(d => d >= today).slice(0, 4);
+
+  const [selectedDate, setSelectedDate] = useState(date);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full sm:max-w-md bg-[#111111] rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden border border-[#2a2a2a]">
+      <div className="relative w-full sm:max-w-lg bg-[#141414] rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden border border-[#222]">
 
         {/* Drag handle (mobile) */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
@@ -448,15 +513,11 @@ function BookingModal({
         </div>
 
         {/* Header */}
-        <div className="flex items-start justify-between px-5 pt-4 pb-3">
+        <div className="flex items-start justify-between px-5 pt-4 pb-4 border-b border-[#1e1e1e]">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-bold text-[#22c55e] bg-[#22c55e]/10 border border-[#22c55e]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Rezervacija
-              </span>
-            </div>
-            <h2 className="text-xl font-black text-white">{court.name}</h2>
-            <p className="text-sm text-[#6b7280] mt-0.5 flex items-center gap-1">
+            <span className="text-[10px] font-bold text-[#22c55e] tracking-widest uppercase">Reservation Details</span>
+            <h2 className="text-2xl font-black text-white mt-0.5">{court.name}</h2>
+            <p className="text-sm text-[#6b7280] flex items-center gap-1 mt-0.5">
               <svg className="w-3 h-3 text-[#4b5563]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               {venueName}
             </p>
@@ -466,22 +527,68 @@ function BookingModal({
           </button>
         </div>
 
-        <div className="px-5 space-y-4 pb-5">
+        <div className="px-5 space-y-5 pt-4 pb-5 max-h-[70vh] overflow-y-auto">
 
-          {/* Date row */}
-          <div className="flex items-center gap-2 bg-[#1a1a1a] rounded-xl px-3.5 py-2.5 border border-[#2a2a2a]">
-            <svg className="w-4 h-4 text-[#6b7280] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2}/>
-              <line x1="16" y1="2" x2="16" y2="6" strokeWidth={2}/>
-              <line x1="8" y1="2" x2="8" y2="6" strokeWidth={2}/>
-              <line x1="3" y1="10" x2="21" y2="10" strokeWidth={2}/>
-            </svg>
-            <span className="text-sm text-white font-semibold capitalize">{dateLabel}</span>
+          {/* Date tiles */}
+          <div>
+            <p className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest mb-2.5">Select Date</p>
+            <div className="flex gap-2">
+              {dateTiles.map((d) => {
+                const isActive = d === selectedDate;
+                const wd = new Date(d + "T00:00:00").toLocaleDateString("sl-SI", { weekday: "short" }).toUpperCase().replace(".", "").slice(0, 3);
+                const dn = new Date(d + "T00:00:00").getDate();
+                return (
+                  <button
+                    key={d}
+                    onClick={() => setSelectedDate(d)}
+                    className={`flex-1 flex flex-col items-center py-2.5 rounded-xl border transition-all ${
+                      isActive
+                        ? "bg-[#22c55e] border-[#22c55e] shadow-md shadow-green-500/20"
+                        : "bg-[#1a1a1a] border-[#222] hover:border-[#333]"
+                    }`}
+                  >
+                    <span className={`text-[9px] font-bold tracking-widest ${isActive ? "text-green-100" : "text-[#6b7280]"}`}>{wd}</span>
+                    <span className={`text-lg font-black leading-tight ${isActive ? "text-white" : "text-white"}`}>{dn}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Duration pills */}
+          {/* Time slot */}
           <div>
-            <p className="text-[10px] font-bold text-[#4b5563] uppercase tracking-widest mb-2">Trajanje</p>
+            <p className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest mb-2.5">Time Slot</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-semibold text-[#4b5563] uppercase tracking-widest mb-1.5">Start Time</p>
+                <div className="relative">
+                  <select
+                    value={startMin}
+                    onChange={(e) => setStartMin(Number(e.target.value))}
+                    className="w-full appearance-none text-base font-black tabular-nums px-4 py-3.5 pr-8 rounded-xl bg-[#1a1a1a] border border-[#222] text-white outline-none focus:ring-2 focus:ring-[#22c55e]/50 cursor-pointer transition-all"
+                  >
+                    {validStarts.map(s => (
+                      <option key={s} value={s}>{fmtTime(s)}</option>
+                    ))}
+                  </select>
+                  <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-[#4b5563] uppercase tracking-widest mb-1.5">End Time</p>
+                <div className="w-full text-base font-black tabular-nums px-4 py-3.5 rounded-xl bg-[#1a1a1a] border border-[#222] text-[#9ca3af] flex items-center gap-2">
+                  {fmtTime(endMin)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Duration */}
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Total Duration</p>
+              <span className="text-xs font-semibold text-[#9ca3af]">{effectiveDuration} min</span>
+            </div>
             <div className="flex gap-2">
               {DURATION_OPTIONS.map(d => {
                 const available = d <= maxDuration;
@@ -491,12 +598,12 @@ function BookingModal({
                     key={d}
                     onClick={() => available && setDurationMins(d)}
                     disabled={!available}
-                    className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${
                       active
-                        ? "bg-[#22c55e] border-[#22c55e] text-white shadow-lg shadow-green-500/20"
+                        ? "bg-[#22c55e] border-[#22c55e] text-white shadow-md shadow-green-500/20"
                         : available
-                        ? "bg-[#1a1a1a] border-[#2a2a2a] text-[#9ca3af] hover:border-[#3a3a3a] hover:text-white"
-                        : "bg-[#111111] border-[#1a1a1a] text-[#3a3a3a] cursor-not-allowed"
+                        ? "bg-[#1a1a1a] border-[#222] text-[#9ca3af] hover:border-[#333] hover:text-white"
+                        : "bg-[#111] border-[#1a1a1a] text-[#2a2a2a] cursor-not-allowed"
                     }`}
                   >
                     {d < 60 ? `${d}m` : `${d / 60}h`}
@@ -506,41 +613,15 @@ function BookingModal({
             </div>
           </div>
 
-          {/* Start + End */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-[10px] font-bold text-[#4b5563] uppercase tracking-widest mb-2">Začetek</p>
-              <div className="relative">
-                <select
-                  value={startMin}
-                  onChange={(e) => setStartMin(Number(e.target.value))}
-                  className="w-full appearance-none text-sm font-bold tabular-nums px-3 py-2.5 pr-8 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-white outline-none focus:ring-2 focus:ring-[#22c55e]/50 cursor-pointer transition-all"
-                >
-                  {validStarts.map(s => (
-                    <option key={s} value={s}>{fmtTime(s)}</option>
-                  ))}
-                </select>
-                <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7"/></svg>
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-[#4b5563] uppercase tracking-widest mb-2">Konec</p>
-              <div className="w-full text-sm font-bold tabular-nums px-3 py-2.5 rounded-xl bg-[#1a1a1a]/50 border border-[#2a2a2a]/50 text-[#9ca3af] flex items-center gap-2">
-                <svg className="w-3.5 h-3.5 text-[#4b5563] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                {fmtTime(endMin)}
-              </div>
-            </div>
-          </div>
-
           {/* Notes */}
           <div>
-            <p className="text-[10px] font-bold text-[#4b5563] uppercase tracking-widest mb-2">Opomba <span className="normal-case font-normal text-[#3a3a3a]">(neobvezno)</span></p>
+            <p className="text-[10px] font-bold text-[#6b7280] uppercase tracking-widest mb-2">Note <span className="normal-case font-normal text-[#3a3a3a]">(optional)</span></p>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="npr. trening, turnir..."
-              className="w-full text-sm px-3.5 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-[#4b5563] outline-none focus:ring-2 focus:ring-[#22c55e]/50 transition-all"
+              placeholder="e.g. training, tournament..."
+              className="w-full text-sm px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#222] text-white placeholder-[#3a3a3a] outline-none focus:ring-2 focus:ring-[#22c55e]/50 transition-all"
             />
           </div>
 
@@ -551,40 +632,37 @@ function BookingModal({
             </div>
           )}
 
-          <div className="border-t border-[#1e1e1e]" />
-
-          {/* Total + confirm */}
-          <div className="flex items-center justify-between">
-            <div>
-              {price != null ? (
-                <>
-                  <p className="text-xs text-[#4b5563]">Skupaj</p>
-                  <p className="text-2xl font-black text-white">{price % 1 === 0 ? price.toFixed(0) : price.toFixed(2)} €</p>
-                </>
-              ) : (
-                <p className="text-sm text-[#6b7280]">{fmtTime(startMin)} – {fmtTime(endMin)}</p>
-              )}
+          {/* Price card */}
+          {price != null && (
+            <div className="bg-[#1a1a1a] rounded-xl border border-[#222] p-4">
+              <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#222]">
+                <span className="text-xs text-[#6b7280]">{fmtTime(startMin)} – {fmtTime(endMin)}</span>
+                <span className="text-xs text-[#9ca3af]">{effectiveDuration} min</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-white">Estimated Total</span>
+                <span className="text-2xl font-black text-white">{price % 1 === 0 ? price.toFixed(0) : price.toFixed(2)} €</span>
+              </div>
             </div>
-            <button
-              onClick={() => onConfirm(startMin, endMin, notes)}
-              disabled={isPending || availableDurations.length === 0}
-              className="flex items-center gap-2 px-6 py-3 bg-[#22c55e] hover:bg-[#16a34a] active:bg-[#15803d] disabled:opacity-50 text-white font-black rounded-xl transition-colors shadow-lg shadow-green-500/20"
-            >
-              {isPending ? (
-                <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                  Rezervacija...
-                </>
-              ) : (
-                <>
-                  Potrdi
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
-                </>
-              )}
-            </button>
-          </div>
+          )}
 
-          <p className="text-[10px] text-[#3a3a3a] text-center">Z rezervacijo sprejemate pravila in pogoje igrišča</p>
+          {/* Confirm button */}
+          <button
+            onClick={() => onConfirm(startMin, endMin, notes)}
+            disabled={isPending || availableDurations.length === 0}
+            className="w-full flex items-center justify-center gap-2 py-4 bg-[#22c55e] hover:bg-[#16a34a] active:bg-[#15803d] disabled:opacity-50 text-white font-black rounded-full transition-colors shadow-lg shadow-green-500/20 text-base tracking-wide"
+          >
+            {isPending ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                Booking...
+              </>
+            ) : (
+              "Confirm Booking"
+            )}
+          </button>
+
+          <p className="text-[10px] text-[#3a3a3a] text-center uppercase tracking-widest">Free cancellation up to 24h before</p>
         </div>
       </div>
     </div>
@@ -603,7 +681,7 @@ function CourtGrid({
   selection: Selection;
   onSelect: (sel: Selection) => void;
 }) {
-  const totalH = HOURS.length * HOUR_H;
+  const totalH = SLOTS.length * SLOT_H;
   const [page, setPage] = useState(0);
   const totalPages = Math.ceil(courts.length / PAGE_SIZE);
   const visible = courts.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
@@ -611,9 +689,9 @@ function CourtGrid({
   return (
     <div>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-2 border-b border-[#1e1e1e] bg-[#0d0d0d]">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[#1e1e1e] bg-[#0f0f0f]">
           <span className="text-xs text-[#4b5563] font-medium">
-            Igrišča {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, courts.length)} / {courts.length}
+            Courts {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, courts.length)} / {courts.length}
           </span>
           <div className="flex gap-1">
             <button
@@ -638,16 +716,14 @@ function CourtGrid({
         <div style={{ minWidth: `${56 + visible.length * 160}px` }}>
 
           {/* Court headers */}
-          <div className="flex sticky top-0 z-10 bg-[#111111] border-b border-[#2a2a2a]">
+          <div className="flex sticky top-0 z-10 bg-[#141414] border-b border-[#222]">
             <div className="w-14 shrink-0" />
             {visible.map((court) => (
               <div key={court.id} className="flex-1 min-w-[160px] border-l border-[#1e1e1e] px-2 py-3 text-center">
-                <p className="text-xs font-bold text-white uppercase tracking-wide truncate">{court.name}</p>
-                <div className="flex items-center justify-center mt-1">
-                  <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${SURFACE_COLORS[court.surface] ?? "bg-[#1e1e1e] text-[#6b7280] border-[#2a2a2a]"}`}>
-                    {court.surface}
-                  </span>
-                </div>
+                <p className="text-xs font-bold text-[#22c55e] uppercase tracking-widest truncate">{court.name}</p>
+                <p className="text-[10px] text-[#6b7280] mt-0.5 capitalize">
+                  {court.is_indoor ? "Indoor " : "Outdoor "}{court.surface}
+                </p>
               </div>
             ))}
           </div>
@@ -663,13 +739,24 @@ function CourtGrid({
 
             {/* Time axis */}
             <div className="w-14 shrink-0 relative">
-              {HOURS.map((hour) => (
-                <div key={hour} className="absolute right-0 flex justify-end pr-2.5" style={{ top: (hour - START_HOUR) * HOUR_H, height: HOUR_H }}>
-                  <span className="text-[11px] text-[#4b5563] font-medium tabular-nums mt-1">{String(hour).padStart(2, "0")}:00</span>
-                </div>
-              ))}
-              {HOURS.map((hour) => (
-                <div key={hour} className="absolute left-0 right-0 border-b border-[#1a1a1a]" style={{ top: (hour - START_HOUR) * HOUR_H + HOUR_H }} />
+              {SLOTS.map((i) => {
+                const isFullHour = i % 2 === 0;
+                const min = slotIndexToMin(i);
+                return (
+                  <div key={i} className="absolute right-0 flex justify-end pr-2.5" style={{ top: i * SLOT_H, height: SLOT_H }}>
+                    {isFullHour && (
+                      <span className="text-[11px] text-[#4b5563] font-medium tabular-nums mt-1">{fmtTime(min)}</span>
+                    )}
+                  </div>
+                );
+              })}
+              {/* Hour dividers */}
+              {SLOTS.map((i) => (
+                <div
+                  key={i}
+                  className={`absolute left-0 right-0 ${i % 2 === 0 ? "border-b border-[#1e1e1e]" : "border-b border-[#181818]"}`}
+                  style={{ top: i * SLOT_H + SLOT_H }}
+                />
               ))}
             </div>
 
@@ -722,85 +809,121 @@ function CourtColumn({
     return set;
   }, [bookings]);
 
-  const handleCellClick = (hour: number) => {
-    const slotStart = toMin(hour);
-    const slotEnd = slotStart + 60;
-    if (bookedMins.has(slotStart) || bookedMins.has(slotStart + 30)) return;
+  // Map from booking start minute to booking info
+  const bookingByStart = useMemo(() => {
+    if (!bookings) return new Map<number, Booking>();
+    const map = new Map<number, Booking>();
+    for (const b of bookings as Booking[]) {
+      const bs = isoToLocalMin(b.starts_at);
+      map.set(bs, b);
+    }
+    return map;
+  }, [bookings]);
+
+  const handleSlotClick = (slotMin: number) => {
+    const slotEnd = slotMin + 30;
+    if (bookedMins.has(slotMin)) return;
     if (date === today && slotEnd <= nowMin) return;
-    if (selection?.courtId === court.id && slotStart === selection.startMin) {
+    if (selection?.courtId === court.id && slotMin === selection.startMin) {
       onSelect(null);
       return;
     }
-    onSelect({ courtId: court.id, startMin: slotStart });
+    onSelect({ courtId: court.id, startMin: slotMin });
   };
 
   return (
     <div className="flex-1 min-w-[150px] border-l border-[#1e1e1e] relative" style={{ height: totalH }}>
 
-      {HOURS.map((hour) => {
-        const slotStart = toMin(hour);
-        const slotEnd = slotStart + 60;
-        const isBooked = bookedMins.has(slotStart) || bookedMins.has(slotStart + 30);
+      {SLOTS.map((i) => {
+        const slotMin = slotIndexToMin(i);
+        const slotEnd = slotMin + 30;
+        const isBooked = bookedMins.has(slotMin);
         const isPast = date === today && slotEnd <= nowMin;
-        const isSelected = selection?.courtId === court.id && slotStart === selection.startMin;
+        const isSelected = selection?.courtId === court.id && slotMin === selection.startMin;
+        const isFullHour = i % 2 === 0;
+
+        if (isBooked) return null; // rendered via floating cards
 
         return (
           <div
-            key={hour}
+            key={i}
             className={[
-              "absolute left-0 right-0 border-b border-[#1a1a1a] transition-colors",
-              isBooked
-                ? "cursor-default bg-[#1a1a1a]"
-                : isPast
+              "absolute left-0 right-0 transition-colors",
+              isFullHour ? "border-b border-[#1e1e1e]" : "border-b border-[#181818]",
+              isPast
                 ? "bg-[#0f0f0f] cursor-default"
                 : isSelected
-                ? "bg-[#22c55e] hover:bg-[#16a34a] cursor-pointer"
-                : "bg-[#111111] hover:bg-[#1a2e1a] cursor-pointer group",
+                ? "bg-[#22c55e] hover:bg-[#1db954] cursor-pointer"
+                : "bg-[#141414] hover:bg-[#1a1a1a] cursor-pointer group",
             ].join(" ")}
-            style={{ top: (hour - START_HOUR) * HOUR_H, height: HOUR_H }}
-            onClick={() => handleCellClick(hour)}
+            style={{ top: i * SLOT_H, height: SLOT_H }}
+            onClick={() => handleSlotClick(slotMin)}
           >
-            {!isBooked && !isPast && !isSelected && (
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <span className="text-[11px] text-[#22c55e] font-semibold tabular-nums">
-                  {fmtTime(slotStart)}
-                </span>
+            {!isPast && !isSelected && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="text-2xl text-[#2a2a2a] font-light leading-none group-hover:text-[#3a3a3a] transition-colors">+</span>
               </div>
             )}
             {isSelected && (
-              <div className="absolute inset-0 flex items-center justify-center gap-1.5 pointer-events-none">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                <span className="text-sm text-white font-bold tabular-nums">{fmtTime(slotStart)}</span>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-0.5">
+                <div className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                  <span className="text-[10px] text-white font-bold uppercase tracking-wider">Selected Slot</span>
+                </div>
+                <span className="text-[9px] text-green-100 tabular-nums font-semibold">{fmtTime(slotMin)} – {fmtTime(slotEnd)}</span>
               </div>
             )}
           </div>
         );
       })}
 
-      {/* Floating booking cards */}
-      {(bookings as Booking[] | undefined)?.map((b, i) => {
+      {/* Booked slots — rendered as overlay blocks per booking */}
+      {(bookings as Booking[] | undefined)?.map((b, bi) => {
         const bs = isoToLocalMin(b.starts_at);
         const be = isoToLocalMin(b.ends_at);
-        const top = ((bs - toMin(START_HOUR)) / 60) * HOUR_H;
-        const height = ((be - bs) / 60) * HOUR_H;
-        if (top < 0 || height <= 0) return null;
+        const topIdx = (bs - START_HOUR * 60) / 30;
+        const numSlots = (be - bs) / 30;
+        if (topIdx < 0 || numSlots <= 0) return null;
+
         return (
           <div
-            key={i}
-            className="absolute left-1 right-1 z-10 rounded-xl overflow-hidden pointer-events-none"
-            style={{ top: top + 2, height: height - 4 }}
+            key={bi}
+            className="absolute left-0 right-0 z-10 pointer-events-none overflow-hidden border-b border-[#1e1e1e]"
+            style={{ top: topIdx * SLOT_H, height: numSlots * SLOT_H }}
           >
-            <div className="w-full h-full flex flex-col justify-center px-3 py-2 rounded-xl bg-[#2a1a1a] border border-red-500/20"
-              style={{ backgroundImage: "repeating-linear-gradient(135deg,transparent,transparent 5px,rgba(239,68,68,0.04) 5px,rgba(239,68,68,0.04) 6px)" }}
+            <div
+              className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[#111]"
+              style={{
+                backgroundImage: "repeating-linear-gradient(135deg,transparent,transparent 8px,rgba(255,255,255,0.015) 8px,rgba(255,255,255,0.015) 9px)"
+              }}
             >
+              <span className="text-[10px] font-bold text-[#3a3a3a] uppercase tracking-widest">Booked</span>
               {b.player?.full_name && (
-                <span className="text-sm font-black text-[#f87171] truncate leading-tight">
+                <span className="text-[11px] font-semibold text-[#4b5563] truncate px-2 max-w-full text-center leading-tight">
                   {b.player.full_name}
                 </span>
               )}
-              <span className="text-xs font-semibold text-[#9ca3af] tabular-nums">{fmtTime(bs)}–{fmtTime(be)}</span>
             </div>
           </div>
+        );
+      })}
+
+      {/* Mark booked slots as non-interactive */}
+      {SLOTS.map((i) => {
+        const slotMin = slotIndexToMin(i);
+        const isBooked = bookedMins.has(slotMin);
+        const isPast = date === today && slotMin + 30 <= nowMin;
+        const isFullHour = i % 2 === 0;
+        if (!isBooked) return null;
+        return (
+          <div
+            key={`booked-bg-${i}`}
+            className={[
+              "absolute left-0 right-0 cursor-not-allowed",
+              isFullHour ? "border-b border-[#1e1e1e]" : "border-b border-[#181818]",
+            ].join(" ")}
+            style={{ top: i * SLOT_H, height: SLOT_H, zIndex: 9 }}
+          />
         );
       })}
     </div>
