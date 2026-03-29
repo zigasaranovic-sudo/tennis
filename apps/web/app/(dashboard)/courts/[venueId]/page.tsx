@@ -853,20 +853,22 @@ function CourtGrid({
   return (
     <div>
 
-      {/* ── Mobile: row-based grid, all courts horizontally scrollable ── */}
+      {/* ── Mobile: row-based grid, horizontal + vertical scroll ── */}
       <div className="lg:hidden p-1">
         <div className="rounded-2xl overflow-hidden border" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
-          {/* Scrollable container with fixed height */}
-          <div style={{ maxHeight: 480, overflowY: "auto", scrollbarWidth: "none" }}>
-            {/* Sticky header */}
-            <div className="sticky top-0 z-20 flex border-b" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
-              <div className="w-14 shrink-0" />
-              <div className="flex overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          {/* Outer: vertical scroll with fixed height */}
+          <div style={{ maxHeight: 460, overflowY: "auto", overflowX: "auto", scrollbarWidth: "none" }}>
+            {/* Inner: min-width ensures all courts are visible */}
+            <div style={{ minWidth: `${56 + courts.length * 110}px` }}>
+
+              {/* Sticky header row */}
+              <div className="flex sticky top-0 z-20 border-b" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
+                <div className="shrink-0" style={{ width: 56 }} />
                 {courts.map((court) => {
                   const isActive = selection?.courtId === court.id;
                   return (
-                    <div key={court.id} className="min-w-[100px] flex-1 py-3 text-center border-l"
-                      style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+                    <div key={court.id} className="border-l py-3 text-center"
+                      style={{ width: 110, minWidth: 110, borderColor: "rgba(255,255,255,0.04)" }}>
                       <p className="text-[9px] font-bold uppercase tracking-widest truncate px-1"
                         style={{ color: isActive ? "#4be277" : "rgba(188,203,185,0.45)" }}>
                         {court.name}
@@ -878,27 +880,25 @@ function CourtGrid({
                   );
                 })}
               </div>
-            </div>
 
-            {/* Row-based grid body */}
-            {SLOTS.map((i) => {
-              const isFullHour = i % 2 === 0;
-              const slotMin = slotIndexToMin(i);
-              return (
-                <div key={i} className="flex border-b" style={{ borderColor: "rgba(255,255,255,0.04)", height: SLOT_H }}>
-                  {/* Time label — sticky left */}
-                  <div className="w-14 shrink-0 flex items-center justify-end pr-2 sticky left-0"
-                    style={{ background: "#1b1c1c" }}>
-                    <span className="tabular-nums" style={{
-                      fontSize: isFullHour ? 10 : 9,
-                      fontWeight: isFullHour ? 600 : 400,
-                      color: isFullHour ? "rgba(188,203,185,0.4)" : "rgba(188,203,185,0.18)",
-                    }}>
-                      {fmtTime(slotMin)}
-                    </span>
-                  </div>
-                  {/* Court cells */}
-                  <div className="flex overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+              {/* Slot rows */}
+              {SLOTS.map((i) => {
+                const isFullHour = i % 2 === 0;
+                const slotMin = slotIndexToMin(i);
+                return (
+                  <div key={i} className="flex border-b" style={{ borderColor: "rgba(255,255,255,0.04)", height: SLOT_H }}>
+                    {/* Sticky time label */}
+                    <div className="shrink-0 flex items-center justify-end pr-2 sticky left-0 z-10"
+                      style={{ width: 56, background: "#1b1c1c" }}>
+                      <span className="tabular-nums" style={{
+                        fontSize: isFullHour ? 10 : 9,
+                        fontWeight: isFullHour ? 600 : 400,
+                        color: isFullHour ? "rgba(188,203,185,0.4)" : "rgba(188,203,185,0.18)",
+                      }}>
+                        {fmtTime(slotMin)}
+                      </span>
+                    </div>
+                    {/* Court cells — fixed width matching header */}
                     {courts.map((court) => (
                       <MobileSlotCell
                         key={court.id}
@@ -911,9 +911,9 @@ function CourtGrid({
                       />
                     ))}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -1046,8 +1046,8 @@ function MobileSlotCell({
 
   return (
     <div
-      className="min-w-[100px] flex-1 border-l p-1"
-      style={{ borderColor: "rgba(255,255,255,0.04)" }}
+      className="shrink-0 border-l p-1"
+      style={{ width: 110, minWidth: 110, borderColor: "rgba(255,255,255,0.04)" }}
       onClick={handleClick}
     >
       <div
