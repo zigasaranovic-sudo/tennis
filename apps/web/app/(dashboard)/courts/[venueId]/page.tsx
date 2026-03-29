@@ -144,7 +144,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ venueId:
     new Date(d + "T00:00:00").toLocaleDateString("sl-SI", { weekday: "short" }).replace(".", "").toUpperCase();
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen" style={{ background: "#131313" }}>
+    <div className="min-h-screen" style={{ background: "#131313" }}>
 
       {/* ── Hero ── */}
       <div className="relative h-52 sm:h-64 overflow-hidden">
@@ -187,7 +187,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ venueId:
       </div>
 
       {/* ── Body ── */}
-      <div className="px-4 sm:px-6 py-5 pb-48 lg:pb-16">
+      <div className="px-3 sm:px-6 py-4 pb-24 lg:pb-16">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-5 items-start">
 
           {/* ── Left: Booking Panel ── */}
@@ -854,10 +854,10 @@ function CourtGrid({
     <div>
 
       {/* ── Mobile: row-based grid, horizontal + vertical scroll ── */}
-      <div className="lg:hidden p-1">
-        <div className="rounded-2xl overflow-hidden border" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
-          {/* Outer: vertical scroll with fixed height */}
-          <div style={{ maxHeight: 460, overflowY: "auto", overflowX: "auto", scrollbarWidth: "none" }}>
+      <div className="lg:hidden" style={{ height: "calc(100dvh - 360px)", minHeight: 260, overflow: "hidden" }}>
+        <div style={{ height: "100%", background: "#1b1c1c", overflow: "hidden" }}>
+          {/* Outer: vertical scroll, fills remaining viewport */}
+          <div style={{ height: "100%", overflowY: "auto", overflowX: "auto", scrollbarWidth: "none" }}>
             {/* Inner: min-width ensures all courts are visible */}
             <div style={{ minWidth: `${56 + courts.length * 110}px` }}>
 
