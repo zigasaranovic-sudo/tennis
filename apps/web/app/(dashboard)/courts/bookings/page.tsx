@@ -382,7 +382,7 @@ function CompactCard({ booking, tab, onCancel, cancelling }: {
               onClick={() => setShowCancel(true)}
               disabled={cancelling}
               className="w-full py-2.5 rounded-2xl font-bold text-sm transition-all"
-              style={{ background: "#202020", color: "rgba(188,203,185,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}
+              style={{ background: "linear-gradient(135deg, #4be277, #22c55e)", color: "#003915" }}
             >
               Manage Booking
             </button>
