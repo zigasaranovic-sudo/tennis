@@ -46,7 +46,8 @@ const START_HOUR = 8;
 const END_HOUR = 20;
 const SLOT_H = 64; // px per 30-min slot
 const SLOTS = Array.from({ length: (END_HOUR - START_HOUR) * 2 }, (_, i) => i);
-const PAGE_SIZE = 4;
+const PAGE_SIZE_MOBILE = 1;
+const PAGE_SIZE_DESKTOP = 4;
 
 // Kinetic gradient (used across CTA buttons and selected slots)
 const KINETIC_GRADIENT = "linear-gradient(135deg, #4be277 0%, #22c55e 50%, #16a34a 100%)";
@@ -187,7 +188,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ venueId:
       </div>
 
       {/* ── Body ── */}
-      <div className="px-4 sm:px-6 py-5 pb-32">
+      <div className="px-4 sm:px-6 py-5 pb-48 lg:pb-16">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-5 items-start">
 
           {/* ── Left: Booking Panel ── */}
@@ -459,7 +460,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ venueId:
       {/* ── YOUR SELECTION bottom card (mobile/tablet) ── */}
       {selection && selectedCourt && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-40 lg:hidden px-4 py-4"
+          className="fixed bottom-[72px] left-0 right-0 z-40 lg:hidden px-4 py-3"
           style={{ background: "#131313", borderTop: "1px solid rgba(75,226,119,0.1)" }}
         >
           <div className="rounded-2xl p-4 border flex items-center justify-between gap-3" style={{ background: "#202020", borderColor: "rgba(75,226,119,0.1)" }}>
@@ -846,129 +847,122 @@ function CourtGrid({
   onSelect: (sel: Selection) => void;
 }) {
   const totalH = SLOTS.length * SLOT_H;
-  const [page, setPage] = useState(0);
-  const totalPages = Math.ceil(courts.length / PAGE_SIZE);
-  const visible = courts.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const [mobilePage, setMobilePage] = useState(0);
+  const [desktopPage, setDesktopPage] = useState(0);
 
-  return (
-    <div>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-2 border-b" style={{ background: "#131313", borderColor: "rgba(255,255,255,0.05)" }}>
-          <span className="text-xs font-medium" style={{ color: "rgba(188,203,185,0.35)" }}>
-            Courts {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, courts.length)} / {courts.length}
-          </span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setPage(p => p - 1)}
-              disabled={page === 0}
-              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors disabled:opacity-30"
-              style={{ color: "rgba(188,203,185,0.5)" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#202020")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/>
-              </svg>
-            </button>
-            <button
-              onClick={() => setPage(p => p + 1)}
-              disabled={page >= totalPages - 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors disabled:opacity-30"
-              style={{ color: "rgba(188,203,185,0.5)" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#202020")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/>
-              </svg>
-            </button>
-          </div>
+  const mobileTotal = courts.length;
+  const desktopPages = Math.ceil(courts.length / PAGE_SIZE_DESKTOP);
+
+  const mobileVisible = courts.slice(mobilePage, mobilePage + PAGE_SIZE_MOBILE);
+  const desktopVisible = courts.slice(desktopPage * PAGE_SIZE_DESKTOP, desktopPage * PAGE_SIZE_DESKTOP + PAGE_SIZE_DESKTOP);
+
+  // Court selector header — shared rendering function
+  const CourtPageControls = ({ isMobile }: { isMobile: boolean }) => {
+    const page = isMobile ? mobilePage : desktopPage;
+    const total = isMobile ? mobileTotal : desktopPages;
+    const setPage = isMobile ? setMobilePage : setDesktopPage;
+    const hasMultiple = isMobile ? mobileTotal > 1 : desktopPages > 1;
+    const label = isMobile
+      ? `${courts[mobilePage]?.name ?? ""} (${mobilePage + 1}/${mobileTotal})`
+      : `Courts ${desktopPage * PAGE_SIZE_DESKTOP + 1}–${Math.min((desktopPage + 1) * PAGE_SIZE_DESKTOP, courts.length)} / ${courts.length}`;
+
+    if (!hasMultiple) return null;
+    return (
+      <div className="flex items-center justify-between px-4 py-2 border-b" style={{ background: "#131313", borderColor: "rgba(255,255,255,0.05)" }}>
+        <span className="text-xs font-medium" style={{ color: "rgba(188,203,185,0.35)" }}>{label}</span>
+        <div className="flex gap-1">
+          <button onClick={() => setPage(p => isMobile ? Math.max(0, p - 1) : p - 1)}
+            disabled={page === 0}
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors disabled:opacity-30"
+            style={{ color: "rgba(188,203,185,0.5)" }}>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <button onClick={() => setPage(p => isMobile ? Math.min(mobileTotal - 1, p + 1) : p + 1)}
+            disabled={isMobile ? mobilePage >= mobileTotal - 1 : desktopPage >= desktopPages - 1}
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors disabled:opacity-30"
+            style={{ color: "rgba(188,203,185,0.5)" }}>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
         </div>
-      )}
+      </div>
+    );
+  };
 
-      {/* Grid container */}
-      <div className="m-1 rounded-2xl overflow-hidden border" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
-        <div className="overflow-x-auto">
-          <div style={{ minWidth: `${64 + visible.length * 160}px` }}>
+  const GridInner = ({ visible }: { visible: VenueCourt[] }) => (
+    <div className="m-1 rounded-2xl overflow-hidden border" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
+      <div className="overflow-x-auto">
+        <div style={{ minWidth: `${64 + visible.length * 160}px` }}>
+          {/* Court header row */}
+          <div className="flex sticky top-0 z-10 border-b" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
+            <div className="w-16 shrink-0" />
+            {visible.map((court) => {
+              const isActive = selection?.courtId === court.id;
+              return (
+                <div key={court.id} className="flex-1 min-w-[160px] border-l px-2 py-2.5 text-center"
+                  style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest truncate"
+                    style={{ color: isActive ? "#4be277" : "rgba(188,203,185,0.45)" }}>
+                    {court.name}
+                  </p>
+                  <p className="text-[9px] mt-0.5 capitalize" style={{ color: "rgba(188,203,185,0.25)" }}>
+                    {court.is_indoor ? "Indoor " : "Outdoor "}{court.surface}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
 
-            {/* Court header row */}
-            <div className="flex sticky top-0 z-10 border-b" style={{ background: "#1b1c1c", borderColor: "rgba(255,255,255,0.05)" }}>
-              <div className="w-16 shrink-0" />
-              {visible.map((court, idx) => {
-                const isActive = selection?.courtId === court.id;
+          {/* Grid body */}
+          <div className="relative flex" style={{ height: totalH }}>
+            {nowPx !== null && (
+              <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: nowPx }}>
+                <div className="w-2.5 h-2.5 rounded-full shrink-0 ml-[52px]" style={{ background: "#ef4444" }} />
+                <div className="flex-1 h-px" style={{ background: "rgba(239,68,68,0.5)" }} />
+              </div>
+            )}
+            {/* Time axis */}
+            <div className="w-16 shrink-0 relative">
+              {SLOTS.map((i) => {
+                const isFullHour = i % 2 === 0;
+                const min = slotIndexToMin(i);
                 return (
-                  <div
-                    key={court.id}
-                    className="flex-1 min-w-[160px] border-l px-2 py-2.5 text-center"
-                    style={{ borderColor: "rgba(255,255,255,0.04)" }}
-                  >
-                    <p
-                      className="text-[10px] font-bold uppercase tracking-widest truncate"
-                      style={{ color: isActive ? "#4be277" : "rgba(188,203,185,0.45)" }}
-                    >
-                      {court.name}
-                    </p>
-                    <p className="text-[9px] mt-0.5 capitalize" style={{ color: "rgba(188,203,185,0.25)" }}>
-                      {court.is_indoor ? "Indoor " : "Outdoor "}{court.surface}
-                    </p>
+                  <div key={i} className="absolute right-0 flex justify-end pr-2" style={{ top: i * SLOT_H, height: SLOT_H }}>
+                    <span className="tabular-nums mt-1" style={{
+                      fontSize: isFullHour ? 10 : 9,
+                      fontWeight: isFullHour ? 600 : 400,
+                      color: isFullHour ? "rgba(188,203,185,0.35)" : "rgba(188,203,185,0.18)",
+                    }}>
+                      {fmtTime(min)}
+                    </span>
                   </div>
                 );
               })}
             </div>
-
-            {/* Grid body */}
-            <div className="relative flex" style={{ height: totalH }}>
-              {/* Now line */}
-              {nowPx !== null && (
-                <div
-                  className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
-                  style={{ top: nowPx }}
-                >
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0 ml-[52px]" style={{ background: "#ef4444" }} />
-                  <div className="flex-1 h-px" style={{ background: "rgba(239,68,68,0.5)" }} />
-                </div>
-              )}
-
-              {/* Time axis */}
-              <div className="w-16 shrink-0 relative">
-                {SLOTS.map((i) => {
-                  const isFullHour = i % 2 === 0;
-                  const min = slotIndexToMin(i);
-                  return (
-                    <div
-                      key={i}
-                      className="absolute right-0 flex justify-end pr-2"
-                      style={{ top: i * SLOT_H, height: SLOT_H }}
-                    >
-                      <span
-                        className="tabular-nums mt-1"
-                        style={{
-                          fontSize: isFullHour ? 10 : 9,
-                          fontWeight: isFullHour ? 600 : 400,
-                          color: isFullHour ? "rgba(188,203,185,0.35)" : "rgba(188,203,185,0.18)",
-                        }}
-                      >
-                        {fmtTime(min)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {visible.map((court) => (
-                <CourtColumn
-                  key={court.id}
-                  court={court}
-                  date={date}
-                  today={today}
-                  selection={selection}
-                  onSelect={onSelect}
-                  totalH={totalH}
-                />
-              ))}
-            </div>
+            {visible.map((court) => (
+              <CourtColumn key={court.id} court={court} date={date} today={today}
+                selection={selection} onSelect={onSelect} totalH={totalH} />
+            ))}
           </div>
         </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Mobile: 1 court at a time */}
+      <div className="lg:hidden">
+        <CourtPageControls isMobile={true} />
+        <GridInner visible={mobileVisible} />
+      </div>
+      {/* Desktop: up to 4 courts */}
+      <div className="hidden lg:block">
+        <CourtPageControls isMobile={false} />
+        <GridInner visible={desktopVisible} />
       </div>
     </div>
   );
