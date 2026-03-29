@@ -152,8 +152,16 @@ export default function MyMatchesPage() {
               </div>
             ) : (
               <div className="mt-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#6b7280" }}>Recent History</p>
-                {mobileList.map((b) => <HistoryRow key={b.id} booking={b} />)}
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: "#6b7280" }}>Recent History</p>
+                  <Link href="/courts/bookings/history" className="text-xs font-semibold hover:text-white transition-colors"
+                    style={{ color: "rgba(188,203,185,0.4)" }}>
+                    View All →
+                  </Link>
+                </div>
+                <div className="space-y-3">
+                  {mobileList.map((b) => <HistoryRow key={b.id} booking={b} />)}
+                </div>
               </div>
             )}
           </div>
@@ -413,14 +421,6 @@ function HistoryRow({ booking }: { booking: Booking }) {
         {booking.court?.name} · {fmtTime(booking.starts_at)}–{fmtTime(booking.ends_at)}
       </p>
 
-      <div className="mt-3 pt-3 border-t" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-        <button className="flex items-center gap-1 text-xs font-semibold" style={{ color: "rgba(188,203,185,0.5)" }}>
-          View Details
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
-          </svg>
-        </button>
-      </div>
     </div>
   );
 }
