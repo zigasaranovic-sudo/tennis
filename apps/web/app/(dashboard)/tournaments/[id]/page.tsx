@@ -27,17 +27,29 @@ type TournamentDetail = {
   }>;
 };
 
+const STATUS_COLOR: Record<string, { bg: string; color: string; border: string; label: string }> = {
+  open:      { bg: "rgba(75,226,119,0.12)", color: "#4be277", border: "rgba(75,226,119,0.25)", label: "Open" },
+  full:      { bg: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "rgba(251,191,36,0.25)", label: "Full" },
+  cancelled: { bg: "rgba(239,68,68,0.12)",  color: "#ef4444", border: "rgba(239,68,68,0.25)",  label: "Cancelled" },
+  completed: { bg: "rgba(107,114,128,0.12)", color: "#9ca3af", border: "rgba(107,114,128,0.25)", label: "Completed" },
+};
+const FORMAT_COLOR: Record<string, { bg: string; color: string }> = {
+  singles: { bg: "rgba(96,165,250,0.12)", color: "#60a5fa" },
+  doubles: { bg: "rgba(167,139,250,0.12)", color: "#a78bfa" },
+  both:    { bg: "rgba(99,102,241,0.12)",  color: "#818cf8" },
+};
 const FORMAT_LABEL: Record<string, string> = {
-  singles: "Singles",
-  doubles: "Doubles",
-  both: "Singles & Doubles",
+  singles: "Singles", doubles: "Doubles", both: "Singles & Doubles",
 };
-const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  open: { label: "Open", cls: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" },
-  full: { label: "Full", cls: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" },
-  cancelled: { label: "Cancelled", cls: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" },
-  completed: { label: "Completed", cls: "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400" },
-};
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+}
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
 
 export default function TournamentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -47,32 +59,34 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ id:
 
   const [joinPlayFormat, setJoinPlayFormat] = useState<"singles" | "doubles">("singles");
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const joinMutation = trpc.tournament.join.useMutation({
-    onSuccess: () => {
-      setShowJoinModal(false);
-      void refetch();
-    },
+    onSuccess: () => { setShowJoinModal(false); void refetch(); },
   });
-
   const cancelMutation = trpc.tournament.cancel.useMutation({
-    onSuccess: () => void refetch(),
+    onSuccess: () => { setShowCancelConfirm(false); void refetch(); },
   });
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen pb-32" style={{ background: "#131313", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <div className="px-5 pt-6 lg:px-8 lg:pt-10 space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="rounded-2xl animate-pulse" style={{ background: "#1b1c1c", height: i === 0 ? 200 : 120 }} />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (!tournament) {
     return (
-      <div className="text-center py-16">
-        <p className="text-gray-500 dark:text-slate-400">Tournament not found.</p>
-        <Link href="/tournaments" className="text-green-600 hover:underline mt-2 block">
-          Back to Tournaments
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4"
+        style={{ background: "#131313", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <p className="text-white font-black text-lg">Tournament not found</p>
+        <Link href="/tournaments" className="text-sm font-semibold" style={{ color: "#4be277" }}>
+          ← Back to Tournaments
         </Link>
       </div>
     );
@@ -82,202 +96,262 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ id:
   const alreadyJoined = tournament.participants.some((p) => p.player_id === profile?.id);
   const isFull = tournament.status === "full" || tournament.participant_count >= tournament.max_spots;
   const spotsFilledPct = Math.min(100, Math.round((tournament.participant_count / tournament.max_spots) * 100));
-  const sts = STATUS_BADGE[tournament.status] ?? STATUS_BADGE.open;
-
-  const handleJoin = () => {
-    joinMutation.mutate({ tournament_id: id, play_format: joinPlayFormat });
-  };
+  const sts = STATUS_COLOR[tournament.status] ?? STATUS_COLOR.open;
+  const fmt = FORMAT_COLOR[tournament.format] ?? FORMAT_COLOR.singles;
+  const canJoin = !isCreator && tournament.status === "open" && !alreadyJoined;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Back link */}
-      <Link href="/tournaments" className="text-sm text-gray-500 dark:text-slate-400 hover:text-green-600 transition-colors">
-        ← Back to Tournaments
-      </Link>
+    <div className="min-h-screen pb-32" style={{ background: "#131313", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
-      {/* Header card */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-        <div className="flex items-start justify-between gap-4">
+      {/* Back */}
+      <div className="px-5 pt-6 pb-2 lg:px-8 lg:pt-10">
+        <Link href="/tournaments" className="inline-flex items-center gap-1.5 text-sm font-semibold mb-6"
+          style={{ color: "rgba(188,203,185,0.5)" }}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+          </svg>
+          Tournaments
+        </Link>
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-6">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-2">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{tournament.name}</h1>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${sts.cls}`}>{sts.label}</span>
-            </div>
-
-            {tournament.description && (
-              <p className="text-sm text-gray-600 dark:text-slate-400 mb-3">{tournament.description}</p>
-            )}
-
-            <div className="space-y-1 text-sm text-gray-600 dark:text-slate-400">
-              <p>
-                📅{" "}
-                {new Date(tournament.scheduled_at).toLocaleDateString("en-US", {
-                  weekday: "long", year: "numeric", month: "long", day: "numeric",
-                  hour: "2-digit", minute: "2-digit",
-                })}
-              </p>
-              {(tournament.location_city || tournament.location_name) && (
-                <p>
-                  📍 {[tournament.location_name, tournament.location_city].filter(Boolean).join(", ")}
-                </p>
-              )}
-              <p>🎾 Format: {FORMAT_LABEL[tournament.format] ?? tournament.format}</p>
-            </div>
-
-            {/* Creator */}
-            <div className="flex items-center gap-2 mt-3">
-              <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
-                {tournament.creator?.full_name?.[0]?.toUpperCase() ?? "?"}
-              </div>
-              <span className="text-xs text-gray-500 dark:text-slate-400">
-                Organized by {tournament.creator?.full_name ?? tournament.creator?.username ?? "Unknown"}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border"
+                style={{ background: sts.bg, color: sts.color, borderColor: sts.border }}>
+                {sts.label}
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest"
+                style={{ background: fmt.bg, color: fmt.color }}>
+                {FORMAT_LABEL[tournament.format]}
               </span>
             </div>
+            <h1 className="text-3xl lg:text-4xl font-black text-white leading-tight">{tournament.name}</h1>
+            {tournament.description && (
+              <p className="text-sm mt-2" style={{ color: "rgba(188,203,185,0.5)" }}>{tournament.description}</p>
+            )}
           </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-col gap-2 flex-shrink-0">
-            {isCreator && (tournament.status === "open" || tournament.status === "full") && (
-              <button
-                onClick={() => {
-                  if (confirm("Are you sure you want to cancel this tournament?")) {
-                    cancelMutation.mutate({ tournament_id: id });
-                  }
-                }}
-                disabled={cancelMutation.isPending}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-              >
-                Cancel Tournament
-              </button>
-            )}
-            {!isCreator && tournament.status === "open" && !alreadyJoined && (
+          {/* Action button */}
+          <div className="shrink-0 mt-1">
+            {canJoin && (
               <button
                 onClick={() => { setJoinPlayFormat("singles"); setShowJoinModal(true); }}
-                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                className="px-5 py-2.5 rounded-2xl font-black text-sm text-black shadow-lg shadow-green-500/20"
+                style={{ background: "linear-gradient(135deg, #4be277, #22c55e)" }}
               >
                 Join
               </button>
             )}
             {alreadyJoined && (
-              <span className="px-4 py-2 text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                ✓ Joined
+              <span className="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-black"
+                style={{ background: "rgba(75,226,119,0.12)", color: "#4be277" }}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
+                </svg>
+                Joined
               </span>
             )}
-            {tournament.status === "full" && !alreadyJoined && (
-              <span className="px-4 py-2 text-sm font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                Tournament Full
+            {isFull && !alreadyJoined && (
+              <span className="px-4 py-2 rounded-2xl text-sm font-black"
+                style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24" }}>
+                Full
               </span>
             )}
           </div>
         </div>
 
-        {/* Spots progress bar */}
-        <div className="mt-5 pt-5 border-t border-gray-100 dark:border-slate-700">
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span className="font-medium text-gray-700 dark:text-slate-300">
-              {tournament.participant_count} of {tournament.max_spots} spots filled
-            </span>
-            <span className="text-gray-500 dark:text-slate-400">{spotsFilledPct}%</span>
+        {/* Info cards */}
+        <div className="grid grid-cols-2 gap-3 mb-4 lg:grid-cols-4">
+          {/* Date */}
+          <div className="col-span-2 lg:col-span-2 rounded-2xl p-4" style={{ background: "#1b1c1c" }}>
+            <p className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: "rgba(188,203,185,0.35)" }}>
+              Date & Time
+            </p>
+            <p className="font-black text-white text-sm">{fmtDate(tournament.scheduled_at)}</p>
+            <p className="text-xs mt-0.5" style={{ color: "#4be277" }}>{fmtTime(tournament.scheduled_at)}</p>
           </div>
-          <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2">
-            <div
-              className="bg-green-500 h-2 rounded-full transition-all"
-              style={{ width: `${spotsFilledPct}%` }}
-            />
+
+          {/* Location */}
+          <div className="col-span-2 lg:col-span-1 rounded-2xl p-4" style={{ background: "#1b1c1c" }}>
+            <p className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: "rgba(188,203,185,0.35)" }}>
+              Location
+            </p>
+            {tournament.location_name || tournament.location_city ? (
+              <>
+                {tournament.location_name && <p className="font-black text-white text-sm">{tournament.location_name}</p>}
+                {tournament.location_city && <p className="text-xs mt-0.5" style={{ color: "rgba(188,203,185,0.5)" }}>{tournament.location_city}</p>}
+              </>
+            ) : (
+              <p className="text-sm" style={{ color: "rgba(188,203,185,0.35)" }}>TBD</p>
+            )}
+          </div>
+
+          {/* Spots */}
+          <div className="col-span-2 lg:col-span-1 rounded-2xl p-4" style={{ background: "#1b1c1c" }}>
+            <p className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: "rgba(188,203,185,0.35)" }}>
+              Spots
+            </p>
+            <p className="font-black text-white text-sm">
+              {tournament.participant_count}
+              <span style={{ color: "rgba(188,203,185,0.4)" }}>/{tournament.max_spots}</span>
+            </p>
+            <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+              <div className="h-full rounded-full transition-all"
+                style={{ width: `${spotsFilledPct}%`, background: "linear-gradient(90deg, #4be277, #22c55e)" }} />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Participants */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">
-          Participants ({tournament.participant_count})
-        </h2>
-        {tournament.participants.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-slate-400">No participants yet. Be the first to join!</p>
-        ) : (
-          <div className="space-y-3">
-            {tournament.participants.map((p) => (
-              <div key={p.id} className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                  {p.player?.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.player.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
-                  ) : (
-                    (p.player?.full_name?.[0] ?? "?").toUpperCase()
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <Link
-                    href={`/players/${p.player_id}`}
-                    className="text-sm font-medium text-gray-900 dark:text-slate-100 hover:text-green-600 transition-colors truncate block"
-                  >
-                    {p.player?.full_name ?? p.player?.username ?? "Unknown"}
-                  </Link>
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded-full capitalize bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 flex-shrink-0">
-                  {p.play_format}
-                </span>
-              </div>
-            ))}
+        {/* Creator */}
+        {tournament.creator && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl mb-4" style={{ background: "#1b1c1c" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-black text-xs font-black shrink-0"
+              style={{ background: "linear-gradient(135deg, #4be277, #22c55e)" }}>
+              {tournament.creator.full_name[0]?.toUpperCase()}
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(188,203,185,0.35)" }}>Organized by</p>
+              <p className="text-sm font-bold text-white">{tournament.creator.full_name}</p>
+            </div>
+            {isCreator && (tournament.status === "open" || tournament.status === "full") && (
+              <button
+                onClick={() => setShowCancelConfirm(true)}
+                className="ml-auto px-4 py-2 rounded-xl text-xs font-black"
+                style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
+              >
+                Cancel Tournament
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Join modal */}
-      {showJoinModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-sm">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">Join Tournament</h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mb-5">{tournament.name}</p>
+      {/* Participants */}
+      <div className="px-5 lg:px-8">
+        <div className="rounded-2xl overflow-hidden" style={{ background: "#1b1c1c" }}>
+          <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            <h2 className="font-black text-white text-base">Participants</h2>
+            <span className="text-xs font-bold tabular-nums" style={{ color: "rgba(188,203,185,0.4)" }}>
+              {tournament.participant_count}/{tournament.max_spots}
+            </span>
+          </div>
 
-            <p className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-3">How will you play?</p>
-            <div className="space-y-2">
+          {tournament.participants.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="font-black text-white mb-1">No participants yet</p>
+              <p className="text-sm" style={{ color: "#6b7280" }}>Be the first to join!</p>
+            </div>
+          ) : (
+            <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              {tournament.participants.map((p, i) => {
+                const pFmt = FORMAT_COLOR[p.play_format] ?? FORMAT_COLOR.singles;
+                return (
+                  <div key={p.id} className="flex items-center gap-3 px-5 py-3.5">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-black text-[11px] font-black shrink-0"
+                      style={{ background: "linear-gradient(135deg, #4be277, #22c55e)" }}>
+                      {p.player?.avatar_url
+                        ? <img src={p.player.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+                        : (p.player?.full_name?.[0] ?? "?").toUpperCase()
+                      }
+                    </div>
+                    <Link href={`/players/${p.player_id}`}
+                      className="flex-1 min-w-0 text-sm font-bold text-white hover:text-[#4be277] transition-colors truncate">
+                      {p.player?.full_name ?? p.player?.username ?? "Unknown"}
+                    </Link>
+                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
+                      style={{ background: pFmt.bg, color: pFmt.color }}>
+                      {p.play_format}
+                    </span>
+                    <span className="text-[10px] tabular-nums" style={{ color: "rgba(188,203,185,0.3)" }}>#{i + 1}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Join modal ── */}
+      {showJoinModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0"
+          style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShowJoinModal(false)}>
+          <div className="w-full max-w-sm rounded-3xl p-6" style={{ background: "#1b1c1c" }}
+            onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-white mb-1">Join Tournament</h3>
+            <p className="text-sm mb-5 font-semibold" style={{ color: "rgba(188,203,185,0.5)" }}>{tournament.name}</p>
+
+            <p className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color: "rgba(188,203,185,0.4)" }}>
+              How will you play?
+            </p>
+            <div className="space-y-2 mb-5">
               {(tournament.format === "singles" || tournament.format === "both") && (
-                <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                  <input
-                    type="radio"
-                    name="play_format"
-                    value="singles"
-                    checked={joinPlayFormat === "singles"}
-                    onChange={() => setJoinPlayFormat("singles")}
-                    className="accent-green-600"
-                  />
-                  <span className="text-sm font-medium text-gray-900 dark:text-slate-100">Singles</span>
+                <label className="flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer transition-colors"
+                  style={joinPlayFormat === "singles"
+                    ? { background: "rgba(75,226,119,0.1)", border: "1px solid rgba(75,226,119,0.3)" }
+                    : { background: "#202020", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <input type="radio" name="play_format" value="singles"
+                    checked={joinPlayFormat === "singles"} onChange={() => setJoinPlayFormat("singles")}
+                    className="accent-[#4be277]" />
+                  <span className="text-sm font-bold text-white">Singles</span>
                 </label>
               )}
               {(tournament.format === "doubles" || tournament.format === "both") && (
-                <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                  <input
-                    type="radio"
-                    name="play_format"
-                    value="doubles"
-                    checked={joinPlayFormat === "doubles"}
-                    onChange={() => setJoinPlayFormat("doubles")}
-                    className="accent-green-600"
-                  />
-                  <span className="text-sm font-medium text-gray-900 dark:text-slate-100">Doubles</span>
+                <label className="flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer transition-colors"
+                  style={joinPlayFormat === "doubles"
+                    ? { background: "rgba(75,226,119,0.1)", border: "1px solid rgba(75,226,119,0.3)" }
+                    : { background: "#202020", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <input type="radio" name="play_format" value="doubles"
+                    checked={joinPlayFormat === "doubles"} onChange={() => setJoinPlayFormat("doubles")}
+                    className="accent-[#4be277]" />
+                  <span className="text-sm font-bold text-white">Doubles</span>
                 </label>
               )}
             </div>
 
             {joinMutation.error && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-3">{joinMutation.error.message}</p>
+              <p className="text-sm text-red-400 mb-3">{joinMutation.error.message}</p>
             )}
 
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => setShowJoinModal(false)}
-                className="flex-1 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
-              >
+            <div className="flex gap-3">
+              <button onClick={() => setShowJoinModal(false)}
+                className="flex-1 py-3 rounded-2xl font-bold text-sm"
+                style={{ background: "#202020", color: "rgba(188,203,185,0.6)" }}>
                 Cancel
               </button>
-              <button
-                onClick={handleJoin}
+              <button onClick={() => joinMutation.mutate({ tournament_id: id, play_format: joinPlayFormat })}
                 disabled={joinMutation.isPending}
-                className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-              >
-                {joinMutation.isPending ? "Joining..." : "Confirm"}
+                className="flex-1 py-3 rounded-2xl font-black text-sm text-black shadow-lg shadow-green-500/20 transition-opacity disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg, #4be277, #22c55e)" }}>
+                {joinMutation.isPending ? "Joining…" : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cancel confirm modal ── */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0"
+          style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShowCancelConfirm(false)}>
+          <div className="w-full max-w-sm rounded-3xl p-6" style={{ background: "#1b1c1c" }}
+            onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-white mb-1">Cancel tournament?</h3>
+            <p className="text-sm mb-6" style={{ color: "rgba(188,203,185,0.5)" }}>
+              This will cancel <span className="text-white font-bold">{tournament.name}</span> and notify all participants.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowCancelConfirm(false)}
+                className="flex-1 py-3 rounded-2xl font-bold text-sm"
+                style={{ background: "#202020", color: "rgba(188,203,185,0.6)" }}>
+                Keep it
+              </button>
+              <button
+                onClick={() => cancelMutation.mutate({ tournament_id: id })}
+                disabled={cancelMutation.isPending}
+                className="flex-1 py-3 rounded-2xl font-bold text-sm transition-opacity disabled:opacity-50"
+                style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
+                {cancelMutation.isPending ? "Cancelling…" : "Yes, cancel"}
               </button>
             </div>
           </div>
