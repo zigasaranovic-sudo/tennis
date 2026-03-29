@@ -100,6 +100,7 @@ export const courtsRouter = router({
           match_id: input.match_id ?? null,
           starts_at: input.starts_at,
           ends_at: input.ends_at,
+          status: "confirmed",
           notes: input.notes ?? null,
         })
         .select("*")
@@ -127,7 +128,7 @@ export const courtsRouter = router({
         .order("starts_at", { ascending: input.upcoming });
 
       if (input.upcoming) {
-        query = query.gte("starts_at", now).eq("status", "confirmed");
+        query = query.gte("starts_at", now).neq("status", "cancelled");
       } else {
         query = query.lt("starts_at", now);
       }

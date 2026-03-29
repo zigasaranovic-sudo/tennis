@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, use } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { useT } from "@/lib/i18n/context";
@@ -89,8 +89,8 @@ type Selection = { courtId: string; startMin: number } | null;
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 
-export default function VenueDetailPage({ params }: { params: { venueId: string } }) {
-  const { venueId } = params;
+export default function VenueDetailPage({ params }: { params: Promise<{ venueId: string }> }) {
+  const { venueId } = use(params);
   const { t } = useT();
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
@@ -940,11 +940,16 @@ function CourtGrid({
                       className="absolute right-0 flex justify-end pr-2"
                       style={{ top: i * SLOT_H, height: SLOT_H }}
                     >
-                      {isFullHour && (
-                        <span className="text-[10px] font-medium tabular-nums mt-1" style={{ color: "rgba(188,203,185,0.3)" }}>
-                          {fmtTime(min)}
-                        </span>
-                      )}
+                      <span
+                        className="tabular-nums mt-1"
+                        style={{
+                          fontSize: isFullHour ? 10 : 9,
+                          fontWeight: isFullHour ? 600 : 400,
+                          color: isFullHour ? "rgba(188,203,185,0.35)" : "rgba(188,203,185,0.18)",
+                        }}
+                      >
+                        {fmtTime(min)}
+                      </span>
                     </div>
                   );
                 })}

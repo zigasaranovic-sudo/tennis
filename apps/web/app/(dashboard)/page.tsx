@@ -30,18 +30,83 @@ type Venue = {
   surfaces?: string[];
 };
 
-// ── Gradient placeholder colors by surface ───────────────────────────────────
+// ── Venue images ─────────────────────────────────────────────────────────────
 
-const SURFACE_GRADIENT: Record<string, string> = {
-  clay:    "from-[#3d1f0a] to-[#5c2e12]",
-  hard:    "from-[#0a1a3d] to-[#122b5c]",
-  grass:   "from-[#0a2e14] to-[#12472a]",
-  indoor:  "from-[#1b1c1c] to-[#242626]",
-  default: "from-[#1b1c1c] to-[#202020]",
+const VENUE_PHOTOS: Record<string, string> = {
+  // Legacy Ljubljana venues (not on Courtiplay) — distinct Unsplash tennis photos
+  "tc-fuzine":            "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&q=80",
+  "tk-ilirija":           "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=600&q=80",
+  "tk-olimpija":          "https://images.unsplash.com/photo-1530915365347-e35b749a0381?w=600&q=80",
+  "tc-smarna-gora":       "https://images.unsplash.com/photo-1595435742656-5272d0b3fa82?w=600&q=80",
+  "tenis-center-btc":     "https://images.unsplash.com/photo-1460881680858-30d872d5b530?w=600&q=80",
+  "tk-tivoli":            "https://images.unsplash.com/photo-1531315396756-905d68d21b56?w=600&q=80",
+  // Courtiplay venues (slugs match venueSlug(venue.name) from DB)
+  "tenis-klub-kamnik":        "https://api.courtiplay.com/storage/v1/render/image/public/banners/33a4b992-23df-4ca8-90f6-80645fed4f92/IMG_1742.jpeg?height=600&resize=contain",
+  "tk-strazisce":             "https://api.courtiplay.com/storage/v1/render/image/public/banners/707f60ba-39f4-4a67-9f9d-52b7dc25428b/1000005826.jpg?height=600&resize=contain",
+  "tenis-ruski-car":          "https://api.courtiplay.com/storage/v1/render/image/public/banners/7f4b2f5d-72bb-49fa-9971-b3f308e5e89b/7e0a35a4-3bab-4685-8343-ed54867d1d4a-1024x768.jpg?height=600&resize=contain",
+  "tk-menges":                "https://api.courtiplay.com/storage/v1/render/image/public/banners/8b90f4f8-3860-426b-95ed-9a7ae1e7d005/IMG_20240224_190336.jpg?height=600&resize=contain",
+  "tk-duplica":               "https://api.courtiplay.com/storage/v1/render/image/public/banners/88ededf0-92b4-4bbe-ab00-401b7ff7f963/IMG_4317.jpeg?height=600&resize=contain",
+  "tk-radlje":                "https://api.courtiplay.com/storage/v1/render/image/public/banners/f47a157b-e0f7-4c15-af29-a17b2d9c3d1e/tk%20radlje.jpeg?height=600&resize=contain",
+  "sobec":                    "https://api.courtiplay.com/storage/v1/render/image/public/banners/6c6ac6f3-1dfb-43f3-af77-e92a5c62852d/13_1678487216.jpeg?height=600&resize=contain",
+  "tenis-kamp-danica":        "https://api.courtiplay.com/storage/v1/render/image/public/banners/4f5629d5-8b60-41bd-8988-1e381bc6d7d2/Image%2023.%207.%2024%20at%2009.50.jpeg?height=600&resize=contain",
+  "bernardi":                 "https://api.courtiplay.com/storage/v1/render/image/public/banners/b84559a9-d3c4-425a-8bab-1fd3acb6ebcf/Putr%20avgust24%20edited-66.jpg?height=600&resize=contain",
+  "tenisko-drustvo-dovce":    "https://api.courtiplay.com/storage/v1/render/image/public/banners/240f0bc1-c9f1-4adf-b61c-e9aab7fbd861/40_1556566401.jpeg?height=600&resize=contain",
+  "tenis-gust-bar":           "https://api.courtiplay.com/storage/v1/render/image/public/banners/27dee8f7-c1cb-4c8e-8a20-3229cbc31f99/485341474_2897361857122781_7367172855721233389_n.jpg?height=600&resize=contain",
+  "tenis-hala-gokop":         "https://api.courtiplay.com/storage/v1/render/image/public/banners/a4c78234-1eda-4d6c-b950-b5e3da099e6f/Screenshot%202025-10-26%20at%2015.34.33.png?height=600&resize=contain",
+  "cokan-tennis-academy":     "https://api.courtiplay.com/storage/v1/render/image/public/banners/4b3997df-f2b9-46d7-9af7-9f84e0501644/teniska-sola-celje-z-okolico-cokan-tennis-academy-sportna-akademija-d-o-o_5-1024x1024-.png?height=600&resize=contain",
+  "teniski-klub-murska-sobota":"https://api.courtiplay.com/storage/v1/render/image/public/banners/f297ccbc-c39f-49a1-995b-f71226271996/received_311205469980915-scaled.jpeg?height=600&resize=contain",
+  "tenis-padel-smartno":      "https://api.courtiplay.com/storage/v1/render/image/public/banners/20524ba5-f937-401e-8dc1-f8383db87c23/1000008160.jpg?height=600&resize=contain",
+  "tenis-center-murko":       "https://api.courtiplay.com/storage/v1/render/image/public/banners/02b43766-01d2-41e5-9178-7d4f3ff70782/32519417qCE816CBDB99047000AC87D99C3117782_1200.webp?height=600&resize=contain",
+  "tenis-portoroz":           "https://api.courtiplay.com/storage/v1/render/image/public/banners/a8e8ea59-3403-4ff5-ad74-afacf5923add/270620241719495595_tennis-portoroz.jpg?height=600&resize=contain",
+  "tenis-in-padel-koroska":   "https://api.courtiplay.com/storage/v1/render/image/public/banners/edf0b7bb-9b00-44d0-81f8-fc386c6aa243/Koroska.jpg?height=600&resize=contain",
+  "sport-park-krsnik":        "https://api.courtiplay.com/storage/v1/render/image/public/banners/761ffce5-c2bb-4355-a9c6-80bf01a85cb4/d9f433_215fbfabdedb44b8b58c154eeef93c1a_mv2.avif?height=600&resize=contain",
+  "rimski-vrelec":            "https://api.courtiplay.com/storage/v1/render/image/public/banners/d7e43b12-9b33-4e1e-8bbe-b6c897d37b1b/Rimski_igrisce_1515.jpg?height=600&resize=contain",
 };
 
-function placeholderGradient(surfaces: string[]) {
-  return SURFACE_GRADIENT[surfaces[0] ?? "default"] ?? SURFACE_GRADIENT.default;
+const SURFACE_IMAGES: Record<string, string> = {
+  clay:    "https://api.courtiplay.com/storage/v1/render/image/public/banners/33a4b992-23df-4ca8-90f6-80645fed4f92/IMG_1742.jpeg?height=600&resize=contain",
+  hard:    "https://api.courtiplay.com/storage/v1/render/image/public/banners/707f60ba-39f4-4a67-9f9d-52b7dc25428b/1000005826.jpg?height=600&resize=contain",
+  grass:   "https://api.courtiplay.com/storage/v1/render/image/public/banners/6c6ac6f3-1dfb-43f3-af77-e92a5c62852d/13_1678487216.jpeg?height=600&resize=contain",
+  indoor:  "https://api.courtiplay.com/storage/v1/render/image/public/banners/a4c78234-1eda-4d6c-b950-b5e3da099e6f/Screenshot%202025-10-26%20at%2015.34.33.png?height=600&resize=contain",
+  default: "https://api.courtiplay.com/storage/v1/render/image/public/banners/d7e43b12-9b33-4e1e-8bbe-b6c897d37b1b/Rimski_igrisce_1515.jpg?height=600&resize=contain",
+};
+
+// ── Display name translations ─────────────────────────────────────────────────
+// Maps DB-stored name → display name with correct diacritics.
+// Only entries that differ from the DB value need to be listed.
+// All routing, image lookup, and slug logic uses the original venue.name.
+
+const VENUE_DISPLAY_NAMES: Record<string, string> = {
+  // Legacy Ljubljana clubs
+  "TC Fuzine":                      "TC Fužine",
+  "TC Smarna Gora":                 "TC Šmarna Gora",
+  // Courtiplay venues — both ASCII (if stored without diacritics) and correct form
+  "TK Strazisce":                   "TK Stražišče",
+  "TK Strazisc":                    "TK Stražišče",
+  "Sobec":                          "Šobec",
+  "TK Menges":                      "TK Mengeš",
+  "Tenis Padel Smartno":            "Tenis Padel Šmartno",
+  "Tenis Portoroz":                 "Tenis Portorož",
+  "Tenis in Padel Koroska":         "Tenis in Padel Koroška",
+  "Sport park Krsnik":              "Šport park Krsnik",
+  "Tenisko drustvo Dovce":          "Teniško društvo Dovce",
+  "Tenis Gust Bar":                 "Tenis Gušt Bar",
+  "Teniski klub Murska Sobota":     "Teniški klub Murska Sobota",
+};
+
+function venueDisplayName(name: string): string {
+  return VENUE_DISPLAY_NAMES[name] ?? name;
+}
+
+function venueSlug(name: string): string {
+  return name.toLowerCase()
+    .replace(/[čćžšđ]/g, (c: string) => ({ č: "c", ć: "c", ž: "z", š: "s", đ: "d" }[c] ?? c))
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function venueImage(id: string, name: string, surfaces: string[]): string {
+  const slug = venueSlug(name);
+  return VENUE_PHOTOS[slug] ?? VENUE_PHOTOS[id] ?? SURFACE_IMAGES[surfaces[0] ?? "default"] ?? SURFACE_IMAGES.default;
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -196,7 +261,7 @@ export default function HomePage() {
             )}
           </div>
         ) : (
-          <div className="space-y-8 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-2">
             {filtered.map((venue) => (
               <VenueCard key={venue.id} venue={venue} />
             ))}
@@ -230,78 +295,49 @@ export default function HomePage() {
 function VenueCard({ venue }: { venue: Venue }) {
   const surfaces = venue.surfaces ?? [];
   const courtCount = courtCountFromId(venue.id);
-  const gradientClasses = placeholderGradient(surfaces);
+  const imgSrc = venueImage(venue.id, venue.name, surfaces);
 
   return (
     <Link href={`/courts/${venue.id}`} className="block group">
       {/* Image area */}
-      <div className="relative aspect-[4/5] rounded-3xl overflow-hidden mb-4">
-        {/* Placeholder gradient background */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${gradientClasses}`} />
-
-        {/* Subtle tennis court lines overlay */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-x-[10%] top-[20%] bottom-[20%] border border-white/40 rounded-sm" />
-          <div className="absolute left-1/2 top-[20%] bottom-[20%] w-px bg-white/40 -translate-x-px" />
-          <div className="absolute inset-x-[10%] top-1/2 h-px bg-white/40 -translate-y-px" />
-          <div className="absolute inset-x-[10%] top-[20%] h-[18%] border-b border-white/30" />
-          <div className="absolute inset-x-[10%] bottom-[20%] h-[18%] border-t border-white/30" />
-        </div>
+      <div className="relative aspect-[3/2] sm:aspect-[4/3] rounded-2xl overflow-hidden mb-3 bg-[#1b1c1c]">
+        <img
+          src={imgSrc}
+          alt={venueDisplayName(venue.name)}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
 
         {/* Vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#131313]/90 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#131313]/80 via-transparent to-transparent" />
 
         {/* Court count badge — top right */}
         <div className="absolute top-3 right-3">
-          <div className="bg-[#131313]/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-extrabold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full">
+          <div className="bg-[#131313]/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-extrabold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full">
             {courtCount} COURTS
           </div>
         </div>
 
         {/* Available now — bottom left */}
-        <div className="absolute bottom-4 left-4 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#4be277] shadow-lg shadow-[#4be277]/60 animate-pulse" />
-          <span className="text-[#4be277] text-[10px] font-extrabold uppercase tracking-[0.18em]">
+        <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#4be277] shadow-lg shadow-[#4be277]/60 animate-pulse" />
+          <span className="text-[#4be277] text-[9px] font-extrabold uppercase tracking-[0.18em]">
             AVAILABLE NOW
           </span>
         </div>
       </div>
 
-      {/* Venue info below image */}
-      <h2 className="text-[1.35rem] font-extrabold text-[#e5e2e1] leading-tight mb-1.5 group-hover:text-[#4be277] transition-colors">
-        {venue.name}
+      {/* Venue info */}
+      <h2 className="text-base font-extrabold text-[#e5e2e1] leading-tight mb-1 group-hover:text-[#4be277] transition-colors truncate">
+        {venueDisplayName(venue.name)}
       </h2>
 
-      <div className="flex items-center justify-between gap-3">
-        {/* Location */}
-        <div className="flex items-center gap-1.5 min-w-0">
-          <svg className="w-3.5 h-3.5 text-[#e5e2e1]/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-          <span className="text-sm text-[#e5e2e1]/40 truncate">
-            {venue.city}
-            {venue.address ? ` · ${venue.address}` : ""}
-          </span>
-        </div>
-
-        {/* Surface tags + price */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {surfaces.slice(0, 2).map((s) => (
-            <span
-              key={s}
-              className="text-[10px] font-bold uppercase tracking-wide text-[#e5e2e1]/40 bg-[#202020] px-2.5 py-1 rounded-lg"
-            >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-[#e5e2e1]/40 truncate">
+          {venue.city}{venue.address ? ` · ${venue.address}` : ""}
+        </span>
+        <div className="flex items-center gap-1 shrink-0">
+          {surfaces.slice(0, 1).map((s) => (
+            <span key={s} className="text-[9px] font-bold uppercase text-[#e5e2e1]/40 bg-[#202020] px-2 py-0.5 rounded">
               {s}
             </span>
           ))}

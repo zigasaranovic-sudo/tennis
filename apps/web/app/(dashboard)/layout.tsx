@@ -20,10 +20,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [router]);
 
   const bottomNav = [
-    { href: "/", label: "Courts", icon: CourtsIcon },
-    { href: "/messages", label: "Chat", icon: ChatIcon },
-    { href: "/tournaments", label: "Tourney", icon: TourneyIcon },
-    { href: "/profile", label: "Profile", icon: ProfileIcon },
+    { href: "/", label: "Courts", icon: CourtsIcon, base: "/" },
+    { href: "/courts/bookings", label: "Matches", icon: MatchesIcon, base: "/courts/bookings" },
+    { href: "/tournaments", label: "Tourney", icon: TourneyIcon, base: "/tournaments" },
+    { href: "/messages", label: "Chat", icon: ChatIcon, base: "/messages" },
   ];
 
   return (
@@ -46,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <nav className="hidden lg:flex items-center gap-8">
             {[
               { href: "/", label: "Courts", base: "/" },
-              { href: "/courts/bookings", label: "Bookings", base: "/courts/bookings" },
+              { href: "/courts/bookings", label: "Matches", base: "/courts/bookings" },
               { href: "/tournaments", label: "Tournaments", base: "/tournaments" },
               { href: "/messages", label: "Chat", base: "/messages" },
             ].map((link) => {
@@ -97,8 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-[#202020]/90 backdrop-blur-xl rounded-t-[2rem] shadow-2xl border-t border-white/5">
         <div className="flex justify-around items-center px-4 pb-6 pt-3">
           {bottomNav.map((item) => {
-            const base = item.href === "/" ? "/" : item.href;
-            const active = base === "/" ? pathname === "/" : pathname.startsWith(base);
+            const active = item.base === "/" ? pathname === "/" : pathname.startsWith(item.base);
             const Icon = item.icon;
             return (
               <Link
@@ -143,10 +142,10 @@ function TourneyIcon({ active }: { active: boolean }) {
     </svg>
   );
 }
-function ProfileIcon({ active }: { active: boolean }) {
+function MatchesIcon({ active }: { active: boolean }) {
   return (
-    <svg className="w-5 h-5" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={active ? 0 : 1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
     </svg>
   );
 }
