@@ -4,6 +4,63 @@ import { use, useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 
+// ── Demo bracket data ─────────────────────────────────────────────────────────
+type BracketPlayer = { initials: string; name: string; score: string; winner?: boolean };
+type BracketMatch = { id: string; player1: BracketPlayer; player2: BracketPlayer; live?: boolean; completed?: boolean };
+
+const DEMO_BRACKET: BracketMatch[] = [
+  { id: "m1", live: true,
+    player1: { initials: "NK", name: "N. Kovač", score: "6-4 3" },
+    player2: { initials: "MT", name: "M. Tomić", score: "2-6 2" } },
+  { id: "m2", completed: true,
+    player1: { initials: "AJ", name: "A. Janez", score: "6-3 6-1", winner: true },
+    player2: { initials: "BK", name: "B. Kos", score: "3-6 1-6" } },
+  { id: "m3",
+    player1: { initials: "PH", name: "P. Horvat", score: "–" },
+    player2: { initials: "SD", name: "S. Dolar", score: "–" } },
+  { id: "m4", completed: true,
+    player1: { initials: "LV", name: "L. Vidmar", score: "7-5 6-4", winner: true },
+    player2: { initials: "RN", name: "R. Novak", score: "5-7 4-6" } },
+];
+
+function BracketCard({ match }: { match: BracketMatch }) {
+  return (
+    <div className={`relative shrink-0 w-52 rounded-2xl overflow-hidden ${match.live ? "border border-[#4be277]/30" : "border border-transparent"}`}
+      style={{ background: "#1b1c1c" }}>
+      {match.live && (
+        <span className="absolute top-2 left-2 bg-[#4be277] text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest z-10">
+          LIVE
+        </span>
+      )}
+      <div className="absolute top-0 right-0 w-1 h-full"
+        style={{ background: "linear-gradient(180deg, #4be277 0%, #22c55e 50%, #16a34a 100%)" }} />
+      <div className="p-4 pt-3 space-y-3">
+        <BracketPlayerRow player={match.player1} dim={match.completed && !match.player1.winner} />
+        <div className="h-px" style={{ background: "#202020" }} />
+        <BracketPlayerRow player={match.player2} dim={match.completed && !match.player2.winner} />
+      </div>
+    </div>
+  );
+}
+
+function BracketPlayerRow({ player, dim }: { player: BracketPlayer; dim?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between gap-2 ${dim ? "opacity-50" : ""}`}>
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 text-black"
+          style={{ background: "linear-gradient(135deg, #4be277, #22c55e)" }}>
+          {player.initials}
+        </div>
+        <span className="text-white text-xs font-semibold truncate">{player.name}</span>
+      </div>
+      <span className={`text-xs font-black tabular-nums shrink-0 ${player.winner ? "text-[#4be277]" : "text-[#9ca3af]"}`}>
+        {player.score}
+      </span>
+    </div>
+  );
+}
+
+// ── Tournament types ──────────────────────────────────────────────────────────
 type TournamentDetail = {
   id: string;
   creator_id: string;
@@ -225,6 +282,18 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ id:
             )}
           </div>
         )}
+      </div>
+
+      {/* Bracket */}
+      <div className="px-5 lg:px-8 mb-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-3" style={{ color: "#6b7280" }}>
+          Tournament Bracket
+        </p>
+        <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
+          {DEMO_BRACKET.map((match) => (
+            <BracketCard key={match.id} match={match} />
+          ))}
+        </div>
       </div>
 
       {/* Participants */}

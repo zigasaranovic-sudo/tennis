@@ -23,43 +23,6 @@ type TournamentItem = {
   participant_count: number;
 };
 
-// ── Mock bracket data for hero section ────────────────────────────────────────
-
-type BracketPlayer = { initials: string; name: string; score: string; winner?: boolean };
-type BracketMatch = {
-  id: string;
-  player1: BracketPlayer;
-  player2: BracketPlayer;
-  live?: boolean;
-  completed?: boolean;
-};
-
-const DEMO_BRACKET: BracketMatch[] = [
-  {
-    id: "m1",
-    live: true,
-    player1: { initials: "NK", name: "N. Kovač", score: "6-4 3" },
-    player2: { initials: "MT", name: "M. Tomić", score: "2-6 2" },
-  },
-  {
-    id: "m2",
-    completed: true,
-    player1: { initials: "AJ", name: "A. Janez", score: "6-3 6-1", winner: true },
-    player2: { initials: "BK", name: "B. Kos", score: "3-6 1-6" },
-  },
-  {
-    id: "m3",
-    player1: { initials: "PH", name: "P. Horvat", score: "–" },
-    player2: { initials: "SD", name: "S. Dolar", score: "–" },
-  },
-  {
-    id: "m4",
-    completed: true,
-    player1: { initials: "LV", name: "L. Vidmar", score: "7-5 6-4", winner: true },
-    player2: { initials: "RN", name: "R. Novak", score: "5-7 4-6" },
-  },
-];
-
 const SLOVENIAN_CITIES = [
   "Ljubljana", "Maribor", "Celje", "Kranj", "Koper", "Novo Mesto",
   "Velenje", "Nova Gorica", "Murska Sobota", "Ptuj", "Kamnik", "Domžale",
@@ -94,59 +57,6 @@ const FORMAT_COLOR: Record<string, string> = {
   doubles: "text-purple-400 bg-purple-400/10 border-purple-400/20",
   both:    "text-indigo-400 bg-indigo-400/10 border-indigo-400/20",
 };
-
-// ── BracketCard ────────────────────────────────────────────────────────────────
-
-function BracketCard({ match }: { match: BracketMatch }) {
-  return (
-    <div
-      className={`relative shrink-0 w-56 bg-[#1b1c1c] rounded-2xl overflow-hidden
-        ${match.live ? "border border-[#4be277]/30" : "border border-transparent"}`}
-    >
-      {/* LIVE badge */}
-      {match.live && (
-        <span className="absolute top-2 left-2 bg-[#4be277] text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest z-10">
-          LIVE
-        </span>
-      )}
-
-      {/* Right kinetic accent strip */}
-      <div
-        className="absolute top-0 right-0 w-1 h-full"
-        style={{ background: "linear-gradient(180deg, #4be277 0%, #22c55e 50%, #16a34a 100%)" }}
-      />
-
-      <div className="p-4 pt-3 space-y-3">
-        {/* Player 1 */}
-        <PlayerRow player={match.player1} dim={match.completed && !match.player1.winner} />
-        {/* divider */}
-        <div className="h-px bg-[#202020]" />
-        {/* Player 2 */}
-        <PlayerRow player={match.player2} dim={match.completed && !match.player2.winner} />
-      </div>
-    </div>
-  );
-}
-
-function PlayerRow({ player, dim }: { player: BracketPlayer; dim?: boolean }) {
-  return (
-    <div className={`flex items-center justify-between gap-2 ${dim ? "opacity-60" : ""}`}>
-      <div className="flex items-center gap-2 min-w-0">
-        {/* initials circle */}
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 text-black"
-          style={{ background: "linear-gradient(135deg, #4be277 0%, #22c55e 100%)" }}
-        >
-          {player.initials}
-        </div>
-        <span className="text-white text-xs font-semibold truncate">{player.name}</span>
-      </div>
-      <span className={`text-xs font-black tabular-nums shrink-0 ${player.winner ? "text-[#4be277]" : "text-[#9ca3af]"}`}>
-        {player.score}
-      </span>
-    </div>
-  );
-}
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 
@@ -220,107 +130,8 @@ export default function TournamentsPage() {
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 min-h-screen bg-[#131313] pb-36">
 
-      {/* ── Hero / live match header ─────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 pt-8 pb-6">
-        <p className="text-[#4be277] text-[10px] font-black uppercase tracking-[0.25em] mb-2">
-          LJUBLJANA OPEN 2024
-        </p>
-        <div className="flex items-center gap-3 mb-6">
-          <h1 className="text-3xl sm:text-4xl font-black text-white">Quarter-finals</h1>
-          {/* LIVE NOW pill */}
-          <span className="flex items-center gap-1.5 bg-[#4be277]/10 border border-[#4be277]/30 text-[#4be277] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4be277] animate-pulse" />
-            LIVE NOW
-          </span>
-        </div>
-      </div>
-
-      {/* ── Bracket horizontal scroll ─────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 mb-8">
-        <p className="text-[#6b7280] text-[10px] font-black uppercase tracking-widest mb-3">
-          Tournament Bracket
-        </p>
-        <div className="flex gap-3 overflow-x-auto scrollbar-none pb-2">
-          {DEMO_BRACKET.map((match) => (
-            <BracketCard key={match.id} match={match} />
-          ))}
-        </div>
-      </div>
-
-      {/* ── On-Court Momentum ─────────────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 mb-10">
-        <p className="text-[#6b7280] text-[10px] font-black uppercase tracking-widest mb-3">
-          On-Court Momentum
-        </p>
-
-        {/* Full-width court photo placeholder */}
-        <div
-          className="w-full h-44 rounded-2xl mb-3 overflow-hidden relative"
-          style={{ background: "linear-gradient(135deg, #1b1c1c 0%, #202020 60%, #131313 100%)" }}
-        >
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-20">
-            <svg className="w-14 h-14 text-[#4be277]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" strokeWidth={1.5}/>
-              <path strokeLinecap="round" strokeWidth={1.5}
-                d="M3 12c2-4 7-7 9-0s7 4 9 0M12 2c-2 3-2 7 0 10s2 7 0 10"/>
-            </svg>
-          </div>
-          {/* gradient overlay at bottom */}
-          <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-[#131313] to-transparent" />
-          <span className="absolute bottom-3 left-4 text-[10px] font-black text-[#6b7280] uppercase tracking-widest">
-            Live Court Cam
-          </span>
-        </div>
-
-        {/* Stats row */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          {/* Fastest serve */}
-          <div className="bg-[#1b1c1c] rounded-2xl p-4">
-            <p className="text-[#6b7280] text-[9px] font-black uppercase tracking-widest mb-1">
-              Fastest Serve
-            </p>
-            <p className="text-[#4be277] text-2xl font-black leading-none mb-1">214 km/h</p>
-            <p className="text-white text-xs font-semibold">N. Kovač</p>
-          </div>
-
-          {/* Aces */}
-          <div className="bg-[#1b1c1c] rounded-2xl p-4">
-            <p className="text-[#6b7280] text-[9px] font-black uppercase tracking-widest mb-1">
-              Aces This Set
-            </p>
-            <p className="text-[#4be277] text-2xl font-black leading-none mb-1">7</p>
-            <p className="text-white text-xs font-semibold">M. Tomić</p>
-          </div>
-        </div>
-
-        {/* Win probability bar */}
-        <div className="bg-[#1b1c1c] rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white text-xs font-black">N. Kovač</span>
-            <span className="text-[#6b7280] text-[9px] font-black uppercase tracking-widest">
-              Win Probability
-            </span>
-            <span className="text-white text-xs font-black">M. Tomić</span>
-          </div>
-          <div className="flex rounded-full overflow-hidden h-2.5">
-            <div
-              className="h-full transition-all duration-700"
-              style={{
-                width: "67%",
-                background: "linear-gradient(90deg, #4be277 0%, #22c55e 100%)",
-              }}
-            />
-            <div className="h-full flex-1 bg-[#202020]" />
-          </div>
-          <div className="flex justify-between mt-1.5">
-            <span className="text-[#4be277] text-[10px] font-black">67%</span>
-            <span className="text-[#6b7280] text-[10px] font-black">33%</span>
-          </div>
-        </div>
-      </div>
-
       {/* ── Tournament list ───────────────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6">
+      <div className="px-4 sm:px-6 pt-8">
         <p className="text-[#6b7280] text-[10px] font-black uppercase tracking-widest mb-4">
           All Tournaments
         </p>
